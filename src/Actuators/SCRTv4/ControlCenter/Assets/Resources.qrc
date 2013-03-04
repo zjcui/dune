@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Help.html</file>
+        <file>Icons/22x22/Bit.png</file>
+        <file>Icons/22x22/Calibration.png</file>
+        <file>Icons/22x22/Clear.png</file>
+        <file>Icons/22x22/Connect.png</file>
+        <file>Icons/22x22/Disconnect.png</file>
+        <file>Icons/22x22/Error.png</file>
+        <file>Icons/22x22/Help.png</file>
+        <file>Icons/22x22/Ok.png</file>
+        <file>Icons/22x22/Save.png</file>
+    </qresource>
+</RCC>
