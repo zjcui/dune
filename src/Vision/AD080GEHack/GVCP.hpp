@@ -166,7 +166,7 @@ namespace Vision
         m_seq(0),
         m_polarity(true)
       {
-        m_socket.bind(c_port);
+        m_socket.bind(c_port * 10);
         m_iom.add(&m_socket);
       }
 

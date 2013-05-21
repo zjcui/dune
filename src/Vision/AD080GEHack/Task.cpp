@@ -62,20 +62,6 @@ namespace Vision
       unsigned jpeg_quality;
       //! Number of frame buffers.
       unsigned buffer_count;
-      //! Exposure time (or maximum value if auto).
-      double exposure_time;
-      //! Gain.
-      unsigned gain;
-      //! Gamma.
-      unsigned gamma;
-      //! Strobe mode.
-      std::string strobe_mode;
-      //! Strobe polarity.
-      bool strobe_polarity;
-      //! Strobe delay.
-      int strobe_delay;
-      //! Strobe duration.
-      unsigned strobe_duration;
       //! Store as raw
       bool store_raw;
     };
@@ -139,47 +125,6 @@ namespace Vision
         param("Stream Port", m_args.port)
         .defaultValue("61200")
         .description("Local UDP port used to receive the video stream");
-
-        param("Exposure Time", m_args.exposure_time)
-        .defaultValue("0.0819")
-        .minimumValue("0.0001")
-        .maximumValue("30.0")
-        .units(Units::Second)
-        .description("Exposure time");
-
-        param("Gain", m_args.gain)
-        .defaultValue("260")
-        .minimumValue("260")
-        .maximumValue("1023")
-        .description("Gain");
-
-        param("Gamma", m_args.gamma)
-        .defaultValue("100")
-        .minimumValue("1")
-        .maximumValue("500")
-        .description("Gamma");
-
-        param("Strobe Mode", m_args.strobe_mode)
-        .defaultValue("Exposure")
-        .values("Off, Always On, Fixed, Exposure")
-        .description("Strobe mode");
-
-        param("Strobe Polarity", m_args.strobe_polarity)
-        .defaultValue("false")
-        .description("Strobe polarity");
-
-        param("Strobe Delay", m_args.strobe_delay)
-        .defaultValue("0")
-        .minimumValue("-10000")
-        .maximumValue("10000")
-        .units(Units::Microsecond)
-        .description("Strobe delay");
-
-        param("Strobe Duration", m_args.strobe_duration)
-        .defaultValue("0")
-        .minimumValue("0")
-        .maximumValue("20000")
-        .description("Strobe duration");
 
         param("Number of Buffers", m_args.buffer_count)
         .defaultValue("25")
@@ -268,8 +213,47 @@ namespace Vision
         debug("setting pixel format");
         m_gvcp->setPixelFormat(GVCP::PIX_RGB8_PACKED);
 
+#if 0
         debug("enabling test pattern");
         m_gvcp->writeRegister(0xA13C, 10);
+#else
+        debug("disabling test pattern");
+        m_gvcp->writeRegister(0xA13C, 0);
+
+        debug("setting exposure mode = eps");
+        m_gvcp->writeRegister(0xA040, 1);
+
+        debug("setting sync mode = sync");
+        m_gvcp->writeRegister(0xA098, 0);
+
+        debug("setting shutter mode = autoexposure");
+        m_gvcp->writeRegister(0xA000, 3);
+
+        debug("setting gain = auto");
+        m_gvcp->writeRegister(0xA0B0, 1);
+
+        // Pulse generator config
+        debug("counter dividing value = 1420");
+        m_gvcp->writeRegister(0xB004, 1419);
+
+        debug("length counter 0 = 1000 clock ticks");
+        m_gvcp->writeRegister(0xB008, 1000);
+
+        debug("start point counter 0 (1) = 100 ticks");
+        m_gvcp->writeRegister(0xB00C, 100);
+
+        debug("start point counter 0 (2) = 0 ticks");
+        m_gvcp->writeRegister(0xB010, 0);
+
+        debug("end point counter 0 = 500 ticks");
+        m_gvcp->writeRegister(0xB014, 500);
+
+        debug("counter clear 0 = 0 (free run)");
+        m_gvcp->writeRegister(0xB018, 0);
+
+        debug("camera trigger selector = pulse generator 0");
+        m_gvcp->writeRegister(0xB060, 16);
+#endif
 
         debug("setting packet size");
         m_gvcp->writeRegister(0x0D04, (1 << 30 | 1500));
@@ -283,36 +267,6 @@ namespace Vision
 #if 0
         debug("setting frames per second to '%u'", m_args.fps);
         m_gvcp->setFPS(m_args.fps);
-
-        if (m_args.ae)
-          debug("enabling automatic exposure time up to '%0.4f'", m_args.exposure_time);
-        else
-          debug("setting exposure time to '%0.4f'", m_args.exposure_time);
-        m_gvcp->setExposureTime(m_args.exposure_time);
-        m_exposure = m_args.exposure_time;
-
-        debug("setting gain to '%u'", m_args.gain);
-        m_gvcp->setGain(m_args.gain);
-
-        debug("setting gamma to '%u'", m_args.gamma);
-        m_gvcp->setGamma(m_args.gamma);
-
-        GVCP::StrobeModes strobe_mode = GVCP::STROBE_MODE_OFF;
-        if (m_args.strobe_mode == "Exposure")
-          strobe_mode = GVCP::STROBE_MODE_EXPOSURE;
-        else if (m_args.strobe_mode == "Always On")
-          strobe_mode = GVCP::STROBE_MODE_ALWAYS_ON;
-        else if (m_args.strobe_mode == "Fixed")
-          strobe_mode = GVCP::STROBE_MODE_FIXED;
-
-        debug("setting strobe mode to '%s'", m_args.strobe_mode.c_str());
-        m_gvcp->setStrobeMode(strobe_mode, m_args.strobe_polarity);
-
-        debug("setting strobe duration to '%u'", m_args.strobe_duration);
-        m_gvcp->setStrobeDuration(m_args.strobe_duration);
-
-        debug("setting strobe delay to '%d'", m_args.strobe_delay);
-        m_gvcp->setStrobeDelay(m_args.strobe_delay);
 #endif
 
         debug("starting streaming");
@@ -392,8 +346,10 @@ namespace Vision
           if (pkt_count < c_pkts_per_frame)
             war("lost at least %d packets", c_pkts_per_frame - pkt_count);
 
-          if (isActive())
+          if (isActive() || 1)
           {
+            inf("got frame");
+
             double timestamp = frame->getTimeStamp();
             Path file = m_log_dir / String::str("%0.4f.jpg", timestamp);
             {
