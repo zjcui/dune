@@ -46,20 +46,20 @@ static SerialPort* m_uart;
 static const int c_buffer_size = 4096;
 //! Internal buffer.
 static char m_buffer[c_buffer_size];
+//! Debug ostream
+static std::ostream* rn_dbg;
 
 void
-sendData(const char* cmd, bool spew = true)
+sendData(const char* cmd)
 {
-  if (spew)
-    std::cerr << "sending: " << sanitize(cmd) << std::endl;
+  (*rn_dbg) << "sending: " << sanitize(cmd) << std::endl;
 
   int sv = std::strlen(cmd);
   int rv = m_uart->write(cmd, sv);
 }
 
 bool
-receiveData(const char* ack, double timeout,
-            bool spew = true, const char* invalid = 0)
+receiveData(const char* ack, double timeout, const char* invalid = 0)
 {
   double deadline = Clock::get() + timeout;
   int m_widx = 0;
@@ -77,8 +77,7 @@ receiveData(const char* ack, double timeout,
         m_widx = c_buffer_size - 1;
       m_buffer[m_widx] = 0;
 
-      if (spew)
-        std::cerr << "receiving: " << sanitize(m_buffer) << std::endl;
+      (*rn_dbg) << "receiving: " << sanitize(m_buffer) << std::endl;
 
       if (ack)
       {
@@ -138,7 +137,7 @@ checkParam(const char* param)
 
   sendData(cmd);
 
-  receiveData(0, timeout, false);
+  receiveData(0, timeout);
 
   if (strstr(m_buffer, param))
     return true;
@@ -184,7 +183,7 @@ setName(const char* name)
 {
   if (checkName(MODULE_NAME))
   {
-    std::cerr << "module name is " << MODULE_NAME << std::endl;
+    std::cerr << "\t" << "module name is " << MODULE_NAME << std::endl;
     return true;
   }
 
@@ -201,14 +200,14 @@ setName(const char* name)
   // get back into command mode
   if (!enterCmdMode())
   {
-    std::cerr << "failed to go back into command mode" << std::endl;
+    std::cerr << "\t" << "failed to go back into command mode" << std::endl;
     return false;
   }
 
   if (checkName(MODULE_NAME))
-    std::cerr << "module name is " << MODULE_NAME << std::endl;
+    std::cerr << "\t" << "module name is " << MODULE_NAME << std::endl;
   else
-    std::cerr << "name is not the same" << std::endl;
+    std::cerr << "\t" << "name is not the same" << std::endl;
 
   return true;
 }
@@ -334,10 +333,10 @@ connect(Device& dev)
 
   std::string ack = "CONNECT," + dev.address + "," + "0" + "\r\n";
 
-  if (!receiveData(ack.c_str(), timeout, true, "CONNECT failed\r\n"))
+  if (!receiveData(ack.c_str(), timeout, "CONNECT failed\r\n"))
     return false;
 
-  std::cerr << sanitize(m_buffer) << std::endl;
+  (*rn_dbg) << sanitize(m_buffer) << std::endl;
 
   return true;
 }
@@ -359,7 +358,7 @@ performScan(std::stringstream& scan)
 
   double timeout = 40.0;
 
-  if (!receiveData("Inquiry Done\r\n", timeout, true, "No Devices Found\r\n"))
+  if (!receiveData("Inquiry Done\r\n", timeout, "No Devices Found\r\n"))
     return false;
 
   scan << std::string(m_buffer);
@@ -396,7 +395,7 @@ parseScan(std::stringstream& scan, std::vector<Device>& devices)
 
     if (list.size() != 3)
     {
-      std::cerr << "failed parsing" << std::endl;
+      std::cerr << "\t" << "Failed parsing" << std::endl;
       return 0;
     }
 
@@ -415,30 +414,34 @@ printDevices(std::vector<Device>& devices)
 {
   for (unsigned i = 0; i < devices.size(); ++i)
   {
-    std::cerr << "Device #" << i + 1 << std::endl;
-    std::cerr << "  Address: " << devices[i].address << std::endl;
-    std::cerr << "  Name: " << devices[i].name << std::endl;
-    std::cerr << "  COD: " << devices[i].cod << std::endl;
+    std::cerr << "\t" << "Device #" << i + 1 << std::endl;
+    std::cerr << "\t" << "  Address: " << devices[i].address << std::endl;
+    std::cerr << "\t" << "  Name: " << devices[i].name << std::endl;
+    std::cerr << "\t" << "  COD: " << devices[i].cod << std::endl;
   }
 }
 
 bool
-initDevice(const char* port)
+initDevice(const char* port, std::ostream* dbg)
 {
   // Start with the default baud rate
   m_uart = new SerialPort(port, BAUD_RATE_DEFAULT);
 
   m_uart->flush();
 
+  rn_dbg = dbg;
+
+  std::cerr << "\t" << "Attempting to enter command mode" << std::endl;
   if (!enterCmdMode())
   {
     // It failed so the fastest baudrate must have already been configured
     m_uart->setBaudRate(BAUD_RATE_FAST);
 
-    std::cerr << "changed baud rate, trying again ..." << std::endl;
+    std::cerr << "\t" << "Changed baud rate, trying again ..." << std::endl;
+    std::cerr << "\t" << "Attempting to enter command mode" << std::endl;
     if (!enterCmdMode())
     {
-      std::cerr << "failed to enter command mode" << std::endl;
+      std::cerr << "\t" << "Failed to enter command mode" << std::endl;
       return false;
     }
   }
@@ -446,31 +449,34 @@ initDevice(const char* port)
   {
     if (!setBaudRate(BAUD_RATE_FAST))
     {
-      std::cerr << "failed to set baudrate" << std::endl;
+      std::cerr << "\t" << "Failed to set baudrate" << std::endl;
       return false;
     }
 
     m_uart->setBaudRate(BAUD_RATE_FAST);
   }
 
-  std::cerr << "in command mode" << std::endl;
+  std::cerr << "\t" << "In command mode" << std::endl;
 
+  std::cerr << "\t" << "Checking role (slave)" << std::endl;
   if (!setSlaveMode())
   {
-    std::cerr << "failed to set slave mode" << std::endl;
+    std::cerr << "\t" << "Failed to set slave mode" << std::endl;
     return false;
   }
 
+  std::cerr << "\t" << "Setting module name" << std::endl;
   if (!setName(MODULE_NAME))
   {
-    std::cerr << "failed to set name" << std::endl;
+    std::cerr << "\t" << "Failed to set name" << std::endl;
     return false;
   }
 
 #if USE_PIN
+  std::cerr << "\t" << "Setting module pin" << std::endl;
   if (!setPIN(WAVY_PIN))
   {
-    std::cerr << "failed to set pin" << std::endl;
+    std::cerr << "\t" << "Failed to set pin" << std::endl;
     return false;
   }
 #endif
@@ -479,7 +485,7 @@ initDevice(const char* port)
   // Enabling status messages
   if (!enableStatusMessages())
   {
-    std::cerr << "failed to enable status messages" << std::endl;
+    std::cerr << "\t" << "Failed to enable status messages" << std::endl;
     return false;
   }
 #endif
@@ -487,7 +493,7 @@ initDevice(const char* port)
 #if 0
   if (!setBaudRate(115200))
   {
-    std::cerr << "failed to set baud rate" << std::endl;
+    std::cerr << "\t" << "Failed to set baud rate" << std::endl;
     return false;
   }
 #endif
@@ -500,9 +506,10 @@ connectToWavy(const char* name)
 {
   std::stringstream scan;
 
+  std::cerr << "\t" << "Scanning for devices" << std::endl;
   if (!performScan(scan))
   {
-    std::cerr << "failed to scan" << std::endl;
+    std::cerr << "\t" << "Failed to scan" << std::endl;
     return false;
   }
 
@@ -510,18 +517,18 @@ connectToWavy(const char* name)
 
   parseScan(scan, devs);
 
-  std::cerr << std::endl;
-  std::cerr << scan.str() << std::endl;
+  (*rn_dbg) << std::endl;
+  (*rn_dbg) << scan.str() << std::endl;
 
-  std::cerr << "Printing devices" << std::endl;
+  std::cerr << "\t" << "Printing devices" << std::endl;
 
   printDevices(devs);
 
-  std::cerr << std::endl;
+  std::cerr << "\t" << std::endl;
 
   if (!devs.size())
   {
-    std::cerr << "no devices" << std::endl;
+    std::cerr << "\t" << "no devices" << std::endl;
     return false;
   }
 
@@ -532,14 +539,14 @@ connectToWavy(const char* name)
     {
       if (connect(devs[i]))
       {
-        std::cerr << "connected to "
+        (*rn_dbg) << "Connected to "
                   << devs[i].name
                   << std::endl;
         return true;
       }
       else
       {
-        std::cerr << "failed to connect to "
+        (*rn_dbg) << "Failed to connect to "
                   << devs[i].name
                   << std::endl;
         return false;
@@ -547,7 +554,7 @@ connectToWavy(const char* name)
     }
   }
 
-  std::cerr << "device '" << name
+  std::cerr << "\t" << "Device '" << name
             << "' not found"
             << std::endl;
   return false;

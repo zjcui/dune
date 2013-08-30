@@ -200,6 +200,8 @@ struct log_header
   uint16_t serial;
 } __attribute__((packed));
 
+static std::ostream* ss_dbg;
+
 void
 printUserParams(struct params_user* puser)
 {
@@ -254,6 +256,17 @@ printProgress(download_manager_t dldr)
 
   std::cerr << "Estimated time left: " << (unsigned)time_left / 60 / 60 << ":"
             << str_min << ":" << str_sec << std::endl;
+}
+
+void
+printCmd(int cmd)
+{
+  if ((cmd != 0) && (cmd != -1))
+  {
+    // do not output any sort of message if we received a data command
+    if ((unsigned)cmd != WAVY_CMD_DATA)
+      (*ss_dbg) << "PTL: " << (unsigned)cmd << std::endl;
+  }
 }
 
 static inline int
@@ -315,20 +328,20 @@ downloadReadData(download_manager_t dldr, bool trace)
 {
   if (trace)
   {
-    std::cerr << "-------------" << std::endl;
-    std::cerr << "INF: Received data size is: "
+    (*ss_dbg) << "-------------" << std::endl;
+    (*ss_dbg) << "INF: Received data size is: "
               << (unsigned)dldr->temp_frame.size << std::endl;
-    std::cerr << "Data: ";
+    (*ss_dbg) << "Data: ";
   }
 
   if (trace)
   {
     for (uint8_t i = 0; i < dldr->temp_frame.size; ++i)
     {
-      std::cerr << std::hex
+      (*ss_dbg) << std::hex
                 << (unsigned)dldr->temp_frame.data[i]
                 << std::dec;
-      std::cerr << " ";
+      (*ss_dbg) << " ";
     }
   }
 
@@ -339,8 +352,8 @@ downloadReadData(download_manager_t dldr, bool trace)
   
   if (trace)
   {
-    std::cerr << std::endl;
-    std::cerr << "-------------" << std::endl;
+    (*ss_dbg) << std::endl;
+    (*ss_dbg) << "-------------" << std::endl;
   }
 
   // update bitfield
@@ -360,7 +373,7 @@ checkMissingFrames(download_manager_t dldr, bool trace)
     dldr->index = 0;
 
     if (trace)
-      std::cerr << "WRN: Missed some frames." << std::endl;
+      (*ss_dbg) << "WRN: Missed some frames." << std::endl;
 
     return true;
   }
@@ -391,17 +404,6 @@ downloadSize(download_manager_t dldr)
 }
 
 void
-printCmd(int cmd)
-{
-  if ((cmd != 0) && (cmd != -1))
-  {
-    // do not output any sort of message if we received a data command
-    if ((unsigned)cmd != WAVY_CMD_DATA)
-      std::cerr << "PTL: " << (unsigned)cmd << std::endl;
-  }
-}
-
-void
 onDownload(download_manager_t dldr)
 {
   int cmd;
@@ -417,13 +419,13 @@ onDownload(download_manager_t dldr)
         dldr->state = DLDR_RECV_DATA;
         dldr->bitfield = 0x00;
         dldr->timer = Clock::get();
-        std::cerr << "INF: Got acknowledge to request" << std::endl;
+        (*ss_dbg) << "INF: Got acknowledge to request" << std::endl;
       }
       else if (cmd == WAVY_CMD_SIZE)
       {
         dldr->log_size = downloadSize(dldr);
 
-        std::cerr << "size is " << dldr->log_size << std::endl;
+        (*ss_dbg) << "size is " << dldr->log_size << std::endl;
 
         ptl_out_cmd(WAVY_CMD_REQ, 0, 0);
         dldr->timer = Clock::get();
@@ -431,7 +433,7 @@ onDownload(download_manager_t dldr)
       }
       else if (cmd == WAVY_CMD_NTS)
       {
-        std::cerr << "INF: Wavy has got nothing to send." << std::endl;
+        (*ss_dbg) << "INF: Wavy has got nothing to send." << std::endl;
         dldr->state = DLDR_DONE;
         ptl_out_cmd(WAVY_CMD_ACK, 0, 0);
       }
@@ -449,7 +451,7 @@ onDownload(download_manager_t dldr)
       }
       else if (Clock::get() - dldr->timer >= DLDR_REQ_PERIOD)
       {
-        std::cerr << "INF: Sending request ..." << std::endl;
+        (*ss_dbg) << "INF: Sending request ..." << std::endl;
         ptl_out_cmd(WAVY_CMD_SIZE, 0, 0);
         dldr->timer = Clock::get();
       }
@@ -481,7 +483,7 @@ onDownload(download_manager_t dldr)
           dldr->total_recv += dldr->n_recs;
           dldr->n_recs = 0;
 
-          std::cerr << "INF: Got all frames of this set. Sent acknowledge."
+          (*ss_dbg) << "INF: Got all frames of this set. Sent acknowledge."
                     << std::endl;
           std::cerr << "Got so far: " << dldr->total_recv << " ("
                     << std::fixed << std::setprecision(2)
@@ -499,11 +501,11 @@ onDownload(download_manager_t dldr)
       {
         dldr->timer = Clock::get();
 
-        std::cerr << "INF: Wavy has got nothing to send." << std::endl;
+        (*ss_dbg) << "INF: Wavy has got nothing to send." << std::endl;
 
         dldr->n_frames = dldr->index;
 
-        std::cerr << "bitfield is " << (int)dldr->bitfield << std::endl;
+        (*ss_dbg) << "bitfield is " << (int)dldr->bitfield << std::endl;
 
         if( checkMissingFrames(dldr, true) )
         {
@@ -535,7 +537,7 @@ onDownload(download_manager_t dldr)
         ptl_out_cmd(WAVY_CMD_ACK, 0, 0);
         dldr->timer = Clock::get();
 
-        std::cerr << "INF: Got ack, replying with and ack" << std::endl;
+        (*ss_dbg) << "INF: Got ack, replying with and ack" << std::endl;
       }
       else if ((cmd != 0) && (cmd != -1))
       {
@@ -598,11 +600,11 @@ onDownload(download_manager_t dldr)
         if ( !downloadReadData(dldr, true) )
           break;
 
-        std::cerr << "index: " << (int)dldr->index << std::endl;
+        (*ss_dbg) << "index: " << (int)dldr->index << std::endl;
         
         temp_bitfield = dldr->bitfield >> dldr->index;
 
-        std::cerr << "bitfield: " << (int)dldr->bitfield << std::endl;
+        (*ss_dbg) << "bitfield: " << (int)dldr->bitfield << std::endl;
         
         // update index again
         while (dldr->index <= dldr->n_frames - 1)
@@ -621,7 +623,7 @@ onDownload(download_manager_t dldr)
         // Got to the end of the missing frames
         if (dldr->index > dldr->n_frames - 1)
         {
-          std::cerr << "INF: Reached end of missing frames." << std::endl;
+          (*ss_dbg) << "INF: Reached end of missing frames." << std::endl;
           dldr->index = dldr->n_frames;
           if ( checkMissingFrames(dldr, true) )
           {
@@ -639,7 +641,7 @@ onDownload(download_manager_t dldr)
             // send acknowledge
             ptl_out_cmd(WAVY_CMD_ACK, 0, 0);
 
-            std::cerr << "INF: Got all frames of this set (RECV_MISSED)." << std::endl;
+            (*ss_dbg) << "INF: Got all frames of this set (RECV_MISSED)." << std::endl;
           }
         }
       }
@@ -667,7 +669,7 @@ onDownload(download_manager_t dldr)
 
         if (dldr->index > dldr->n_frames - 1)
         {
-          std::cerr << "INF: Reached end of missing frames." << std::endl;
+          (*ss_dbg) << "INF: Reached end of missing frames." << std::endl;
           ptl_out_cmd(WAVY_CMD_INC, &dldr->bitfield, 1);
           dldr->state = DLDR_RECV_MISSED;
           dldr->index = 0;
@@ -708,7 +710,7 @@ onGetUserData(download_manager_t dldr, struct params_user* puser, const char* na
   {
     // do not output any sort of message if we received a data command
     if (cmd != WAVY_CMD_DATA)
-      std::cerr << "PTL: " << (unsigned)cmd << std::endl;
+      (*ss_dbg) << "PTL: " << (unsigned)cmd << std::endl;
   }
 
   switch (dldr->state)
@@ -720,18 +722,18 @@ onGetUserData(download_manager_t dldr, struct params_user* puser, const char* na
       }
       else if (cmd == WAVY_CMD_PARAM_USER)
       {
-        std::cerr << "----------"
+        (*ss_dbg) << "----------"
                   << name
                   << "----------"
                   << std::endl;
 
-        std::cerr << "got it " << (unsigned)dldr->temp_frame.size << std::endl;
+        (*ss_dbg) << "got it " << (unsigned)dldr->temp_frame.size << std::endl;
 
         struct params_user temp;
         memcpy((uint8_t*)&temp, dldr->temp_frame.data, sizeof(struct params_user));
         printUserParams(&temp);
 
-        std::cerr << "--------------------"
+        (*ss_dbg) << "--------------------"
                   << std::endl;
 
         dldr->state = DLDR_DONE;
@@ -747,7 +749,7 @@ onGetUserData(download_manager_t dldr, struct params_user* puser, const char* na
       }
       else if (Clock::get() - dldr->timer >= DLDR_REQ_PERIOD)
       {
-        std::cerr << "INF: Sending request ..." << std::endl;
+        (*ss_dbg) << "INF: Sending request ..." << std::endl;
         ptl_out_cmd(WAVY_CMD_PARAM_USER, (uint8_t*)puser, sizeof(struct params_user));
         dldr->timer = Clock::get();
       }
@@ -821,7 +823,7 @@ onGetStatus(download_manager_t dldr, const char* name)
       }
       else if (Clock::get() - dldr->timer >= DLDR_REQ_PERIOD)
       {
-        std::cerr << "INF: Sending request ..." << std::endl;
+        (*ss_dbg) << "INF: Sending request ..." << std::endl;
         ptl_out_cmd(CMD_FW_NAME, 0, 0);
         dldr->timer = Clock::get();
       }
@@ -923,10 +925,13 @@ main(int argc, char* argv[])
 {
   char op = 'd';
 
-  if (argc != 3 && argc != 4)
+  bool debug = false;
+  std::filebuf fb;
+
+  if (argc < 3 && argc > 5)
   {
     std::cerr << "Need two arguments."
-              << argv[0] << " [serial port] [name] [operation]"
+              << argv[0] << " [serial port] [name] [operation] [debug]"
               << std::endl
               << "[operation] can be: " << std::endl
               << "-d (download)" << std::endl
@@ -935,11 +940,14 @@ main(int argc, char* argv[])
               << "Setting user parameters expects a file called user.ini in the same dir."
               << std::endl
               << "[operation] defaults to -d."
+              << std::endl
+              << "[debug] any string or char will enable debug"
+              << "[debug] debug is disabled by default"
               << std::endl;
     return -1;
   }
   
-  if (argc == 4)
+  if (argc >= 4)
   {
     op = argv[3][1];
 
@@ -950,19 +958,38 @@ main(int argc, char* argv[])
     }
   }
 
-  if (!initDevice(argv[1]))
+  if (argc == 5)
+    debug = true;
+
+  if (debug)
   {
+    ss_dbg = &std::cerr;
+  }
+  else
+  {
+    fb.open("/dev/null", std::ios::out);
+    ss_dbg = new std::ostream(&fb);
+  }
+
+  std::cerr << "Initializing device..." << std::endl;
+  std::cerr << "--------------------" << std::endl;
+  if (!initDevice(argv[1], ss_dbg))
+  {
+    std::cerr << "--------------------" << std::endl;
     std::cerr << "Failed to initialize device" << std::endl;
     closeDevice();
     return -1;
   }
   else
   {
+    std::cerr << "--------------------" << std::endl;
     std::cerr << "Device configured successfully" << std::endl;
   }
 
   const char* name = argv[2];
 
+  std::cerr << "Attempting to connect to '" << name << "'" << std::endl;
+    std::cerr << "--------------------" << std::endl;
   if (!connectToWavy(name))
   {
     std::cerr << "Failed to connect to '" << name << "' device" << std::endl;
@@ -971,7 +998,8 @@ main(int argc, char* argv[])
   }
   else
   {
-    std::cerr << "Connection successful" << std::endl;
+    std::cerr << "--------------------" << std::endl;
+    std::cerr << "Connection to '" << name << "' successful" << std::endl;
   }
 
   download_manager downloader;
@@ -1062,7 +1090,7 @@ main(int argc, char* argv[])
     }
   }
 
-  std::cerr << "Done" << std::endl;
+  (*ss_dbg) << "Done" << std::endl;
 
   if (downloader.fout != NULL)
   {
@@ -1071,6 +1099,12 @@ main(int argc, char* argv[])
   }
 
   closeDevice();
+
+  if (!debug)
+  {
+    delete ss_dbg;
+    fb.close();
+  }
 
   return 0;
 }
