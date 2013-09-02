@@ -928,9 +928,9 @@ main(int argc, char* argv[])
   bool debug = false;
   std::filebuf fb;
 
-  if (argc < 3 && argc > 5)
+  if (argc < 3 || argc > 5)
   {
-    std::cerr << "Need two arguments."
+    std::cerr << "Need three to five arguments."
               << argv[0] << " [serial port] [name] [operation] [debug]"
               << std::endl
               << "[operation] can be: " << std::endl
