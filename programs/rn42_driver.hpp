@@ -23,7 +23,7 @@
 //! Name to set on module
 #define MODULE_NAME "WavyHub-1"
 //! Enable status messages in connect and disconnect
-#define ENABLE_STATUS_MESSAGES 0
+#define ENABLE_STATUS_MESSAGES 1
 //! Use pin for authentication
 #define USE_PIN 1
 //! Pin for authentication
@@ -258,7 +258,7 @@ setSlaveMode(void)
 bool
 enableStatusMessages(void)
 {
-  if (!sendCommand("SO,%GONE\r\n", "AOK\r\n"))
+  if (!sendCommand("SO,%\r\n", "AOK\r\n"))
     return false;
 
   if (!rebootModule())
@@ -331,7 +331,7 @@ connect(Device& dev)
   // Send command
   sendData(str.c_str());
 
-  std::string ack = "CONNECT," + dev.address + "," + "0" + "\r\n";
+  std::string ack = "%CONNECT";  //," + dev.address + "," + "0" + "\r\n";
 
   if (!receiveData(ack.c_str(), timeout, "CONNECT failed\r\n"))
     return false;
@@ -353,7 +353,8 @@ disconnect(void)
 bool
 performScan(std::stringstream& scan)
 {
-  if (!sendCommand("I,10\r\n", "Inquiry,T=10,COD=0\r\n"))
+  // if (!sendCommand("I,10\r\n", "Inquiry,T=10,COD=0\r\n"))
+  if (!sendCommand("I,10\r\n", "Inquiry,"))
     return false;
 
   double timeout = 40.0;
