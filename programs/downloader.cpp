@@ -42,6 +42,8 @@
 #define WAVY_CMD_SIZE 0x4C
 //! Frame containing Data command (ascii char 'D')
 #define WAVY_CMD_DATA 0x44
+//! Parameters configuration (ascii char 'F')
+#define WAVY_CMD_PARAM_FACTORY 0x46
 //! Data sending process was incomplete(ascii char 'I')
 #define WAVY_CMD_INC 0x49
 //! Nothing to send command (ascii char 'E')
@@ -170,6 +172,24 @@ struct params_user
   uint8_t crc;
 } __attribute__((packed));
 
+struct params_factory
+{
+  //! Version.
+  uint8_t version;
+  //! Serial number.
+  uint16_t serial;
+  //! Flash memory size (bytes).
+  uint32_t flash_size;
+  //! Emergency voltage threshold (mV).
+  uint16_t emergency_mv;
+  //! Shutdown voltage threshold (mV).
+  uint16_t shutdown_mv;
+  //! Fuel Gauge EEPROM.
+  uint8_t fuel_gauge_eep[26];
+  //! CRC.
+  uint8_t crc;
+} __attribute__((packed));
+
 struct wavy_status
 {
   //! Temperature as provided by the fuel gauge
@@ -221,8 +241,25 @@ printUserParams(struct params_user* puser)
   printf("  STA DATE SEC: %u\n", puser->start_date.second);
   printf("  STA NEXT ON : %u\n", puser->start_field);
   printf("  CRC8        : %x\n", puser->crc);
+  printf("\n\n");
+}
+
+void
+printFactoryParams(struct params_factory* pf)
+{
+  printf("FACTORY\n");
+  printf("  VERSION     : %u\n", pf->version);
+  printf("  SERIAL      : %u\n", pf->serial);
+  printf("  FLASH       : %x\n", pf->flash_size);
+  printf("  EMERGENCY MV: %u\n", pf->emergency_mv);
+  printf("  SHUTDOWN MV : %u\n", pf->shutdown_mv);
+  printf("  FUEL GAUGE  :");
+  for (uint8_t i = 0; i < sizeof(pf->fuel_gauge_eep); ++i)
+    printf(" %x", pf->fuel_gauge_eep[i]);
   printf("\n");
-  printf("\n");
+
+  printf("  CRC8        : %u\n", pf->crc);
+  printf("\n\n");
 }
 
 void
@@ -261,11 +298,21 @@ printProgress(download_manager_t dldr)
 void
 printCmd(int cmd)
 {
-  if ((cmd != 0) && (cmd != -1))
+  if ((cmd == 0) || (cmd == -1))
+    return;
+
+  switch ((unsigned)cmd)
   {
-    // do not output any sort of message if we received a data command
-    if ((unsigned)cmd != WAVY_CMD_DATA)
+    case WAVY_CMD_DATA:
+    case WAVY_CMD_STATUS:
+    case WAVY_CMD_PARAM_FACTORY:
+    case WAVY_CMD_PARAM_USER:
+    case CMD_GIT_INFO:
+    case CMD_NAME:
+      break;
+    default:
       (*ss_dbg) << "PTL: " << (unsigned)cmd << std::endl;
+      break;
   }
 }
 
@@ -289,6 +336,7 @@ download_handler(uint8_t cmd, uint8_t* data, uint8_t data_len)
     case WAVY_CMD_INC:
     case WAVY_CMD_STOP:
     case WAVY_CMD_PARAM_USER:
+    case WAVY_CMD_PARAM_FACTORY:
     case WAVY_CMD_STATUS:
     case CMD_FW_NAME:
     case CMD_GIT_INFO:
@@ -700,18 +748,14 @@ onDownload(download_manager_t dldr)
 
 }
 
-void
-onGetUserData(download_manager_t dldr, struct params_user* puser, const char* name)
+bool
+onGetCommand(download_manager_t dldr, int expected_cmd,
+             uint8_t* payload = NULL, uint8_t payload_size = 0)
 {
   int cmd;
   cmd = ptl_process(&dldr->parser, dldr->temp_frame.data, &dldr->temp_frame.size);
 
-  if ((cmd != 0) && (cmd != -1))
-  {
-    // do not output any sort of message if we received a data command
-    if (cmd != WAVY_CMD_DATA)
-      (*ss_dbg) << "PTL: " << (unsigned)cmd << std::endl;
-  }
+  printCmd(cmd);
 
   switch (dldr->state)
   {
@@ -720,26 +764,11 @@ onGetUserData(download_manager_t dldr, struct params_user* puser, const char* na
       {
         std::cerr << "ERR: Wavy has rejected or misread request." << std::endl;
       }
-      else if (cmd == WAVY_CMD_PARAM_USER)
+      else if (cmd == expected_cmd)
       {
-        (*ss_dbg) << "----------"
-                  << name
-                  << "----------"
-                  << std::endl;
-
-        (*ss_dbg) << "got it " << (unsigned)dldr->temp_frame.size << std::endl;
-
-        struct params_user temp;
-        memcpy((uint8_t*)&temp, dldr->temp_frame.data, sizeof(struct params_user));
-        printUserParams(&temp);
-
-        (*ss_dbg) << "--------------------"
-                  << std::endl;
-
         dldr->state = DLDR_DONE;
 
-        // attempt to request a reset of the bluetooth module
-        ptl_out_cmd(WAVY_CMD_BLUE_RESET, 0, 0);
+        return true;
       }
       else if ((cmd != 0) && (cmd != -1))
       {
@@ -750,7 +779,12 @@ onGetUserData(download_manager_t dldr, struct params_user* puser, const char* na
       else if (Clock::get() - dldr->timer >= DLDR_REQ_PERIOD)
       {
         (*ss_dbg) << "INF: Sending request ..." << std::endl;
-        ptl_out_cmd(WAVY_CMD_PARAM_USER, (uint8_t*)puser, sizeof(struct params_user));
+
+        if (payload != NULL)
+          ptl_out_cmd(expected_cmd, (uint8_t*)payload, payload_size);
+        else
+          ptl_out_cmd(expected_cmd, 0, 0);
+
         dldr->timer = Clock::get();
       }
       break;
@@ -759,7 +793,60 @@ onGetUserData(download_manager_t dldr, struct params_user* puser, const char* na
     case DLDR_FAILED:
       break;
   }
+
+  return false;
 }
+
+void
+onGetUserData(download_manager_t dldr, struct params_user* puser, const char* name)
+{
+  bool success = false;
+
+  if (puser != NULL)
+  {
+    success = onGetCommand(dldr, WAVY_CMD_PARAM_USER,
+                           (uint8_t*)puser, sizeof(struct params_user));
+  }
+  else
+  {
+    success = onGetCommand(dldr, WAVY_CMD_PARAM_USER, 0, 0);
+  }
+
+  if (success)
+  {
+    (*ss_dbg) << "----------"
+              << name
+              << "----------"
+              << std::endl;
+
+    struct params_user temp;
+    memcpy((uint8_t*)&temp, dldr->temp_frame.data, sizeof(struct params_user));
+    printUserParams(&temp);
+
+    (*ss_dbg) << "--------------------"
+              << std::endl;
+  }
+}
+
+void
+onGetFactoryData(download_manager_t dldr, const char* name)
+{
+  if (onGetCommand(dldr, WAVY_CMD_PARAM_FACTORY, NULL, 0))
+  {
+    (*ss_dbg) << "----------"
+              << name
+              << "----------"
+              << std::endl;
+
+    struct params_factory temp;
+    memcpy((uint8_t*)&temp, dldr->temp_frame.data, sizeof(struct params_factory));
+    printFactoryParams(&temp);
+
+    (*ss_dbg) << "--------------------"
+              << std::endl;
+  }
+}
+
 
 void
 onGetStatus(download_manager_t dldr, const char* name)
@@ -936,6 +1023,7 @@ main(int argc, char* argv[])
               << "[operation] can be: " << std::endl
               << "-d (download)" << std::endl
               << "-u (set user parameters)" << std::endl
+              << "-p (get user and factory parameters)" << std::endl
               << "-s (get status)" << std::endl
               << "Setting user parameters expects a file called user.ini in the same dir."
               << std::endl
@@ -951,7 +1039,7 @@ main(int argc, char* argv[])
   {
     op = argv[3][1];
 
-    if (op != 'd' && op != 'u' && op != 's')
+    if (op != 'd' && op != 'u' && op != 'p' && op != 's')
     {
       std::cerr << "invalid operation" << std::endl;
       return -1;
@@ -1067,6 +1155,53 @@ main(int argc, char* argv[])
         break;
       }
     }
+
+    // attempt to request a reset of the bluetooth module
+    ptl_out_cmd(WAVY_CMD_BLUE_RESET, 0, 0);
+  }
+  else if (op == 'p')
+  {
+
+    downloadInit(&downloader, false);
+
+    while (1)
+    {
+      onGetUserData(&downloader, NULL, name);
+
+      if (downloader.state == DLDR_FAILED)
+      {
+        std::cerr << "ERR: Receiving user parameters failed." << std::endl;
+        break;
+      }
+
+      if (downloader.state == DLDR_DONE)
+      {
+        std::cerr << "INF: Receiving user parameters is over!" << std::endl;
+        break;
+      }
+    }
+
+    downloadInit(&downloader, false);
+
+    while (1)
+    {
+      onGetFactoryData(&downloader, name);
+
+      if (downloader.state == DLDR_FAILED)
+      {
+        std::cerr << "ERR: Receiving wavy status failed." << std::endl;
+        break;
+      }
+
+      if (downloader.state == DLDR_DONE)
+      {
+        std::cerr << "INF: Receiving factory parameters is over!" << std::endl;
+        break;
+      }
+    }
+
+    // attempt to request a reset of the bluetooth module
+    ptl_out_cmd(WAVY_CMD_BLUE_RESET, 0, 0);
   }
   else if (op == 's')
   {
