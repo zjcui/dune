@@ -518,7 +518,7 @@ convertAndWrite(const char* filename, std::vector<logged_data>& packets, const s
 
   unsigned src = g_resolver.resolve(name);
 
-  std::cerr << "resolved to " << src << std::endl;
+  std::cerr << "resolved address to " << src << std::endl;
 
   IMC::EstimatedState state;
 
