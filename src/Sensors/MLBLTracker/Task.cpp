@@ -111,6 +111,8 @@ namespace Sensors
       static const unsigned c_code_abort = 0x000a;
       // Abort acked code.
       static const unsigned c_code_abort_ack = 0x000b;
+      //! Start plan acknowledge code.
+      static const unsigned c_code_plan_ack = 0x000c;
       // Address used to send change plan messages.
       static const unsigned c_plan_addr = 15;
       // Quick tracking mask.
@@ -143,6 +145,8 @@ namespace Sensors
       IMC::AcousticOperation m_acop_out;
       // Save modem commands.
       IMC::DevDataText m_dev_data;
+      // Saved Plan Control.
+      IMC::PlanControl* m_pc;
       // Current operation.
       Operation m_op;
       // Transducer detection GPIO.
@@ -154,6 +158,7 @@ namespace Sensors
         DUNE::Tasks::Task(name, ctx),
         m_uart(NULL),
         m_op_deadline(-1.0),
+        m_pc(NULL),
         m_op(OP_NONE),
         m_gpio_txd(NULL)
       {
@@ -291,6 +296,7 @@ namespace Sensors
       void
       onResourceRelease(void)
       {
+        Memory::clear(m_pc);
         Memory::clear(m_gpio_txd);
         Memory::clear(m_uart);
       }
@@ -386,6 +392,8 @@ namespace Sensors
         if (msg->getId() == DUNE_IMC_PLANCONTROL)
         {
           const IMC::PlanControl* pc = static_cast<const IMC::PlanControl*>(msg);
+          Memory::replace(m_pc, new IMC::PlanControl(*pc));
+
           if (pc->op == IMC::PlanControl::PC_START)
           {
             if (pc->plan_id.size() == 1)
@@ -593,6 +601,17 @@ namespace Sensors
           dispatch(m_acop_out);
           resetOp();
         }
+        if (value == c_code_plan_ack)
+        {
+          inf(DTR("plan started"));
+          m_pc->setDestination(m_pc->getSource());
+          m_pc->setDestinationEntity(m_pc->getSourceEntity());
+          m_pc->setSource(getSystemId());
+          m_pc->setSourceEntity(getEntityId());
+          m_pc->type = IMC::PlanControl::PC_SUCCESS;
+          m_pc->flags = 0;
+          dispatch(*m_pc);
+        }
         else if (value & c_mask_qtrack)
         {
           unsigned beacon = (value & c_mask_qtrack_beacon) >> 10;
@@ -661,23 +680,25 @@ namespace Sensors
 
         float lat;
         float lon;
-        float depth;
-        float yaw;
+        uint8_t depth;
+        int16_t yaw;
+        int16_t alt;
         uint16_t ranges[2];
 
-        float progress;
-        float fuel_level;
-        float fuel_conf;
+        int8_t progress;
+        uint8_t fuel_level;
+        uint8_t fuel_conf;
 
         std::memcpy(&lat, msg_raw + 0, 4);
         std::memcpy(&lon, msg_raw + 4, 4);
-        std::memcpy(&depth, msg_raw + 8, 4);
-        std::memcpy(&yaw, msg_raw + 12, 4);
-        std::memcpy(&ranges[0], msg_raw + 16, 2);
-        std::memcpy(&ranges[1], msg_raw + 18, 2);
-        std::memcpy(&progress, msg_raw + 20, 4);
-        std::memcpy(&fuel_level, msg_raw + 24, 4);
-        std::memcpy(&fuel_conf, msg_raw + 28, 4);
+        std::memcpy(&depth, msg_raw + 8, 1);
+        std::memcpy(&yaw, msg_raw + 9, 2);
+        std::memcpy(&alt, msg_raw + 11, 2);
+        std::memcpy(&ranges[0], msg_raw + 13, 2);
+        std::memcpy(&ranges[1], msg_raw + 15, 2);
+        std::memcpy(&progress, msg_raw + 17, 1);
+        std::memcpy(&fuel_level, msg_raw + 18, 1);
+        std::memcpy(&fuel_conf, msg_raw + 19, 1);
 
         for (int i = 0; i < 2; ++i)
         {
@@ -696,20 +717,24 @@ namespace Sensors
         es.setSource(m_mimap[src]);
         es.lat = lat;
         es.lon = lon;
-        es.depth = depth;
-        es.psi = yaw;
+        es.depth = (float)depth;
+        es.psi = (float)yaw / 100.0;
+        es.alt = (float)alt / 10.0;
         dispatch(es);
 
         IMC::PlanControlState pcs;
         pcs.setSource(m_mimap[src]);
-        pcs.plan_progress = progress;
+        pcs.plan_progress = (float)progress;
         dispatch(pcs);
 
         IMC::FuelLevel fuel;
         fuel.setSource(m_mimap[src]);
-        fuel.value = fuel_level;
-        fuel.confidence = fuel_conf;
+        fuel.value = (float)fuel_level;
+        fuel.confidence = (float)fuel_conf;
         dispatch(fuel);
+
+        spew("lat %f | lon %f | depth %f | alt %f | yaw %f", es.lat, es.lon, es.depth, es.alt, es.psi);
+        spew("fuel %f | conf %f | plan progress %f", fuel.value, fuel.confidence, pcs.plan_progress);
       }
 
       void

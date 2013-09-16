@@ -247,7 +247,7 @@ namespace Navigation
 
             Memory::replace(m_estimate[i], new IMC::LblEstimate);
 
-            m_estimate[i]->beacon.set(IMC::LblBeacon());
+            m_estimate[i]->beacon.set(*itr);
           }
 
           setup();
@@ -319,9 +319,13 @@ namespace Navigation
             dispatch(m_estimate[msg->id]);
 
             spew("beacon %d WGS: %f | %f", msg->id, lat, lon);
+            spew("beacon %d COV: %f | %f", msg->id,
+                 std::sqrt(m_estimate[msg->id]->var_x),
+                 std::sqrt(m_estimate[msg->id]->var_y));
             spew("beacon %d NE: %f | %f :: distance: %f", msg->id,
                  m_estimate[msg->id]->x, m_estimate[msg->id]->y,
                  m_estimate[msg->id]->distance);
+
           }
           else
             spew("rejected range from %d", msg->id);

@@ -22,16 +22,16 @@
 # language governing permissions and limitations at                        #
 # https://www.lsts.pt/dune/licence.                                        #
 ############################################################################
-# Author: José Braga                                                       #
+# Author: Ricardo Martins                                                  #
 ############################################################################
 
-[Require ../common/imc-addresses.ini]
-[Require ../common/transports.ini]
-[Require ../auv/transports.ini]
+if(BLUEVIEW)
+  dune_test_lib(bvtsdk BVTSonar_Create)
+  dune_test_header(bvt_sdk.h)
 
-[Sensors.OS4000]
-Enabled                                 = Simulation
-Entity Label                            = Compass
-Serial Port - Device                    = /dev/ttyUSB0
-Serial Port - Baud Rate                 = 115200
-Debug Level                             = Spew
+  if(DUNE_SYS_HAS_LIB_BVTSDK AND DUNE_SYS_HAS_BVT_SDK_H)
+    set(DUNE_USING_BVTSDK 1 CACHE INTERNAL "libbvtsdk")
+  else(DUNE_SYS_HAS_LIB_BVTSDK AND DUNE_SYS_HAS_BVT_SDK_H)
+    set(DUNE_USING_BVTSDK 0 CACHE INTERNAL "libbvtsdk")
+  endif(DUNE_SYS_HAS_LIB_BVTSDK AND DUNE_SYS_HAS_BVT_SDK_H)
+endif(BLUEVIEW)

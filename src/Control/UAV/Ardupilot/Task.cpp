@@ -224,7 +224,9 @@ namespace Control
           m_mlh[MAVLINK_MSG_ID_HEARTBEAT] = &Task::handleHeartbeatPacket;
           m_mlh[MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT] = &Task::handleNavControllerPacket;
           m_mlh[MAVLINK_MSG_ID_MISSION_ITEM] = &Task::handleMissionItemPacket;
-          m_mlh[MAVLINK_MSG_ID_BATTERY_STATUS] = &Task::handleBatteryStatusPacket;
+          m_mlh[MAVLINK_MSG_ID_SYS_STATUS] = &Task::handleSystemStatusPacket;
+          m_mlh[MAVLINK_MSG_ID_VFR_HUD] = &Task::handleHUDPacket;
+
 
           // Setup processing of IMC messages
           bind<DesiredPath>(this);
@@ -272,7 +274,7 @@ namespace Control
           catch (...)
           {
             m_TCP_sock = 0;
-            war("Connection failed, retrying...");
+            war(DTR("Connection failed, retrying..."));
             setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_COM_ERROR);
           }
         }
@@ -368,9 +370,9 @@ namespace Control
           is &= loop;
 
           if (was && !is)
-            war(DTR("%s - deactivating"), desc);
+            debug("%s - deactivating", desc);
           else if (!was && is)
-            war(DTR("%s - activating"), desc);
+            debug("%s - activating", desc);
         }
 
         void
@@ -407,11 +409,11 @@ namespace Control
           else
             m_cloops &= ~cloops->mask;
 
-          info(prev, m_cloops, IMC::CL_SPEED, DTR("speed control"));
-          info(prev, m_cloops, IMC::CL_ALTITUDE, DTR("altitude control"));
-          info(prev, m_cloops, IMC::CL_ROLL, DTR("bank control"));
-          info(prev, m_cloops, IMC::CL_YAW, DTR("heading control"));
-          info(prev, m_cloops, IMC::CL_PATH, DTR("path control"));
+          info(prev, m_cloops, IMC::CL_SPEED, "speed control");
+          info(prev, m_cloops, IMC::CL_ALTITUDE, "altitude control");
+          info(prev, m_cloops, IMC::CL_ROLL, "bank control");
+          info(prev, m_cloops, IMC::CL_YAW, "heading control");
+          info(prev, m_cloops, IMC::CL_PATH, "path control");
         }
 
         void
@@ -419,7 +421,7 @@ namespace Control
         {
           if (!(m_cloops & IMC::CL_ROLL))
           {
-            err(DTR("bank control is NOT active"));
+            debug("bank control is NOT active");
             return;
           }
 
@@ -443,7 +445,7 @@ namespace Control
         {
           if (!(m_cloops & IMC::CL_ALTITUDE))
           {
-            err(DTR("altitude control is NOT active"));
+            debug("altitude control is NOT active");
             return;
           }
 
@@ -466,7 +468,7 @@ namespace Control
 
           if(!(m_cloops & IMC::CL_PATH))
           {
-            err(DTR("path control is NOT active"));
+            debug("path control is NOT active");
             return;
           }
 
@@ -709,7 +711,7 @@ namespace Control
             }
             catch (...)
             {
-              war("Connection lost, retrying...");
+              war(DTR("Connection lost, retrying..."));
               m_TCP_sock->delFromPoll(m_iom);
               delete m_TCP_sock;
 
@@ -734,7 +736,7 @@ namespace Control
             int n = receiveData(m_buf, sizeof(m_buf));
             if (n < 0)
             {
-              err(DTR("receive error"));
+              debug("Receive error");
               break;
             }
 
@@ -784,7 +786,7 @@ namespace Control
                   case MAVLINK_MSG_ID_HEARTBEAT:
                     trace("HEARTBEAT");
                     break;
-                  case 1:
+                  case MAVLINK_MSG_ID_SYS_STATUS:
                     trace("SYS_STATUS");
                     break;
                   case 22:
@@ -826,7 +828,7 @@ namespace Control
                   case MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT:
                     trace("NAV_CONTROLLER_OUTPUT");
                     break;
-                  case 74:
+                  case MAVLINK_MSG_ID_VFR_HUD:
                     trace("VFR_HUD");
                     break;
                   case MAVLINK_MSG_ID_COMMAND_ACK:
@@ -978,20 +980,20 @@ namespace Control
         }
 
         void
-        handleBatteryStatusPacket(const mavlink_message_t* msg)
+        handleSystemStatusPacket(const mavlink_message_t* msg)
         {
           if(!m_args.pwrm)
           {
             (void) msg;
             return;
           }
-          mavlink_battery_status_t bat_status;
+          mavlink_sys_status_t sys_status;
 
-          mavlink_msg_battery_status_decode(msg, &bat_status);
+          mavlink_msg_sys_status_decode(msg, &sys_status);
 
-          m_volt.value = 0.001 * (float)bat_status.voltage_cell_1;
-          m_curr.value = 0.01 * (float)bat_status.current_battery;
-          m_fuel.value = (float)bat_status.battery_remaining;
+          m_volt.value = 0.001 * (float)sys_status.voltage_battery;
+          m_curr.value = 0.01 * (float)sys_status.current_battery;
+          m_fuel.value = (float)sys_status.battery_remaining;
 
           dispatch(m_volt);
           dispatch(m_curr);
@@ -1218,6 +1220,23 @@ namespace Control
               m_critical = true;
               break;
           }
+        }
+
+        void
+        handleHUDPacket(const mavlink_message_t* msg)
+        {
+          mavlink_vfr_hud_t vfr_hud;
+          mavlink_msg_vfr_hud_decode(msg, &vfr_hud);
+
+          IMC::IndicatedSpeed ias;
+          IMC::TrueSpeed gs;
+
+
+          ias.value = (fp64_t)vfr_hud.airspeed;
+          gs.value = (fp64_t)vfr_hud.groundspeed;
+
+          dispatch(ias);
+          dispatch(gs);
         }
       };
     }
