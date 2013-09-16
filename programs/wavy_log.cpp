@@ -179,6 +179,26 @@ cleanHex(std::ifstream& ifs)
 }
 
 bool
+get2CharHex(std::ifstream& ifs, uint8_t& d)
+{
+  std::string s;
+
+  char c;
+
+  ifs >> c;
+  s += c;
+  ifs >> c;
+  s += c;
+
+  int e = sscanf(s.c_str(), "%x", (unsigned int*)&d);
+
+  if (e != 1)
+    return false;
+
+  return true;
+}
+
+bool
 getHex(std::ifstream& ifs, uint8_t& d)
 {
   std::string s;
@@ -235,7 +255,7 @@ getData(std::ifstream& ifs, uint8_t* data, uint8_t size)
 
   for (unsigned i = 0; i < size; ++i)
   {
-    if (!getHex(ifs, data[i]))
+    if (!get2CharHex(ifs, data[i]))
       return false;
   }
 
@@ -249,16 +269,71 @@ getData(std::ifstream& ifs, uint8_t* data, uint8_t size)
 }
 
 bool
-readRecord(std::ifstream& ifs, log_rec& rec)
+getDebugID(std::ifstream& ifs, log_rec& rec)
 {
   std::string sample;
 
-  // ID
+  if (!getString(ifs, sample))
+  {
+    std::cerr << "no sample" << std::endl;
+    return false;
+  }
+
+  if (strcmp(sample.c_str(), "ID") != 0)
+  {
+    std::cerr << "no id string" << std::endl;
+    return false;
+  }
+
+  char c;
+
+  if (!getChar(ifs, c))
+  {
+    std::cerr << "no char" << std::endl;
+    return false;
+  }
+
+  if (c != ':')
+  {
+    std::cerr << "no match for ':'" << std::endl;
+    return false;
+  }
+
+  if (!getHex(ifs, rec.id))
+  {
+    std::cerr << "failed to parse ID hex" << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+bool
+getDebugCookie(std::ifstream& ifs, log_rec& rec)
+{
+  std::string sample;
 
   if (!getString(ifs, sample))
     return false;
 
-  if (strcmp(sample.c_str(), "ID") != 0)
+  if (strcmp(sample.c_str(), "COOKIE:") != 0)
+    return false;
+
+  if (!getCookie(ifs, rec.cookie))
+    return false;
+
+  return true;
+}
+
+bool
+getDebugSize(std::ifstream& ifs, log_rec& rec)
+{
+  std::string sample;
+
+  if (!getString(ifs, sample))
+    return false;
+
+  if (strcmp(sample.c_str(), "SIZE") != 0)
     return false;
 
   char c;
@@ -269,50 +344,75 @@ readRecord(std::ifstream& ifs, log_rec& rec)
   if (c != ':')
     return false;
 
-  if (!getHexPrefixed(ifs, rec.id))
-    return false;
-
-  // COOKIE
-
-  if (!getString(ifs, sample))
-    return false;
-
-  if (strcmp(sample.c_str(), "COOKIE") != 0)
-    return false;
-
-  if (!getChar(ifs, c))
-    return false;
-
-  if (c != ':')
-    return false;
-
-  if (!getCookie(ifs, rec.cookie))
-    return false;
-
-  // SIZE
-
-  if (!getString(ifs, sample))
-    return false;
-
-  if (strcmp(sample.c_str(), "SIZE") != 0)
-    return false;
-
-  if (!getChar(ifs, c))
-    return false;
-
-  if (c != ':')
-    return false;
-
   if (!getU8(ifs, rec.size))
     return false;
 
+  return true;
+}
+
+bool
+getDebugCRC(std::ifstream& ifs, log_rec& rec)
+{
+  std::string sample;
+
+  if (!getString(ifs, sample))
+    return false;
+
+  if (strcmp(sample.c_str(), "CRC") != 0)
+    return false;
+
+  char c;
+
+  if (!getChar(ifs, c))
+    return false;
+
+  if (c != ':')
+    return false;
+
+  if (!getHex(ifs, rec.crc))
+    return false;
+
+  return true;
+}
+
+bool
+readRecord(std::ifstream& ifs, log_rec& rec)
+{
+  // ID
+
+  if (!getDebugID(ifs, rec))
+  {
+    std::cerr << "failed parsing ID" << std::endl;
+    return false;
+  }
+
+  // COOKIE
+
+  if (!getDebugCookie(ifs, rec))
+  {
+    std::cerr << "failed parsing Cookie" << std::endl;
+    return false;
+  }
+
+  // SIZE
+
+  if (!getDebugSize(ifs, rec))
+  {
+    std::cerr << "failed parsing Size" << std::endl;
+    return false;
+  }
+
   // DATA
+
+  std::string sample;
 
   if (!getString(ifs, sample))
     return false;
 
   if (strcmp(sample.c_str(), "DATA") != 0)
     return false;
+
+  char c;
 
   if (!getChar(ifs, c))
     return false;
@@ -321,24 +421,18 @@ readRecord(std::ifstream& ifs, log_rec& rec)
     return false;
 
   if (!getData(ifs, rec.data, rec.size))
+  {
+    std::cerr << "failed parsing data" << std::endl;
     return false;
+  }
 
   // CRC
 
-  if (!getString(ifs, sample))
+  if (!getDebugCRC(ifs, rec))
+  {
+    std::cerr << "failed parsing CRC" << std::endl;
     return false;
-
-  if (strcmp(sample.c_str(), "CRC") != 0)
-    return false;
-
-  if (!getChar(ifs, c))
-    return false;
-
-  if (c != ':')
-    return false;
-
-  if (!getHexPrefixed(ifs, rec.crc))
-    return false;
+  }
 
   return true;
 }
@@ -435,7 +529,10 @@ parseDebug(std::ifstream& ifs, std::vector<logged_data>& packets)
       logged_data packet;
 
       if (!readRecord(ifs, rec))
+      {
+        std::cerr << "failed to read record" << std::endl;
         return false;
+      }
 
       convertDataToFix(rec.data, rec.size, &packet.fix);
 
@@ -624,7 +721,7 @@ main(int argc, char** argv)
 
   bool success = false;
 
-  std::string name = "wavy-65535";
+  std::string name = "wavy-2";
 
   if (!file.extension().compare("wdg"))
   {
