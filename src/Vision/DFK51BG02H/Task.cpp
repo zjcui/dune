@@ -479,21 +479,22 @@ namespace Vision
           {
             m_white.filter(frame->getData());
             double timestamp = frame->getTimeStamp();
-            Path file = m_log_dir / String::str("%0.4f.jpg", timestamp);
-
-            {
-              m_debayer.decodeToRGB24(frame->getData(), m_rgb24_bfr, c_width, c_height);
-              m_jpeg.compress(m_rgb24_bfr, m_args.jpeg_quality);
-              std::ofstream jpg(file.c_str(), std::ios::binary);
-              jpg.write((char*)m_jpeg.imageData(), m_jpeg.imageSize());
-            }
+            // Debayer version required for
+            m_debayer.decodeToRGB24(frame->getData(), m_rgb24_bfr, c_width, c_height);
 
             if (m_args.store_raw)
             {
-              file = m_log_dir / String::str("%0.4f.pgm", timestamp);
+              Path file = m_log_dir / String::str("%0.4f.pgm", timestamp);
               std::ofstream pgm(file.c_str(), std::ios::binary);
               pgm.write(m_pgm_header.c_str(), m_pgm_header.size());
               pgm.write((char*)frame->getData(), c_width * c_height);
+            }
+            else
+            {
+              Path file = m_log_dir / String::str("%0.4f.jpg", timestamp);
+              m_jpeg.compress(m_rgb24_bfr, m_args.jpeg_quality);
+              std::ofstream jpg(file.c_str(), std::ios::binary);
+              jpg.write((char*)m_jpeg.imageData(), m_jpeg.imageSize());
             }
 
             if (m_args.ae)
