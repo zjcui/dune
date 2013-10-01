@@ -53,7 +53,9 @@ namespace Vision
       //! @param[in] buffer_capacity packet buffer capacity.
       GVSP(uint16_t port, unsigned buffer_capacity = 16384):
         m_buffer_capacity(buffer_capacity),
-        m_count(0)
+        m_count(0),
+        m_drop_rate(0),
+        m_drop_count(0)
       {
         m_buffer = new uint8_t[buffer_capacity];
         m_socket.bind(port);
@@ -124,6 +126,14 @@ namespace Vision
         return frame;
       }
 
+      //! Set the frame dropping rate.
+      //! @param[in] number of dropped frames before valid frame.
+      void
+      setDroppingRate(unsigned rate)
+      {
+        m_drop_rate = rate;
+      }
+
     private:
       //! GVSP header size.
       static const size_t c_header_size = 44;
@@ -145,6 +155,10 @@ namespace Vision
       std::queue<Frame*> m_dirty;
       //! Queue of frames that can be used for new captures.
       std::queue<Frame*> m_clean;
+      //! Frame dropping rate
+      unsigned m_drop_rate;
+      //! Number of frames dropped
+      unsigned m_drop_count;
 
       void
       run(void)
@@ -160,6 +174,12 @@ namespace Vision
 
           if (rv == c_header_size)
           {
+            if (m_drop_count < m_drop_rate)
+            {
+              // Drop the frame
+              continue;
+            }
+
             m_count = 0;
             frame = dequeueClean();
             if (frame == NULL)
@@ -172,11 +192,28 @@ namespace Vision
           }
           else if (rv == c_footer_size)
           {
+            // Update the drop counter
+            m_drop_count++;
+            if (m_drop_count > m_drop_rate)
+              m_drop_count = 0;
+
+            if (m_drop_count < m_drop_rate)
+            {
+              // Drop the frame anyway
+              continue;
+            }
+
             enqueueDirty(frame);
             frame = NULL;
           }
           else
           {
+            if (m_drop_count < m_drop_rate)
+            {
+              // Drop the frame anyway
+              continue;
+            }
+
             if (frame != NULL)
             {
               uint16_t packet_number = 0;
