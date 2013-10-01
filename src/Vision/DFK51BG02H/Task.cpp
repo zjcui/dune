@@ -142,6 +142,8 @@ namespace Vision
       float b_factor;
       //! White-balance Filter: R factor.
       float r_factor;
+      //! How many frames to drop between stored frames
+      unsigned drop_rate;
     };
 
     //! Device driver task.
@@ -207,6 +209,10 @@ namespace Vision
         param("Frames Per Second", m_args.fps)
         .defaultValue("3")
         .description("Frames per second");
+
+        param("Frames Dropping Rate", m_args.drop_rate)
+        .defaultValue("0")
+        .description("Frames per frame");
 
         param("Stream Port", m_args.port)
         .defaultValue("61200")
@@ -319,6 +325,7 @@ namespace Vision
 
         m_gvcp = new GVCP(m_args.raddr);
         m_gvsp = new GVSP(m_args.port);
+        m_gvsp->setDroppingRate(m_args.drop_rate);
         m_gvsp->start();
 
         for (unsigned i = 0; i < m_args.buffer_count; ++i)
