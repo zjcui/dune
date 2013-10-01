@@ -210,7 +210,7 @@ namespace Vision
         .defaultValue("3")
         .description("Frames per second");
 
-        param("Frames Dropping Rate", m_args.drop_rate)
+        param("Frame Dropping Rate", m_args.drop_rate)
         .defaultValue("0")
         .description("Frames per frame");
 
