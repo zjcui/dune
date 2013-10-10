@@ -41,6 +41,83 @@ namespace Transports
   {
     using DUNE_NAMESPACES;
 
+    //! TPDU Types.
+    enum TPDUTypes
+    {
+      TPDU_SMS_DELIVER_REPORT = 0x00,
+      TPDU_SMS_DELIVER        = 0x00,
+      TPDU_SMS_SUBMIT         = 0x01,
+      TPDU_SMS_SUBMIT_REPORT  = 0x01,
+      TPDU_SMS_COMMAND        = 0x02,
+      TPDU_SMS_STATUS_REPORT  = 0x02
+    };
+
+    //! Type of number.
+    enum TypeOfNumber
+    {
+      //! Unknown.
+      TON_UNKNOWN          = 0x00 << 4,
+      //! International number.
+      TON_INTERNATIONAL    = 0x01 << 4,
+      //! National number.
+      TON_NATIONAL         = 0x02 << 4,
+      //! Network specific number.
+      TON_NETWORK_SPECIFIC = 0x03 << 4,
+      //! Subscriber number.
+      TON_SUBSCRIBER       = 0x04 << 4,
+      //! Alphanumeric.
+      TON_ALPHANUMERIC     = 0x05 << 4,
+      //! Abbreviated number.
+      TON_ABBREVIATED      = 0x07 << 4
+    };
+
+    enum NumberPlanIdentification
+    {
+      //! Unknown.
+      NPI_UNKNOWN  = 0x00,
+      //! ISDN/telephone numbering plan.
+      NPI_ISDN     = 0x01,
+      //! Data numbering plan.
+      NPI_DATA     = 0x03,
+      //! Telex numbering plan.
+      NPI_TELEX    = 0x04,
+      //! Service Centre Specific plan.
+      NPI_SCS0     = 0x05,
+      //! Service Centre Specific plan.
+      NPI_SCS1     = 0x06,
+      //! National numbering plan.
+      NPI_NATIONAL = 0x08,
+      //! Private numbering plan.
+      NPI_PRIVATE  = 0x09,
+      //! ERMES numbering plan.
+      NPI_ERMES    = 0x0A
+    };
+
+    //! Validity Period format.
+    enum ValidityPeriodFormat
+    {
+      //! Not present.
+      VP_NONE     = 0x00,
+      //! Enhanced format.
+      VP_ENHANCED = 0x01,
+      //! Relative format.
+      VP_RELATIVE = 0x02,
+      //! Absolute format.
+      VP_ABSOLUTE = 0x03
+    };
+
+    enum MessageClass
+    {
+      //! Flash messages.
+      MC_FLASH = 0x00,
+      //! ME-specific.
+      MC_ME = 0x01,
+      //! SIM / USIM specific.
+      MC_SIM = 0x02,
+      //! TE-specific.
+      MC_TE = 0x03
+    };
+
     class PDU
     {
     public:
