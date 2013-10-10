@@ -35,6 +35,9 @@
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
 
+// Local headers.
+#include "PDU.hpp"
+
 namespace Transports
 {
   namespace GSM
@@ -69,6 +72,8 @@ namespace Transports
       void
       checkMessages(void)
       {
+        return;
+
         IMC::TextMessage sms;
         std::string location;
         unsigned read_count = 0;
@@ -102,17 +107,20 @@ namespace Transports
 
         try
         {
+          std::string pdu = PDU::encodeSMS(number, (uint8_t*)&msg[0], msg.size());
+
           setReadMode(HayesModem::READ_MODE_RAW);
-          sendAT(String::str("+CMGS=\"%s\"", number.c_str()));
+          sendAT(String::str("+CMGS=%u", (pdu.size() - 2) / 2));
           readRaw(timer, bfr, 4);
           setReadMode(HayesModem::READ_MODE_LINE);
 
           if (std::memcmp(bfr, c_sms_prompt, c_sms_prompt_size) != 0)
             throw Hardware::UnexpectedReply();
 
-          std::string data = msg;
-          data.push_back(c_sms_term);
-          sendRaw((uint8_t*)&data[0], data.size());
+          sendRaw((uint8_t*)&pdu[0], pdu.size());
+
+          uint8_t term = 0x1a;
+          sendRaw(&term, 1);
         }
         catch (...)
         {
@@ -173,7 +181,7 @@ namespace Transports
         setEcho(false);
         setErrorVerbosity(2);
         setPin(m_pin);
-        setMessageFormat(1);
+        setMessageFormat(0);
       }
 
       float
