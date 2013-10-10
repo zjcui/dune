@@ -177,6 +177,9 @@ namespace DUNE
       fromHex(const std::string& str);
 
       static void
+      fromHex(const std::string& str, std::vector<uint8_t>& bin);
+
+      static void
       assign(std::vector<char>& dst, const char* src);
 
       static std::string

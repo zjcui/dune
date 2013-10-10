@@ -219,6 +219,20 @@ namespace DUNE
     }
 
     void
+    String::fromHex(const std::string& str, std::vector<uint8_t>& bin)
+    {
+      if ((str.size() % 2) != 0)
+        throw std::runtime_error(DTR("vector size is not a multiple of two"));
+
+      for (unsigned i = 0; i < str.size(); i += 2)
+      {
+        unsigned c;
+        std::sscanf(str.c_str() + i, "%02X", &c);
+        bin.push_back(c);
+      }
+    }
+
+    void
     String::assign(std::vector<char>& dst, const char* src)
     {
       dst.assign(src, src + std::strlen(src));
