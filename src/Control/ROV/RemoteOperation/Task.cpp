@@ -31,6 +31,9 @@
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
 
+// Local headers
+#include "HoldPosition.hpp"
+
 namespace Control
 {
   namespace ROV
@@ -47,6 +50,7 @@ namespace Control
         bool as_control;
         float depth_rate;
         float heading_rate;
+        std::vector<float> hp_gains;
       };
 
       struct Task: public DUNE::Control::BasicRemoteOperation
@@ -67,6 +71,8 @@ namespace Control
         float m_h_ref;
         //! Flag is true if we have depth and heading data
         bool m_dh_data;
+        //! Hold position controller
+        HoldPosition* m_hp;
         //! Task arguments.
         Arguments m_args;
 
@@ -97,12 +103,16 @@ namespace Control
           param("Depth Rate", m_args.depth_rate)
           .defaultValue("0.1")
           .units(Units::MeterPerSecond)
-          .description("Rate of increase or decrease of depth with control enabled.");
+          .description("Rate of increase or decrease of depth with control enabled");
 
           param("Heading Rate", m_args.heading_rate)
           .defaultValue("5.0")
           .units(Units::DegreePerSecond)
-          .description("Rate of increase or decrease of heading with control enabled.");
+          .description("Rate of increase or decrease of heading with control enabled");
+
+          param("Hold Position Gains", m_args.hp_gains)
+          .defaultValue("")
+          .description("PID gains for the hold position controller");
 
           // Add remote actions.
           addActionAxis("Forward");
@@ -147,10 +157,19 @@ namespace Control
         }
 
         void
+        onResourceRelease(void)
+        {
+          Memory::clear(m_hp);
+        }
+
+        void
         onUpdateParameters(void)
         {
           if (paramChanged(m_args.heading_rate))
             m_args.heading_rate = Math::Angles::radians(m_args.heading_rate);
+
+          if (paramChanged(m_args.hp_gains))
+            m_hp->setGains(m_args.hp_gains);
         }
 
         void
