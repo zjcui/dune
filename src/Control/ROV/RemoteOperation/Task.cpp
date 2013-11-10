@@ -163,6 +163,12 @@ namespace Control
         }
 
         void
+        onResourceAcquisition(void)
+        {
+          m_hp = new HoldPosition(m_args.hp_gains);
+        }
+
+        void
         onUpdateParameters(void)
         {
           if (paramChanged(m_args.heading_rate))
