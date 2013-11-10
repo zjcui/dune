@@ -50,7 +50,9 @@ namespace Control
         bool as_control;
         float depth_rate;
         float heading_rate;
+        bool hp_enabled;
         std::vector<float> hp_gains;
+        float hp_cooldown;
       };
 
       struct Task: public DUNE::Control::BasicRemoteOperation
@@ -61,10 +63,6 @@ namespace Control
         Matrix m_forces;
         //! Desired Velocity message.
         IMC::DesiredVelocity m_dvel;
-        //! Starting depth
-        float m_start_depth;
-        //! Starting heading
-        float m_start_heading;
         //! Current vehicle depth.
         float m_depth;
         //! Current heading or heading rate reference
@@ -73,6 +71,10 @@ namespace Control
         bool m_dh_data;
         //! Hold position controller
         HoldPosition* m_hp;
+        //! Counter for hold position controller cooldown
+        Time::Counter<float> m_hp_counter;
+        //! Estimated State
+        IMC::EstimatedState m_state;
         //! Task arguments.
         Arguments m_args;
 
@@ -110,9 +112,18 @@ namespace Control
           .units(Units::DegreePerSecond)
           .description("Rate of increase or decrease of heading with control enabled");
 
+          param("Hold Position Control", m_args.hp_enabled)
+          .defaultValue("false")
+          .description("Enable the Hold Position controller");
+
           param("Hold Position Gains", m_args.hp_gains)
           .defaultValue("")
           .description("PID gains for the hold position controller");
+
+          param("Hold Position Cooldown", m_args.hp_cooldown)
+          .defaultValue("3.0")
+          .units(Units::Second)
+          .description("Turn off time for hold position controller after direct control");
 
           // Add remote actions.
           addActionAxis("Forward");
@@ -132,10 +143,16 @@ namespace Control
           if (m_args.dh_control)
           {
             enableControlLoops(IMC::CL_SPEED | IMC::CL_DEPTH | IMC::CL_YAW);
-            m_depth = m_start_depth;
+            m_depth = m_state.depth;
 
             if (!m_args.as_control)
-              m_h_ref = m_start_heading;
+              m_h_ref = m_state.psi;
+
+            if (m_args.hp_enabled)
+            {
+              m_hp->setPosition(m_state.lat, m_state.lon);
+              m_hp_counter.setTop(m_args.hp_cooldown);
+            }
           }
           else
           {
@@ -182,8 +199,8 @@ namespace Control
         consume(const IMC::EstimatedState* msg)
         {
           m_dh_data = true;
-          m_start_depth = msg->depth;
-          m_start_heading = msg->psi;
+
+          m_state = *msg;
         }
 
         void
@@ -193,9 +210,6 @@ namespace Control
 
           if (m_args.dh_control)
           {
-            m_forces(0, 0) = tuples.get("Forward", 0) / 127.0;   // X
-            m_forces(1, 0) = tuples.get("Starboard", 0) / 127.0; // Y
-
             m_depth += tuples.get("Up", 0) / 127.0 * m_args.depth_rate;
             m_depth = std::max(0.0f, m_depth);
 
@@ -211,12 +225,15 @@ namespace Control
 
             if (tuples.get("Stop", 1))
             {
-              m_depth = m_start_depth;
+              m_depth = m_state.depth;
 
               if (!m_args.as_control)
-                m_h_ref = m_start_heading;
+                m_h_ref = m_state.psi;
               else
                 m_h_ref = 0.0;
+
+              if (m_args.hp_enabled)
+                m_hp->setPosition(m_state.lat, m_state.lon);
             }
 
             debug("desired depth: %.1f", m_depth);
@@ -225,6 +242,20 @@ namespace Control
               debug("desired heading: %.1f", m_h_ref * 180.0 / DUNE::Math::c_pi);
             else
               debug("desired heading rate: %.1f", m_h_ref * 180.0 / DUNE::Math::c_pi);
+
+            if (m_args.hp_enabled)
+            {
+              if ((tuples.get("Forward", 0) != 0) && (tuples.get("Starboard", 0) != 0))
+                m_hp_counter.reset();
+
+              if (m_hp_counter.overflow())
+                m_hp->getSpeeds(&m_state, m_forces(0, 0), m_forces(1, 0));
+            }
+            else
+            {
+              m_forces(0, 0) = tuples.get("Forward", 0) / 127.0;   // X
+              m_forces(1, 0) = tuples.get("Starboard", 0) / 127.0; // Y
+            }
           }
           else
           {
@@ -245,10 +276,10 @@ namespace Control
           if (m_args.dh_control)
           {
             disableControlLoops(IMC::CL_DEPTH | IMC::CL_YAW);
-            m_depth = m_start_depth;
+            m_depth = m_state.depth;
 
             if (!m_args.as_control)
-              m_h_ref = m_start_heading;
+              m_h_ref = m_state.psi;
             else
               m_h_ref = 0.0;
           }
