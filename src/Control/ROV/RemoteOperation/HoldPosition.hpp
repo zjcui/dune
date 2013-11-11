@@ -60,10 +60,9 @@ namespace Control
         }
 
         void
-        setPosition(double lat, double lon)
+        setPosition(const IMC::EstimatedState* msg)
         {
-          m_lat = lat;
-          m_lon = lon;
+          Coordinates::toWGS84(*msg, m_lat, m_lon);
         }
 
         void
@@ -89,15 +88,17 @@ namespace Control
 
           Coordinates::toWGS84(*msg, e_lat, e_lon);
 
-          Coordinates::WGS84::getNEBearingAndRange(msg->lat, msg->lon,
-                                                   e_lat, e_lon,
+          Coordinates::WGS84::getNEBearingAndRange(e_lat, e_lon,
+                                                   m_lat, m_lon,
                                                    &bearing, &range);
 
           float speed = m_pid.step(Clock::get() - m_time, range);
+          m_time = Clock::get();
+
           u = speed * std::cos(bearing);
           v = speed * std::sin(bearing);
 
-          Math::Angles::rotate(bearing, true, u, v);
+          Math::Angles::rotate(msg->psi, true, u, v);
         }
 
       private:
