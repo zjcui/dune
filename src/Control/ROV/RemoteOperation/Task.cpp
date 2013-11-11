@@ -82,7 +82,8 @@ namespace Control
           DUNE::Control::BasicRemoteOperation(name, ctx),
           m_thruster(5, 1, 0.0),
           m_forces(6, 1, 0.0),
-          m_dh_data(false)
+          m_dh_data(false),
+          m_hp(NULL)
         {
           param("Actuation Inverse Matrix", m_args.actuat)
           .defaultValue("")
@@ -118,6 +119,7 @@ namespace Control
 
           param("Hold Position Gains", m_args.hp_gains)
           .defaultValue("")
+          .size(3)
           .description("PID gains for the hold position controller");
 
           param("Hold Position Cooldown", m_args.hp_cooldown)
@@ -150,8 +152,10 @@ namespace Control
 
             if (m_args.hp_enabled)
             {
-              m_hp->setPosition(m_state.lat, m_state.lon);
               m_hp_counter.setTop(m_args.hp_cooldown);
+
+              if (m_hp != NULL)
+                m_hp->setPosition(&m_state);
             }
           }
           else
@@ -191,7 +195,7 @@ namespace Control
           if (paramChanged(m_args.heading_rate))
             m_args.heading_rate = Math::Angles::radians(m_args.heading_rate);
 
-          if (paramChanged(m_args.hp_gains))
+          if (paramChanged(m_args.hp_gains) && (m_hp != NULL))
             m_hp->setGains(m_args.hp_gains);
         }
 
@@ -204,23 +208,59 @@ namespace Control
         }
 
         void
+        onHPControl(TupleList& tuples)
+        {
+          if (tuples.get("Stop", 1))
+          {
+            m_hp->setPosition(&m_state);
+            return;
+          }
+
+          int forward = tuples.get("Forward", 0);
+          int starboard = tuples.get("Starboard", 0);
+
+          if ((forward != 0) || (starboard != 0))
+            m_hp_counter.reset();
+
+          if (m_hp_counter.overflow())
+          {
+            m_hp->getSpeeds(&m_state, m_forces(0, 0), m_forces(1, 0));
+
+            debug("u is %.1f", m_forces(0, 0));
+            debug("v is %.1f", m_forces(1, 0));
+          }
+          else
+          {
+            m_hp->setPosition(&m_state);
+
+            m_forces(0, 0) = forward / 127.0;   // X
+            m_forces(1, 0) = starboard / 127.0; // Y
+          }
+        }
+
+        void
         onRemoteActions(const IMC::RemoteActions* msg)
         {
           TupleList tuples(msg->actions);
 
+          int forward = tuples.get("Forward", 0);
+          int starboard = tuples.get("Starboard", 0);
+          int up = tuples.get("Up", 0);
+          int rot = tuples.get("Rotate", 0);
+
           if (m_args.dh_control)
           {
-            m_depth += tuples.get("Up", 0) / 127.0 * m_args.depth_rate;
+            m_depth += up / 127.0 * m_args.depth_rate;
             m_depth = std::max(0.0f, m_depth);
 
             if (!m_args.as_control)
             {
-              m_h_ref += tuples.get("Rotate", 0) / 127.0 * m_args.heading_rate;
+              m_h_ref += rot / 127.0 * m_args.heading_rate;
               m_h_ref = Math::Angles::normalizeRadian(m_h_ref);
             }
             else
             {
-              m_h_ref = tuples.get("Rotate", 0) / 127.0 * m_args.heading_rate;
+              m_h_ref = rot / 127.0 * m_args.heading_rate;
             }
 
             if (tuples.get("Stop", 1))
@@ -231,40 +271,33 @@ namespace Control
                 m_h_ref = m_state.psi;
               else
                 m_h_ref = 0.0;
-
-              if (m_args.hp_enabled)
-                m_hp->setPosition(m_state.lat, m_state.lon);
             }
 
             debug("desired depth: %.1f", m_depth);
 
             if (!m_args.as_control)
-              debug("desired heading: %.1f", m_h_ref * 180.0 / DUNE::Math::c_pi);
+              spew("desired heading: %.1f", m_h_ref * 180.0 / DUNE::Math::c_pi);
             else
-              debug("desired heading rate: %.1f", m_h_ref * 180.0 / DUNE::Math::c_pi);
+              spew("desired heading rate: %.1f", m_h_ref * 180.0 / DUNE::Math::c_pi);
 
             if (m_args.hp_enabled)
             {
-              if ((tuples.get("Forward", 0) != 0) && (tuples.get("Starboard", 0) != 0))
-                m_hp_counter.reset();
-
-              if (m_hp_counter.overflow())
-                m_hp->getSpeeds(&m_state, m_forces(0, 0), m_forces(1, 0));
+              onHPControl(tuples);
             }
             else
             {
-              m_forces(0, 0) = tuples.get("Forward", 0) / 127.0;   // X
-              m_forces(1, 0) = tuples.get("Starboard", 0) / 127.0; // Y
+              m_forces(0, 0) = forward / 127.0;   // X
+              m_forces(1, 0) = starboard / 127.0; // Y
             }
           }
           else
           {
-            m_forces(0, 0) = tuples.get("Forward", 0) / 127.0;   // X
-            m_forces(1, 0) = tuples.get("Starboard", 0) / 127.0; // Y
-            m_forces(3, 0) = 0.0;                                // K
-            m_forces(4, 0) = 0.0;                                // M
-            m_forces(2, 0) = tuples.get("Up", 0) / 127.0;      // Z
-            m_forces(5, 0) = tuples.get("Rotate", 0) / 127.0;    // N
+            m_forces(0, 0) = forward / 127.0;   // X
+            m_forces(1, 0) = starboard / 127.0; // Y
+            m_forces(3, 0) = 0.0;               // K
+            m_forces(4, 0) = 0.0;               // M
+            m_forces(2, 0) = up / 127.0;        // Z
+            m_forces(5, 0) = rot / 127.0;       // N
           }
         }
 
