@@ -113,7 +113,7 @@ namespace Monitors
         param("Hardware Clock Synchronization Command", m_args.hw_sync_cmd)
         .description("System command to execute everytime the clock is synchronized");
 
-        param("Change Log File", m_args.change_log)
+        param("Change Log", m_args.change_log)
         .defaultValue("false")
         .description("Change log file after synchronization");
 
