@@ -25,11 +25,11 @@ namespace Simulators
         IMC::VehicleMedium m_medium;
         //! Battery messages
         IMC::Voltage m_volt;
-
         //! TCP socket
         TCPSocket* m_TCP_sock;
         Address m_TCP_addr;
         uint16_t m_TCP_port;
+        bool m_is_surface;
 
         Task(const std::string& name, Tasks::Context& ctx):
           Tasks::Task(name, ctx)
@@ -81,9 +81,9 @@ namespace Simulators
           double volt_before = Clock::get();
           double medium_before = Clock::get();
           uint8_t bfr[1];
-          bool is_surface = true;
+          m_is_surface = true;
           bool was_surface = false;
-          int interval = rand() % 11 + 5; // random interval between 5 and 15 minutes to stay under/above water
+          int interval = randomTime(); // random interval between 5 and 15 minutes to stay under/above water
 
           while (!stopping())
           {
@@ -99,29 +99,29 @@ namespace Simulators
             }
 
             // Handle IMC messages from bus
-            //consumeMessages();
+            consumeMessages();
 
             double now = Clock::get();
 
             if( (now - volt_before) >= 5)
             {
-              bfr[0] = '3'; //request voltage every 5 seconds
+              bfr[0] = '3'; // request voltage every 5 seconds
               sendData(bfr, 1);
               volt_before = now;
             }
 
-            if( ((now - medium_before) / 60) >= interval)
+            if((now - medium_before) >= interval)
             {
-              is_surface = !is_surface;
+              m_is_surface = !m_is_surface;
               medium_before = now;
-              interval = rand() % 11 + 5; //generate new interval
+              interval = randomTime(); // generate new interval
             }
 
-            if( is_surface != was_surface)
+            if(m_is_surface != was_surface)
             {
-              bfr[0] = (is_surface ? '2' : '1'); //2 for surface, 1 for underwater
+              bfr[0] = (m_is_surface ? '2' : '1'); // 2 for surface, 1 for underwater
               sendData(bfr, 1);
-              was_surface = is_surface;
+              was_surface = m_is_surface;
             }
           }
         }
@@ -170,6 +170,33 @@ namespace Simulators
         }
 
         void
+        checkMedium(void)
+        {
+          if (m_is_surface)
+          {
+            m_medium.medium = IMC::VehicleMedium::VM_WATER;
+            inf("surface");
+          }
+          else
+          {
+            m_medium.medium = IMC::VehicleMedium::VM_UNDERWATER;
+            inf("underwater");
+          }
+
+          dispatch(m_medium);
+        }
+
+	float
+	randomTime(void)
+        {
+          checkMedium();
+
+          float a = rand() % 26 + 5;
+          war("interval: %f", a);
+          return a;
+        }
+
+        void
         handleData(void)
         {
           while (poll(0.01))
@@ -185,7 +212,7 @@ namespace Simulators
             for (int i = 0; i < n; i++)
             {
               m_volt.value = ((float)m_buf[i] * 5.0 / 255.0) * (3.0 / 2.0);
-              err("iteration (%d): %f", i, m_volt.value);
+              inf("voltage: %f", m_volt.value);
               dispatch(m_volt);
             }
           }
