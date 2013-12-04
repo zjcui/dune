@@ -110,7 +110,7 @@ namespace Simulators
               volt_before = now;
             }
 
-            if((now - medium_before) >= interval)
+            if(((now - medium_before)/60) >= interval)
             {
               m_is_surface = !m_is_surface;
               medium_before = now;
