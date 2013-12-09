@@ -57,7 +57,9 @@
 //! Configure sms message (ascii char 'G')
 #define WAVY_CMD_CFGSMS 0x47
 //! Reset the bluetooth module (ascii char 'X')
-#define WAVY_CMD_BLUE_RESET     0x58
+#define WAVY_CMD_BLUE_RESET 0x58
+//! Change machine state (ascii char 'M')
+#define WAVY_CMD_CMS 0x4D
 
 //! Log synch number
 #define LOG_SYNCH               0xFC
@@ -95,6 +97,20 @@ enum DOWNLOADER_STATE
   DLDR_FAILED
 };
 
+typedef enum
+{
+  //! Do not change mode
+  GOTO_NONE,
+  //! Change to mode idle
+  GOTO_IDLE,
+  //! Change mode mission
+  GOTO_MISSION,
+  //! Change mode to shutdown
+  GOTO_SHUTDOWN,
+  //! Change mode to bootloader jump
+  GOTO_BOOTLOADER
+} uploader_goto_mode_t;
+
 // data to be filled in handler routine
 struct frame
 {
@@ -111,7 +127,7 @@ struct download_manager
   //! ptl parser
   struct ptl_parser parser;
   //! number of records that were received
-  uint8_t n_recs; 
+  uint8_t n_recs;
   //! number of frames that will be received
   uint8_t n_frames;
   //! amount of data received
@@ -341,7 +357,7 @@ download_handler(uint8_t cmd, uint8_t* data, uint8_t data_len)
     case CMD_FW_NAME:
     case CMD_GIT_INFO:
       return cmd;
-      
+
     default:
       return -1;
   }
@@ -397,7 +413,7 @@ downloadReadData(download_manager_t dldr, bool trace)
 
   // for now...
   ++dldr->n_recs;
-  
+
   if (trace)
   {
     (*ss_dbg) << std::endl;
@@ -406,7 +422,7 @@ downloadReadData(download_manager_t dldr, bool trace)
 
   // update bitfield
   dldr->bitfield |= (1<<dldr->index);
-  
+
   return true;
 }
 
@@ -434,7 +450,7 @@ checkMissingFrames(download_manager_t dldr, bool trace)
 uint8_t
 countRecords(download_manager_t dldr)
 {
-  
+
 }
 
 uint32_t
@@ -511,7 +527,7 @@ onDownload(download_manager_t dldr)
       {
         if ( !downloadReadData(dldr, true) )
           break;
-        
+
         dldr->timer = Clock::get();
 
         // check if this was the last frame of the set
@@ -649,11 +665,11 @@ onDownload(download_manager_t dldr)
           break;
 
         (*ss_dbg) << "index: " << (int)dldr->index << std::endl;
-        
+
         temp_bitfield = dldr->bitfield >> dldr->index;
 
         (*ss_dbg) << "bitfield: " << (int)dldr->bitfield << std::endl;
-        
+
         // update index again
         while (dldr->index <= dldr->n_frames - 1)
         {
@@ -711,7 +727,7 @@ onDownload(download_manager_t dldr)
         std::cerr << "WRN: Got corrupted or out of context message (RECV_MISSED)."
                   << std::endl;
         std::cerr << "WRN: " << (unsigned)cmd << std::endl;
-        
+
         // increment counter any way
         ++dldr->index;
 
@@ -847,7 +863,6 @@ onGetFactoryData(download_manager_t dldr, const char* name)
   }
 }
 
-
 void
 onGetStatus(download_manager_t dldr, const char* name)
 {
@@ -922,6 +937,53 @@ onGetStatus(download_manager_t dldr, const char* name)
 }
 
 void
+onJumpBoot(download_manager_t dldr)
+{
+  int cmd;
+  cmd = ptl_process(&dldr->parser, dldr->temp_frame.data, &dldr->temp_frame.size);
+
+  printCmd(cmd);
+
+  switch (dldr->state)
+  {
+    case DLDR_IDLE:
+      if (cmd == WAVY_CMD_NACK)
+      {
+        std::cerr << "ERR: Wavy has rejected or misread request." << std::endl;
+      }
+      else if (cmd == WAVY_CMD_CMS)
+      {
+        std::cerr << "INF: Wavy has received change mode request command." << std::endl;
+
+        dldr->state = DLDR_DONE;
+      }
+      else if ((cmd != 0) && (cmd != -1))
+      {
+        std::cerr << "WRN: Got corrupted or out of context message (IDLE)." << std::endl;
+        std::cerr << "WRN: " << (unsigned)cmd << std::endl;
+        ptl_out_cmd(WAVY_CMD_NACK, 0, 0);
+      }
+      else if (Clock::get() - dldr->timer >= DLDR_REQ_PERIOD)
+      {
+        uploader_goto_mode_t cms = GOTO_BOOTLOADER;
+
+        (*ss_dbg) << "INF: Sending request ..." << std::endl;
+        ptl_out_cmd(WAVY_CMD_CMS,
+                    (uint8_t*)&cms,
+                    sizeof(cms));
+
+        dldr->timer = Clock::get();
+      }
+      break;
+    case DLDR_DONE:
+    case DLDR_FAILED:
+      break;
+    default:
+      break;
+  }
+}
+
+void
 getUserParams(struct params_user* puser, Parsers::Config* config, const std::string sec)
 {
   uint8_t version;
@@ -940,7 +1002,7 @@ getUserParams(struct params_user* puser, Parsers::Config* config, const std::str
   config->get(sec, "GSM Recipient", "+351933128436", num);
   if (num.size() > PARAMS_GSM_RECIP_SIZE - 1)
     throw std::runtime_error("recipient number is too large");
-  
+
   memcpy(&puser->gsm_recipient[0], &num[0], num.size());
 
   uint16_t gsm_report_per;
@@ -1025,6 +1087,7 @@ main(int argc, char* argv[])
               << "-u (set user parameters)" << std::endl
               << "-p (get user and factory parameters)" << std::endl
               << "-s (get status)" << std::endl
+              << "-b (jump to bootloader)" << std::endl
               << "Setting user parameters expects a file called user.ini in the same dir."
               << std::endl
               << "[operation] defaults to -d."
@@ -1034,12 +1097,12 @@ main(int argc, char* argv[])
               << std::endl;
     return -1;
   }
-  
+
   if (argc >= 4)
   {
     op = argv[3][1];
 
-    if (op != 'd' && op != 'u' && op != 'p' && op != 's')
+    if (op != 'd' && op != 'u' && op != 'p' && op != 's' && op != 'b')
     {
       std::cerr << "invalid operation" << std::endl;
       return -1;
@@ -1220,6 +1283,27 @@ main(int argc, char* argv[])
       if (downloader.state == DLDR_DONE)
       {
         std::cerr << "INF: Receiving wavy status is over!" << std::endl;
+        break;
+      }
+    }
+  }
+  else if (op == 'b')
+  {
+    downloadInit(&downloader, false);
+
+    while (1)
+    {
+      onJumpBoot(&downloader);
+
+      if (downloader.state == DLDR_FAILED)
+      {
+        std::cerr << "ERR: Jumping to boot has failed." << std::endl;
+        break;
+      }
+
+      if (downloader.state == DLDR_DONE)
+      {
+        std::cerr << "INF: Jumping to boot has succeeded!" << std::endl;
         break;
       }
     }
