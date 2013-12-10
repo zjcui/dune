@@ -106,8 +106,8 @@ namespace Control
         IMC::ControlParcel m_parcel_mps;
         //! Control Parcels for rpm controller
         IMC::ControlParcel m_parcel_rpm;
-        //! Control loops last reference time
-        float m_scope_ref;
+        //! Control loops last reference
+        uint32_t m_scope_ref;
         //! Task arguments
         Arguments m_args;
 
@@ -115,7 +115,7 @@ namespace Control
           DUNE::Tasks::Task(name, ctx),
           m_u_active(false),
           m_previous_rpm(0.0),
-          m_scope_ref(0.0)
+          m_scope_ref(0)
         {
           param("Hardware RPMs Control", m_args.hardrpms)
           .defaultValue("true")
@@ -184,6 +184,18 @@ namespace Control
           bind<IMC::DesiredSpeed>(this);
           bind<IMC::ControlLoops>(this);
           bind<IMC::EstimatedState>(this);
+        }
+
+        void
+        onActivation(void)
+        {
+          setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
+        }
+
+        void
+        onDeactivation(void)
+        {
+          setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_IDLE);
         }
 
         void
@@ -300,15 +312,9 @@ namespace Control
             return;
 
           if (!msg->enable)
-          {
             requestDeactivation();
-            debug("disabling");
-          }
           else
-          {
             requestActivation();
-            debug("enabling");
-          }
 
           reset();
         }

@@ -44,6 +44,8 @@ namespace Transports
       std::vector<std::string> messages;
       //! Log file name.
       std::string lsf_name;
+      //! Log file folder.
+      std::string log_folder;
     };
 
     struct Task: public DUNE::Tasks::Task
@@ -78,6 +80,9 @@ namespace Transports
         .units(Units::Second)
         .description("Number of seconds to wait before forcing data to be written to disk");
 
+        param("Log Folder", m_args.log_folder)
+        .defaultValue("");
+
         param("LSF Name", m_args.lsf_name)
         .defaultValue("Digest")
         .description("LSF file name");
@@ -91,6 +96,12 @@ namespace Transports
       ~Task(void)
       {
         stopLog();
+
+        std::map<uint32_t, IMC::Message*>::iterator itr = m_messages.begin();
+        for (; itr != m_messages.end(); ++itr)
+          delete itr->second;
+
+        m_messages.clear();
       }
 
       void
@@ -120,8 +131,24 @@ namespace Transports
       {
         stopLog();
 
-        Path path = m_ctx.dir_log / name / (m_args.lsf_name + ".lsf.gz");
-        m_log = new Compression::FileOutput(path.c_str(), Compression::METHOD_GZIP);
+        if (!m_args.log_folder.empty())
+        {
+          std::string flat_name(name);
+          for (size_t i = 0; i < flat_name.size(); ++i)
+          {
+            if (flat_name[i] == '/')
+              flat_name[i] = '_';
+          }
+
+          Path(m_args.log_folder).create();
+          Path path = m_args.log_folder / (flat_name + ".lsf.gz");
+          m_log = new Compression::FileOutput(path.c_str(), Compression::METHOD_GZIP);
+        }
+        else
+        {
+          Path path = m_ctx.dir_log / name / (m_args.lsf_name + ".lsf.gz");
+          m_log = new Compression::FileOutput(path.c_str(), Compression::METHOD_GZIP);
+        }
 
         // Log entities.
         double ref_time = Clock::getSinceEpoch();
@@ -161,10 +188,11 @@ namespace Transports
             {
               setEntityState(IMC::EntityState::ESTA_FAILURE, String::str(DTR("failed to start log, check available storage: %s"), e.what()));
               err("%s", e.what());
-              war(DTR("waiting for human intervention"));
+              throw RestartNeeded(e.what(), 5);
             }
 
-            logMessage(msg);
+            if (m_log != NULL)
+              logMessage(msg);
             break;
           case IMC::LoggingControl::COP_STOPPED:
             stopLog();
@@ -236,8 +264,15 @@ namespace Transports
         while (!stopping())
         {
           waitForMessages(1.0);
-          writeSample();
-          flush();
+          try
+          {
+            writeSample();
+            flush();
+          }
+          catch(std::exception& e)
+          {
+            throw RestartNeeded(e.what(), 5);
+          }
         }
       }
     };

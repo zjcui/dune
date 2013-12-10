@@ -61,8 +61,8 @@ namespace Transports
       static const int c_port_retries = 5;
       //! Control sockets.
       std::list<TCPSocket*> m_sockets;
-      //! IO selector.
-      IOMultiplexing m_iom;
+      //! I/O selector.
+      Poll m_poll;
       //! List of busy sessions.
       std::list<Session*> m_busy_list;
       //! Concurrency lock for list of busy sessions.
@@ -129,7 +129,7 @@ namespace Transports
 
           port = m_args.control_port;
           TCPSocket* sock = createSocket(itfs[i].address(), port);
-          sock->addToPoll(m_iom);
+          m_poll.add(*sock);
           m_sockets.push_back(sock);
 
           std::stringstream os;
@@ -177,7 +177,7 @@ namespace Transports
           TCPSocket* client = sock->accept(&addr);
 
           debug("accepted connection from '%s'", addr.c_str());
-          Session* handler = new Session(m_ctx, client, local_addr,
+          Session* handler = new Session(m_ctx.dir_log, client, local_addr,
                                          m_args.session_tout);
           handler->start();
           m_busy_list.push_back(handler);
@@ -215,13 +215,13 @@ namespace Transports
         {
           consumeMessages();
 
-          if (!m_iom.poll(1.0))
+          if (!m_poll.poll(1.0))
             continue;
 
           std::list<TCPSocket*>::iterator itr = m_sockets.begin();
           for (; itr != m_sockets.end(); ++itr)
           {
-            if ((*itr)->wasTriggered(m_iom))
+            if (m_poll.wasTriggered(*(*itr)))
               acceptNewClient(*itr, (*itr)->getBoundAddress());
           }
 

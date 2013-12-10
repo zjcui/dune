@@ -139,6 +139,7 @@ namespace Power
         param("Watchdog Timeout", m_args.wdog_tout)
         .units(Units::Second)
         .defaultValue("2.0")
+        .minimumValue("1.0")
         .description("Watchdog timeout");
 
         param("Slave System Name", m_args.slave_system)
@@ -190,6 +191,14 @@ namespace Power
             delete m_adcs[i];
 
           m_adcs[i] = IMC::Factory::produce(m_args.adc_messages[i]);
+
+          try
+          {
+            unsigned eid = resolveEntity(m_args.adc_elabels[i]);
+            m_adcs[i]->setSourceEntity(eid);
+          }
+          catch (...)
+          { }
         }
 
         m_power_state.name = m_args.pwr_name;

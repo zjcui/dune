@@ -42,6 +42,8 @@ namespace Actuators
 
     //! Number of servos
     static const unsigned c_servo_count = 4;
+    //! Serial Port baud rate.
+    static const unsigned c_baud_rate = 115200;
 
     enum Commands
     {
@@ -122,11 +124,6 @@ namespace Actuators
         bind<IMC::SetServoPosition>(this);
       }
 
-      ~Task(void)
-      {
-        Task::onResourceRelease();
-      }
-
       void
       onEntityReservation(void)
       {
@@ -157,7 +154,7 @@ namespace Actuators
       {
         try
         {
-          m_uart = new SerialPort(m_args.uart_dev, 115200);
+          m_uart = new SerialPort(m_args.uart_dev, c_baud_rate);
           m_listener = new Listener(m_uart);
           m_listener->start();
         }

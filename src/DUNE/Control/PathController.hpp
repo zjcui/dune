@@ -44,7 +44,9 @@ namespace DUNE
   namespace Control
   {
     //! Estimated time of arrival factor
-    static const double c_time_factor = 5;
+    static const float c_time_factor = 5.0f;
+    //! Factor for path error in y direction to prevent too large cross track offsets
+    static const float c_erry_factor = 1.75f;
 
     // Export DLL Symbol.
     class DUNE_DLL_SYM PathController;
@@ -334,6 +336,10 @@ namespace DUNE
         Coordinates::getTrackPosition(m_ts.start, m_ts.track_bearing, coord, x, y);
       }
 
+      //! Deactivate bottom tracker
+      void
+      deactivateBottomTracker(void);
+
       //! Data for along-track error monitoring.
       struct ATMData
       {
@@ -430,8 +436,8 @@ namespace DUNE
       IMC::DesiredSpeed m_speed;
       //! Pointer to bottom tracker object
       BottomTracker* m_btrack;
-      //! Control loops last reference time
-      float m_scope_ref;
+      //! Control loops last reference
+      uint32_t m_scope_ref;
     };
   }
 }

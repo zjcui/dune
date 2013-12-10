@@ -45,7 +45,7 @@ if(DUNE_VERSION_TPL AND DUNE_VERSION_OUT)
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   string(COMPARE EQUAL "${sha1}" "" empty_string)
   if(empty_string)
-    set(branch "unknown")
+    set(sha1 "unknown")
   endif(empty_string)
   set(DUNE_GIT_INFO "${DUNE_GIT_INFO},${sha1}")
 
@@ -73,12 +73,14 @@ if(DUNE_VERSION_TPL AND DUNE_VERSION_OUT)
 else()
   set(DUNE_CORE_SOURCES ${DUNE_CORE_SOURCES}
     ${DUNE_GENERATED}/src/DUNE/Version.cpp)
-  file(WRITE ${DUNE_GENERATED}/src/DUNE/Version.cpp "")
+  file(WRITE "${DUNE_GENERATED}/src/DUNE/Version.cpp" "")
 
   add_custom_target(dune-version
-    COMMAND ${CMAKE_COMMAND} -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -DDUNE_VERSION_TPL="src/DUNE/Version.cpp.in"
-    -DDUNE_VERSION_OUT="${DUNE_GENERATED}/src/DUNE/Version.cpp"
+    COMMAND ${CMAKE_COMMAND}
+    -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
+    -DDUNE_VERSION_TPL=src/DUNE/Version.cpp.in
+    -DDUNE_VERSION_OUT=${DUNE_GENERATED}/src/DUNE/Version.cpp
     -P "cmake/Version.cmake"
-    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    VERBATIM)
 endif()

@@ -25,6 +25,9 @@
 // Author: Ricardo Martins                                                  *
 //***************************************************************************
 
+// ISO C++ 98 headers.
+#include <sstream>
+
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
 
@@ -74,15 +77,14 @@ namespace Transports
       "----------"
     };
 
-    Session::Session(Tasks::Context& ctx, TCPSocket* sock, const Address& local_addr, double timeout):
-      m_ctx(ctx),
+    Session::Session(const FileSystem::Path& root, TCPSocket* sock, const Address& local_addr, double timeout):
       m_sock(sock),
       m_local_addr(local_addr),
       m_data_pasv(false),
       m_rest_offset(-1),
       m_timer(timeout)
     {
-      m_root = ctx.dir_log;
+      m_root = root;
       m_path = "/";
 
       m_sock->setNoDelay(true);
@@ -129,6 +131,31 @@ namespace Transports
 
       delete m_sock;
       m_sock = NULL;
+    }
+
+    void
+    Session::sendFileInfoMLSD(const Path& path, TCPSocket* sock)
+    {
+      Path::Type type = path.type();
+      int64_t size = 0;
+      std::ostringstream os;
+
+      if (type == Path::PT_FILE)
+      {
+        size = path.size();
+        os << "Type=file;Size=" << size << ";";
+      }
+      else if (type == Path::PT_DIRECTORY)
+      {
+        os << "Type=dir;";
+      }
+      else
+      {
+        return;
+      }
+
+      os << " " << path.basename() << "\r\n";
+      sock->write(os.str().c_str(), os.str().size());
     }
 
     void
@@ -179,7 +206,7 @@ namespace Transports
                        time_mod.day,
                        time_mod.year,
                        path_name.c_str());
-      }
+                       }
 
       sock->write(m_bfr, strlen(m_bfr));
     }
@@ -356,7 +383,7 @@ namespace Transports
     void
     Session::handleTYPE(const std::string& arg)
     {
-      if (arg == "I")
+      if (arg == "I" || arg == "A")
         sendOK();
       else
         sendReply(504, "Command not implemented for that parameter.");
@@ -431,6 +458,49 @@ namespace Transports
     }
 
     void
+    Session::handleMLSD(const std::string& arg)
+    {
+      Path path = m_root / m_path;
+
+      // @fixme don't allow going below root.
+      if (arg.size() > 0)
+      {
+        path = getAbsolutePath(arg);
+      }
+
+      // Check if we're trying to go below root.
+      if (String::startsWith(m_root.str(), path.str()))
+        path = m_root;
+
+      Path::Type type = path.type();
+      if (type == Path::PT_INVALID)
+      {
+        sendReply(450, "Requested file action not taken.");
+        return;
+      }
+
+      sendReply(150, "File status okay; about to open data connection.");
+
+      Time::BrokenDown time_ref;
+      TCPSocket* data = openDataConnection();
+      if (type == Path::PT_FILE)
+      {
+        sendFileInfoMLSD(path, data);
+      }
+      else
+      {
+        Directory dir(path);
+        const char* entry = NULL;
+        while ((entry = dir.readEntry(Directory::RD_FULL_NAME)))
+        {
+          sendFileInfoMLSD(entry, data);
+        }
+      }
+
+      closeDataConnection(data);
+    }
+
+    void
     Session::handleNOOP(const std::string& arg)
     {
       (void)arg;
@@ -502,6 +572,8 @@ namespace Transports
         handleRMD(arg);
       else if (cmd == "QUIT")
         handleQUIT(arg);
+      else if (cmd == "MLSD")
+        handleMLSD(arg);
       else
         handleNotImplemented(arg);
     }
@@ -511,9 +583,9 @@ namespace Transports
     {
       sendReply(220, "DUNE FTP server ready.");
 
-      IOMultiplexing iom;
-      m_sock->addToPoll(iom);
-      m_sock_data->addToPoll(iom);
+      Poll poll;
+      poll.add(*m_sock);
+      poll.add(*m_sock_data);
 
       while (!isStopping())
       {
@@ -522,10 +594,10 @@ namespace Transports
 
         try
         {
-          if (!iom.poll(1.0))
+          if (!poll.poll(1.0))
             continue;
 
-          if (!m_sock->wasTriggered(iom))
+          if (!poll.wasTriggered(*m_sock))
             continue;
 
           int rv = m_sock->read(m_bfr, sizeof(m_bfr));

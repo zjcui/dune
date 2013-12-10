@@ -25,7 +25,7 @@
 msgid   ""
 msgstr  "Project-Id-Version: DUNE\n"
         "Report-Msgid-Bugs-To: dune@lsts.pt\n"
-        "POT-Creation-Date: 2013-09-11 14:31+0100\n"
+        "POT-Creation-Date: 2013-12-03 13:16+0000\n"
         "PO-Revision-Date: 2013-08-03 13:42-0000\n"
         "Last-Translator: Ricardo Martins <rasm@lsts.pt>\n"
         "Language-Team: DUNE <dune.i18n@lsts.pt>\n"
@@ -182,20 +182,20 @@ msgstr  "вертикального режима управления %d не п
 msgid   "feature not implemented '%s'"
 msgstr  "Возможность не реализована '%s'"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Streams/Terminal.hpp:152
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Streams/Terminal.hpp:157
 msgid   "DBG"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Streams/Terminal.hpp:165
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Streams/Terminal.hpp:170
 #, fuzzy
 msgid   "ERR"
 msgstr  "ОШИБКА"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Streams/Terminal.hpp:174
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Streams/Terminal.hpp:179
 msgid   "WRN"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Streams/Terminal.hpp:183
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Streams/Terminal.hpp:188
 msgid   "MSG"
 msgstr  ""
 
@@ -230,19 +230,19 @@ msgstr  "Двигатель монитор ошибке:"
 msgid   "number of linear points is not even"
 msgstr  "количество линейных пунктов даже не"
 
-#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/HTTPClient.hpp:125
-#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/HTTPClient.hpp:181
+#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/HTTPClient.hpp:122
+#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/HTTPClient.hpp:178
 #, fuzzy
 msgid   "timed out while waiting for reply"
 msgstr  "таймаут при чтении ответа"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Driver.hpp:124
+#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Driver.hpp:126
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Errors.cpp:47
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/LUCL/Protocol.cpp:59
 msgid   "unknown error"
 msgstr  "Неизвестная ошибка"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Driver.hpp:134
+#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Driver.hpp:136
 #, c-format
 msgid   "SMS transmission failed with error code %d"
 msgstr  "Передача SMS ошибкой с кодом %d"
@@ -262,33 +262,33 @@ msgstr  "неверный размер SBD %u"
 msgid   "invalid SBD write %s"
 msgstr  "недействительным SBD написать %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/IridiumSBD/Driver.hpp:207
+#: /home/josebraga/workspace/dune/trunk/src/Transports/IridiumSBD/Driver.hpp:209
 msgid   "error ocurred while clearing MO buffer"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/IridiumSBD/Driver.hpp:216
+#: /home/josebraga/workspace/dune/trunk/src/Transports/IridiumSBD/Driver.hpp:218
 msgid   "error ocurred while clearing MT buffer"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/IridiumSBD/Driver.hpp:401
+#: /home/josebraga/workspace/dune/trunk/src/Transports/IridiumSBD/Driver.hpp:404
 msgid   "error ocurred while clearing buffer"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/IridiumSBD/Driver.hpp:409
+#: /home/josebraga/workspace/dune/trunk/src/Transports/IridiumSBD/Driver.hpp:412
 msgid   "error ocurred while clearing the MOMSN"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/CommandLink.hpp:82
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/CommandLink.hpp:80
 #, fuzzy
 msgid   "failed to get time"
 msgstr  "Не могу выполнить устройство"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/CommandLink.hpp:138
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/CommandLink.hpp:136
 #, fuzzy
 msgid   "failed to set range"
 msgstr  "не удалось погрузить"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/CommandLink.hpp:166
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/CommandLink.hpp:164
 #, fuzzy
 msgid   "failed to get range"
 msgstr  "не удалось погрузить"
@@ -339,13 +339,13 @@ msgid   "lat lon = 0 ? %f"
 msgstr  ""
 
 #: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/UAV/Task.cpp:161
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:194
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:226
 #, c-format
 msgid   "ignored reference from non-authorized source: %d"
 msgstr  "игнорируют ссылки от несанкционированного Источник: %d"
 
 #: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/UAV/Task.cpp:170
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:203
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:235
 #, c-format
 msgid   "ignored reference from non-authorized entity: %d"
 msgstr  "игнорируют ссылки от несанкционированного лица: %d"
@@ -374,52 +374,76 @@ msgstr  ""
 msgid   "Unexpected state %#x"
 msgstr  "неожиданные байт"
 
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:138
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:150
 msgid   "waiting for first reference"
 msgstr  "ждет первая ссылка"
 
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:528
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:580
+#, c-format
+msgid   "Z reference changed to %f"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:589
+#, c-format
+msgid   "Speed reference changed to %f"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:595
+#, c-format
+msgid   "Loiter radius reference changed to %f"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:609
 #, c-format
 msgid   "loitering around (%f, %f, %f, %f)."
 msgstr  "слоняющихся без дела (%f, %f, %f, %f)."
 
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:536
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:620
 #, c-format
 msgid   "loitering (elevator) towards (%f, %f, %f, %f)."
 msgstr  "слонялся (лифт) к (%f, %f, %f, %f)."
 
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:543
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:631
 #, c-format
 msgid   "going towards (%f, %f, %f)."
 msgstr  "происходит в направлении (%f, %f, %f)."
 
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:547
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowReference/AUV/Task.cpp:636
 #, c-format
 msgid   "hovering next to (%f, %f)."
 msgstr  "парящей рядом (%f, %f)."
 
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/Elevator/Task.cpp:149
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/Loiter/Task.cpp:75
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:47
-#, c-format
-msgid   "forcing minimum radius of %.1f"
-msgstr  "заставляя минимальный радиус %.1f"
-
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/Elevator/Task.cpp:279
-msgid   "water column is not deep enough"
-msgstr  "толщи воды не достаточно глубоко"
-
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/Elevator/Task.cpp:331
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/Elevator/Task.cpp:216
 msgid   "vertical progress is too slow"
 msgstr  "вертикальная прогресс идет слишком медленными"
 
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowTrajectory/Task.cpp:128
-msgid   "disregarding trajectory's time constraints"
-msgstr  "без учета времени траектории стесненность"
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowTrajectory/Task.cpp:114
+msgid   "forcing control in meters per second"
+msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowTrajectory/Task.cpp:133
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowTrajectory/Task.cpp:120
 msgid   "provided trajectory is not feasible by the current vehicle!"
 msgstr  "при условии траектории не представляется возможным действующим автомобиля!"
+
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowTrajectory/Task.cpp:240
+msgid   "first point must be timed at 0.0"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowTrajectory/Task.cpp:251
+msgid   "required speed is above the maximum speed allowed"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowTrajectory/Task.cpp:257
+#, c-format
+msgid   "time difference between %d and %d is less than or equal to zero"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Maneuver/Loiter/Task.cpp:75
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:47
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/Elevate.cpp:54
+#, c-format
+msgid   "forcing minimum radius of %.1f"
+msgstr  "заставляя минимальный радиус %.1f"
 
 #: /home/josebraga/workspace/dune/trunk/src/Maneuver/FollowSystem/Task.cpp:299
 msgid   "timeout to receive new remote info was exceeded."
@@ -578,17 +602,22 @@ msgstr  "перезапуска"
 msgid   "restarting in %u seconds due to error: %s"
 msgstr  "перезапуска в %u секунд из-за ошибки: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Tasks/Task.cpp:474
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Tasks/Task.cpp:473
+#, fuzzy, c-format
+msgid   "failed to update parameters: %s"
+msgstr  "не удалось установить частоту дискретизации"
+
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Tasks/Task.cpp:481
 #, c-format
 msgid   "task died with uncaught exception: %s: restarting"
 msgstr  "Задача умер с неперехваченное исключение: %s: перезагрузка"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Tasks/Task.cpp:558
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Tasks/Task.cpp:565
 #, c-format
 msgid   "updating entity parameters: %s: '%s'"
 msgstr  "обновлении параметров объекта: %s: '%s'"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Tasks/Task.cpp:754
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Tasks/Task.cpp:761
 #, c-format
 msgid   "invalid parameter '%s'"
 msgstr  "неверный параметр '%s'"
@@ -654,7 +683,7 @@ msgid   "invalid rate limiter: %s"
 msgstr  "неверный параметр '%s'"
 
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/UDPSocket.cpp:101
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:128
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:129
 msgid   "unable to create socket"
 msgstr  "не удалось создать сокет"
 
@@ -662,47 +691,47 @@ msgstr  "не удалось создать сокет"
 msgid   "setting up socket"
 msgstr  "создание сокета"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/UDPSocket.cpp:182
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:166
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/UDPSocket.cpp:184
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:168
 msgid   "unable to bind to socket"
 msgstr  "Невозможно связаться с сокетом"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/UDPSocket.cpp:204
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/UDPSocket.cpp:197
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:225
-msgid   "error sending data"
-msgstr  "Ошибка при отправке данных"
-
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/UDPSocket.cpp:220
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:243
 msgid   "error receiving data"
 msgstr  "Ошибка приема данных"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:178
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/UDPSocket.cpp:224
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:246
+msgid   "error sending data"
+msgstr  "Ошибка при отправке данных"
+
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:180
 #: /home/josebraga/workspace/dune/trunk/private/src/Sensors/BlueView/Task.cpp:323
 msgid   "unable to connect"
 msgstr  "не удалось подключиться"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:185
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:187
 msgid   "unable to listen"
 msgstr  "неспособны слушать"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:196
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:198
 msgid   "failed to accept connection"
 msgstr  "не удалось принять соединение"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:358
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:344
 msgid   "unable to set receive timeout"
 msgstr  "не можете установить ожидания приема"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:366
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:352
 msgid   "unable to set send timeout"
 msgstr  "не можете установить таймаута на передачу"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:375
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:361
 msgid   "unable to get bound address"
 msgstr  "не в состоянии получить связанное адрес"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:386
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Network/TCPSocket.cpp:372
 msgid   "unable to get bound port"
 msgstr  "не в состоянии получить связанное порта"
 
@@ -731,53 +760,53 @@ msgstr  " маневра ошибке:"
 msgid   "position uncertainty is %0.2f m"
 msgstr  "положение неопределенности %0.2f м"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:59
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:60
 msgid   "Maximum Horizontal Position Variance"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:1101
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:1107
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:1116
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:1122
 #, fuzzy, c-format
 msgid   "no measurements available: %s"
 msgstr  "Нет доступных измерений глубины"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:1101
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:1116
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/BottomTracker.cpp:50
 #: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:59
 msgid   "Depth"
 msgstr  "Глубина"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:1107
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Navigation/BasicNavigation.cpp:1122
 msgid   "Euler Angles"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:287
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:263
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:296
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:258
 msgid   "not active"
 msgstr  "не активна"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:438
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:480
 #, c-format
 msgid   "path (lat/lon): %0.5f %0.5f to %0.5f %0.5f"
 msgstr  "пути (широта / долгота): %0.5f %0.5f до %0.5f %0.5f"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:603
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:647
 msgid   "expected new path control reference"
 msgstr  "Ожидается новая ссылка пути управления"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:660
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:704
 msgid   "now loitering"
 msgstr  "теперь слонялся"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:797
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:843
 msgid   "along-track divergence error"
 msgstr  "вдоль линии пути расхождение ошибке"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:830
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:876
 msgid   "cross-track divergence error"
 msgstr  "боковое расхождение ошибке"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:923
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Control/PathController.cpp:957
 msgid   "waiting for position estimate from navigation"
 msgstr  "ждет от оценки местоположения навигации"
 
@@ -930,27 +959,27 @@ msgstr  "выполнение анкетам: %s"
 msgid   "clean shutdown"
 msgstr  "чистого отключения"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:70
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:67
 #, fuzzy
 msgid   "failed to reset device"
 msgstr  "Не могу выполнить устройство"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:82
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:79
 #, fuzzy
 msgid   "failed to set bootloader parameters"
 msgstr  "не удалось установить модем адрес"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:140
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:137
 #, fuzzy
 msgid   "failed to get firmware name"
 msgstr  "не удалось установить модем адрес"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:153
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:150
 #, fuzzy
 msgid   "failed to get firmware version"
 msgstr  "не удалось установить контроль потока"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:156
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Hardware/UCTK/Interface.cpp:153
 #, fuzzy
 msgid   "invalid firmware version"
 msgstr  "Неверная версия"
@@ -1037,19 +1066,19 @@ msgid   "parser bug"
 msgstr  "синтаксической ошибке"
 
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Status/Messages.cpp:40
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:321
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:146
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:1002
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:334
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:147
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:960
 msgid   "initializing"
 msgstr  "инициализации"
 
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Status/Messages.cpp:41
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:325
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:338
 msgid   "idle"
 msgstr  "холостом ходу"
 
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Status/Messages.cpp:42
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:327
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:340
 msgid   "active"
 msgstr  "активный"
 
@@ -1141,40 +1170,44 @@ msgstr  "Неверная версия"
 msgid   "active but without bottom lock"
 msgstr  "активно, но без нижний замок"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/Maneuver.cpp:89
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Status/Messages.cpp:66
+msgid   "no medium data: user must control device"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Status/Messages.cpp:67
+msgid   "active (no medium data: need user input)"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Status/Messages.cpp:68
+msgid   "idle (no medium data: need user input)"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/Maneuver.cpp:90
 msgid   "unable to unlock"
 msgstr  "не в состоянии разблокировать"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/Maneuver.cpp:139
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/Maneuver.cpp:160
 msgid   "unsupported vertical reference"
 msgstr  "поддерживается вертикальной ссылки"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/Maneuver.cpp:145
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/Maneuver.cpp:166
 msgid   "no valid value for altitude has been received yet,maneuver will not proceed"
 msgstr  "нет допустимого значения для высоты не было получено не менее, маневр не будет продолжаться"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:103
-#, c-format
-msgid   "%s safe region (distance: %.1f m)"
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:96
+#, fuzzy, c-format
+msgid   "outside safe region (distance: %.1f m)"
 msgstr  "%s безопасной области (расстояние: %.1f м)"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:104
-msgid   "inside"
-msgstr  "внутри"
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:105
+#, fuzzy, c-format
+msgid   "inside safe region (distance: %.1f m)"
+msgstr  "%s безопасной области (расстояние: %.1f м)"
 
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:104
-msgid   "outside"
-msgstr  "за пределами"
-
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:112
-#, c-format
-msgid   "stopping (%0.1f m)"
-msgstr  "остановки (%0.1f м)"
-
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:121
-#, c-format
-msgid   "moving (distance: %0.1f m)"
-msgstr  "перемещения (расстояние: %0.1f м)"
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/StationKeep.cpp:137
+#, fuzzy
+msgid   "invalid station keeping state"
+msgstr  "недействительным участником формирования"
 
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/VehicleFormation.cpp:68
 msgid   "parsing vehicle participants"
@@ -1197,9 +1230,13 @@ msgid   "local vehicle is not part of formation"
 msgstr  "местное транспортное средство не является частью формирования"
 
 #: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/VehicleFormation.cpp:146
-#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/FollowTrajectory.cpp:87
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/FollowTrajectory.cpp:80
 msgid   "too few trajectory points"
 msgstr  "слишком мало точках траектории"
+
+#: /home/josebraga/workspace/dune/trunk/src/DUNE/Maneuvers/Elevate.cpp:125
+msgid   "water column is not deep enough"
+msgstr  "толщи воды не достаточно глубоко"
 
 #: /home/josebraga/workspace/dune/trunk/src/Supervisors/Power/Task.cpp:116
 msgid   "failed to execute power down command"
@@ -1229,88 +1266,91 @@ msgstr  "ВНЕШНЕЕ УПРАВЛЕНИЕ"
 msgid   "BOOT"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:171
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:185
 #, c-format
 msgid   "now in '%s' mode"
 msgstr  "Сейчас в '%s' режиме"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:202
-#: /home/josebraga/workspace/dune/trunk/src/Transports/Evologics/Task.cpp:345
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:216
+#: /home/josebraga/workspace/dune/trunk/src/Transports/UAN/Task.cpp:372
 msgid   "got abort request"
 msgstr  "получил прервать запрос"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:314
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:328
 msgid   "entity errors cleared"
 msgstr  "Ошибки лица очищается"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:318
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:332
 #, c-format
 msgid   "vehicle errors: %s"
 msgstr  "автомобиль ошибок: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:381
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:395
 msgid   " maneuver error: "
 msgstr  " маневра ошибке:"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:441
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:455
 msgid   "cannot calibrate: vehicle is in external mode"
 msgstr  "нельзя откалибровать: автомобиль находится в режиме внешнего"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:455
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:469
 #, c-format
 msgid   "calibrating vehicle for %u seconds"
 msgstr  "средства для калибровки %u секунд"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:464
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:478
 msgid   "cannot stop calibration: vehicle is not calibrating"
 msgstr  "не может остановить калибровка: автомобиль не калибровке"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:468
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:482
 msgid   "stopped calibration"
 msgstr  "остановился калибровки"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:484
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:498
 msgid   "no maneuver specified"
 msgstr  "Нет маневр указанный"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:492
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:506
 msgid   " maneuver cannot be started in current mode"
 msgstr  " маневр не может быть запущена в текущем режиме"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:501
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:515
 msgid   " maneuver started"
 msgstr  " маневр начался"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:532
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:625
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:919
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:546
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:620
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:882
 msgid   "OK"
 msgstr  "Хорошо"
 
-#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:560
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:577
+msgid   "this vehicle does not allow for external control, disabling loops"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Supervisors/Vehicle/Task.cpp:593
 msgid   "maneuver request timeout"
 msgstr  "Тайм-аут запроса маневра"
 
-#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:193
-#: /home/josebraga/workspace/dune/trunk/src/Navigation/AUV/SGNavigation/Task.cpp:287
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Collisions/Task.cpp:190
+#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:198
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Collisions/Task.cpp:191
 #, c-format
 msgid   "failed to resolve entity '%s': %s"
 msgstr  "не удалось решить субъекта '%s': %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:236
+#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:241
 msgid   "motion detected"
 msgstr  "обнаружении движения"
 
-#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:318
+#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:323
 msgid   "device is not active"
 msgstr  "Устройство не активно"
 
-#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:326
+#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:331
 msgid   "device is not in proper medium"
 msgstr  "устройство не находится в соответствующей среде"
 
-#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:338
+#: /home/josebraga/workspace/dune/trunk/src/Navigation/General/Alignment/Task.cpp:343
 msgid   "calibrating: system must remain static"
 msgstr  "калибровки: система должна оставаться статической"
 
@@ -1318,42 +1358,42 @@ msgstr  "калибровки: система должна оставаться 
 msgid   "keep alive failed"
 msgstr  "оставьте в живых не удалось"
 
-#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/Task.cpp:224
+#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/Task.cpp:278
 #, fuzzy
 msgid   "failed to start video stream"
 msgstr  "Не удалось запустить выборки данных"
 
-#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/Task.cpp:241
+#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/Task.cpp:295
 #, fuzzy
 msgid   "started video stream"
 msgstr  "Не удалось запустить выборки данных"
 
-#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/Task.cpp:319
-#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/Task.cpp:360
+#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/Task.cpp:373
+#: /home/josebraga/workspace/dune/trunk/src/Vision/Lumenera/Task.cpp:414
 msgid   "failed to set property"
 msgstr  "не удалось установить свойство"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:203
+#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:198
 #: /home/josebraga/workspace/dune/trunk/src/Transports/IridiumSBD/Task.cpp:213
 #, fuzzy
 msgid   "input error"
 msgstr  "Ошибка клиента"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:211
+#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:206
 msgid   "SMS timeout cannot be zero"
 msgstr  "SMS тайм-аут не может быть нулевым"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:234
+#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:229
 #, c-format
 msgid   "discarded expired SMS to recipient '%s'"
 msgstr  "отбрасываются истекшим SMS получателю '%s'"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:245
+#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:240
 #, fuzzy, c-format
 msgid   "failed to send SMS: %s"
 msgstr  "не присоединились задача %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:269
+#: /home/josebraga/workspace/dune/trunk/src/Transports/GSM/Task.cpp:264
 #, fuzzy, c-format
 msgid   "failed to poll status: %s"
 msgstr  "не присоединились задача %s"
@@ -1370,7 +1410,7 @@ msgstr  "не удалось выполнить привязку сокета с
 
 #: /home/josebraga/workspace/dune/trunk/src/Transports/TCP/Server/Task.cpp:120
 #: /home/josebraga/workspace/dune/trunk/src/Transports/UDP/Task.cpp:254
-#: /home/josebraga/workspace/dune/trunk/src/Transports/HTTP/Task.cpp:117
+#: /home/josebraga/workspace/dune/trunk/src/Transports/HTTP/Task.cpp:114
 #: /home/josebraga/workspace/dune/trunk/src/Transports/FTP/Task.cpp:103
 #: /home/josebraga/workspace/dune/trunk/src/Transports/Discovery/Task.cpp:105
 #, c-format
@@ -1393,28 +1433,16 @@ msgstr  "Ошибка принимать новые соединения с кл
 msgid   "failed to copy cache snapshot: %s"
 msgstr  "не удалось скопировать снимок кэша: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/Evologics/Task.cpp:232
-#, c-format
-msgid   "write: %s"
-msgstr  "пишут: %s"
+#: /home/josebraga/workspace/dune/trunk/src/Transports/Evologics/Task.cpp:121
+#, fuzzy
+msgid   "Source Level"
+msgstr  "Уровень отладки"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/Evologics/Task.cpp:243
-#, c-format
-msgid   "discarding %d bytes"
-msgstr  "отбрасывая %d байт"
-
-#: /home/josebraga/workspace/dune/trunk/src/Transports/Evologics/Task.cpp:334
-#, c-format
-msgid   "opening file '%s' with %u frames"
-msgstr  "открытии файла '%s' %u с кадрами"
-
-#: /home/josebraga/workspace/dune/trunk/src/Transports/Evologics/Task.cpp:368
-msgid   "file is complete"
-msgstr  "файл загружен полностью"
-
-#: /home/josebraga/workspace/dune/trunk/src/Transports/Evologics/Task.cpp:373
-msgid   "no file is open"
-msgstr  "файл не открыт"
+#: /home/josebraga/workspace/dune/trunk/src/Transports/Evologics/Task.cpp:199
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:511
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:576
+msgid   "dynamic sound speed corrections are disabled"
+msgstr  "динамической корректировки скорости звук отключаются"
 
 #: /home/josebraga/workspace/dune/trunk/src/Transports/Replay/Task.cpp:179
 msgid   "operation not supported"
@@ -1448,9 +1476,30 @@ msgstr  "началось воспроизведение"
 msgid   "stopped replay"
 msgstr  "остановили воспроизведение"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/SerialOverTCP/Task.cpp:138
+#: /home/josebraga/workspace/dune/trunk/src/Transports/SerialOverTCP/Task.cpp:158
 msgid   "accepting connection request"
 msgstr  "принятие запроса на соединение"
+
+#: /home/josebraga/workspace/dune/trunk/src/Transports/UAN/Task.cpp:102
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:284
+msgid   "Enable Reports"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Transports/UAN/Task.cpp:107
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:294
+msgid   "Reports Periodicity"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Transports/UAN/Task.cpp:247
+#, fuzzy, c-format
+msgid   "unknown system name: %s"
+msgstr  "неизвестной системы"
+
+#: /home/josebraga/workspace/dune/trunk/src/Transports/UAN/Task.cpp:466
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:611
+#, fuzzy
+msgid   "start plan detected"
+msgstr  "обнаружения утечки"
 
 #: /home/josebraga/workspace/dune/trunk/src/Transports/LogBook/Task.cpp:98
 msgid   "cleared logbook"
@@ -1462,7 +1511,7 @@ msgid   "invalid or unsupported command"
 msgstr  "недопустимую команду реконфигурации"
 
 #: /home/josebraga/workspace/dune/trunk/src/Transports/UDP/Task.cpp:251
-#: /home/josebraga/workspace/dune/trunk/src/Transports/HTTP/Task.cpp:145
+#: /home/josebraga/workspace/dune/trunk/src/Transports/HTTP/Task.cpp:142
 msgid   "failed to find one available port"
 msgstr  "не удалось найти свободный порт"
 
@@ -1492,15 +1541,10 @@ msgid   "log started '%s'"
 msgstr  "войти начали '%s'"
 
 #: /home/josebraga/workspace/dune/trunk/src/Transports/Logging/Task.cpp:404
-#: /home/josebraga/workspace/dune/trunk/src/Transports/LoggingDigest/Task.cpp:162
+#: /home/josebraga/workspace/dune/trunk/src/Transports/LoggingDigest/Task.cpp:189
 #, c-format
 msgid   "failed to start log, check available storage: %s"
 msgstr  "Не удалось запустить журнал, проверить имеющиеся хранения: %s"
-
-#: /home/josebraga/workspace/dune/trunk/src/Transports/Logging/Task.cpp:407
-#: /home/josebraga/workspace/dune/trunk/src/Transports/LoggingDigest/Task.cpp:164
-msgid   "waiting for human intervention"
-msgstr  "ждет вмешательства человека"
 
 #: /home/josebraga/workspace/dune/trunk/src/Transports/Discovery/Task.cpp:112
 msgid   "no available ports to listen to advertisements"
@@ -1530,7 +1574,7 @@ msgstr  "другой узел на этом компьютере рекламы
 msgid   "another node on our network is advertising our node name '%s'"
 msgstr  "другой узел нашей сети рекламы наших имя узла '%s'"
 
-#: /home/josebraga/workspace/dune/trunk/src/Transports/Iridium/Task.cpp:154
+#: /home/josebraga/workspace/dune/trunk/src/Transports/Iridium/Task.cpp:163
 msgid   "error while parsing Iridium message"
 msgstr  ""
 
@@ -1548,35 +1592,35 @@ msgstr  "с ошибкой %u"
 msgid   "transmission failed: %s"
 msgstr  "Передача не удалась: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Simulators/Docking/Task.cpp:280
+#: /home/josebraga/workspace/dune/trunk/src/Simulators/Docking/Task.cpp:275
 msgid   "Success"
 msgstr  ""
 
 #: /home/josebraga/workspace/dune/trunk/src/Simulators/Leaks/Task.cpp:125
 #: /home/josebraga/workspace/dune/trunk/src/Simulators/Leaks/Task.cpp:140
-#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:549
+#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:560
 msgid   "leak detected"
 msgstr  "обнаружения утечки"
 
-#: /home/josebraga/workspace/dune/trunk/src/Simulators/VSIM/Task.cpp:140
+#: /home/josebraga/workspace/dune/trunk/src/Simulators/VSIM/Task.cpp:134
 msgid   "error loading world parameters."
 msgstr  "ошибка при загрузке мировых показателей."
 
-#: /home/josebraga/workspace/dune/trunk/src/Simulators/VSIM/Task.cpp:144
+#: /home/josebraga/workspace/dune/trunk/src/Simulators/VSIM/Task.cpp:138
 msgid   "error loading vehicle parameters."
 msgstr  "ошибка при загрузке параметров автомобиля."
 
-#: /home/josebraga/workspace/dune/trunk/src/Simulators/UnderwaterAcoustics/Task.cpp:255
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Collisions/Task.cpp:336
+#: /home/josebraga/workspace/dune/trunk/src/Simulators/UnderwaterAcoustics/Task.cpp:253
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Collisions/Task.cpp:337
 msgid   "collision detected"
 msgstr  "обнаруживается конфликт"
 
-#: /home/josebraga/workspace/dune/trunk/src/Simulators/UnderwaterAcoustics/Task.cpp:383
+#: /home/josebraga/workspace/dune/trunk/src/Simulators/UnderwaterAcoustics/Task.cpp:381
 #, c-format
 msgid   "unexpected simulation message: %s"
 msgstr  "неожиданное сообщение моделирования: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Simulators/UnderwaterAcoustics/Task.cpp:390
+#: /home/josebraga/workspace/dune/trunk/src/Simulators/UnderwaterAcoustics/Task.cpp:388
 #, fuzzy, c-format
 msgid   "read error: %s"
 msgstr  "Ошибка разбора: %s"
@@ -1594,24 +1638,42 @@ msgstr  "Ardupilot интерфейс инициализируется"
 msgid   "Connection failed, retrying..."
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Control/UAV/Ardupilot/Task.cpp:714
+#: /home/josebraga/workspace/dune/trunk/src/Control/UAV/Ardupilot/Task.cpp:709
 #, fuzzy
 msgid   "Connection lost, retrying..."
 msgstr  "соединение закрыто"
 
-#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Diving/Task.cpp:481
+#: /home/josebraga/workspace/dune/trunk/src/Control/ROV/HorizontalPlane/Task.cpp:54
+#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:60
+msgid   "Heading Rate"
+msgstr  "Заголовок Оценить"
+
+#: /home/josebraga/workspace/dune/trunk/src/Control/ROV/HorizontalPlane/Task.cpp:54
+#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:59
+msgid   "Heading"
+msgstr  "Заголовок"
+
+#: /home/josebraga/workspace/dune/trunk/src/Control/ROV/HorizontalPlane/Task.cpp:55
+msgid   "Surge"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Control/ROV/HorizontalPlane/Task.cpp:55
+msgid   "Sway"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Diving/Task.cpp:476
 msgid   "failed to submerge"
 msgstr  "не удалось погрузить"
 
 #: /home/josebraga/workspace/dune/trunk/src/Control/AUV/LMI/Task.cpp:89
 #: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Allocator/Task.cpp:81
-#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:156
+#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:157
 msgid   "Maximum Fin Rotation"
 msgstr  "Максимальное вращение Fin"
 
 #: /home/josebraga/workspace/dune/trunk/src/Control/AUV/LMI/Task.cpp:92
 #: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Allocator/Task.cpp:84
-#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:159
+#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:160
 msgid   "Maximum admissible fin rotation"
 msgstr  "Максимально допустимая вращения плавников"
 
@@ -1627,351 +1689,356 @@ msgstr  "Катиться"
 msgid   "Pitch"
 msgstr  "Шаг"
 
-#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:59
-msgid   "Heading"
-msgstr  "Заголовок"
-
-#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:60
-msgid   "Heading Rate"
-msgstr  "Заголовок Оценить"
-
-#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:161
-#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:163
+#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:162
+#: /home/josebraga/workspace/dune/trunk/src/Control/AUV/Attitude/Task.cpp:164
 msgid   "Enable roll controller"
 msgstr  "Включить рулон контроллера"
 
 #: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv2/Task.cpp:184
-#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:355
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:518
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:459
+#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:364
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex881A/Task.cpp:450
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:515
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:474
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:379
 #: /home/josebraga/workspace/dune/trunk/private/src/Sensors/BlueView/Task.cpp:212
 msgid   "failed to contact device"
 msgstr  "не удалось связаться с устройством"
 
-#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:246
+#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:255
 msgid   "failed to configure strobe mode"
 msgstr  "удалось настроить режим строба"
 
-#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:250
+#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:259
 #, c-format
 msgid   "strobe mode set to: %s"
 msgstr  "Строб Установлен режим: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:250
+#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:259
 #: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:13
 msgid   "Camera"
 msgstr  "Камера"
 
-#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:304
-#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:481
-#: /home/josebraga/workspace/dune/trunk/src/Power/MCBv2/Task.cpp:626
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/LIMU/Task.cpp:193
+#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:313
+#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:492
+#: /home/josebraga/workspace/dune/trunk/src/Power/MCBv2/Task.cpp:634
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/LIMU/Task.cpp:181
 #: /home/josebraga/workspace/dune/trunk/src/Sensors/SDCR/Task.cpp:174
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:199
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/SCRT/Task.cpp:455
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/MCD4R/Task.cpp:328
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:182
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:358
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:204
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/SCRT/Task.cpp:457
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/MCD4R/Task.cpp:335
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:229
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:363
 #, c-format
 msgid   "firmware version %u.%u.%u"
 msgstr  "версия прошивки %u. %u. %u"
 
-#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:452
-#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:516
-#: /home/josebraga/workspace/dune/trunk/src/Power/MCBv2/Task.cpp:576
+#: /home/josebraga/workspace/dune/trunk/src/Power/DOAMv1/Task.cpp:461
+#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:527
+#: /home/josebraga/workspace/dune/trunk/src/Power/MCBv2/Task.cpp:584
 #: /home/josebraga/workspace/dune/trunk/src/Sensors/SDCR/Task.cpp:205
 msgid   "device reported"
 msgstr  "Устройство сообщает"
 
-#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:372
+#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:383
 msgid   "failed to update EEPROM"
 msgstr  "не удалось обновить EEPROM"
 
-#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:441
+#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:452
 msgid   "power down sequence aborted"
 msgstr  "выключить последовательность прервана"
 
-#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:556
+#: /home/josebraga/workspace/dune/trunk/src/Power/PCTLv2/Task.cpp:567
 msgid   "no leak"
 msgstr  "Нет утечки"
 
-#: /home/josebraga/workspace/dune/trunk/src/Power/MCBv2/Task.cpp:602
+#: /home/josebraga/workspace/dune/trunk/src/Power/MCBv2/Task.cpp:610
 msgid   "updating firmware"
 msgstr  "обновление прошивки"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MiniSVS/Task.cpp:110
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/XchangeSV/Task.cpp:155
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MiniSVS/Task.cpp:109
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/XchangeSV/Task.cpp:156
 msgid   "I/O error"
 msgstr  "Ошибка ввода / вывода"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX1/Task.cpp:203
-msgid   "failed to stop device"
-msgstr  "не смогли остановить устройство"
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex881A/Task.cpp:259
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:266
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:154
+msgid   "Range"
+msgstr  "Диапазон"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX1/Task.cpp:212
-msgid   "failed to read EEPROM#130"
-msgstr  "удалось прочитать EEPROM # 130"
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex881A/Task.cpp:267
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:146
+msgid   "Frequency"
+msgstr  "Частота"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX1/Task.cpp:222
-msgid   "failed to read EEPROM#230"
-msgstr  "удалось прочитать EEPROM # 230"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX1/Task.cpp:311
-msgid   "unexpected byte"
-msgstr  "неожиданные байт"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:100
-msgid   "unable to stop continuous output"
-msgstr  "не в состоянии остановить непрерывный выходной"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:106
-msgid   "unable to configure time output"
-msgstr  "не может его настроить время выхода"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:112
-msgid   "unable to configure date output"
-msgstr  "невозможно настроить дату выхода"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:120
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:128
-msgid   "unable to set output format"
-msgstr  "не можете установить выходной формат"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:135
-msgid   "unable to request continuous output"
-msgstr  "не в состоянии запросить длительная мощность"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:157
-msgid   "unable to write full command to device"
-msgstr  "не в состоянии писать полную команду устройству"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:202
-msgid   "timeout waiting for device response"
-msgstr  "таймаут ожидания ответа устройства"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:210
-msgid   "no reply to command"
-msgstr  "Ответа не командовать"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:211
-msgid   "failed to setup device"
-msgstr  "Не могу выполнить устройство"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:460
-msgid   "invalid GPZDA sentence"
-msgstr  "недействительным приговор GPZDA"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:484
-msgid   "invalid GPGGA sentence"
-msgstr  "недействительным приговор GPGGA"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:532
-msgid   "invalid PUBX,00 sentence"
-msgstr  "недействительным PUBX, 00 предложение"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:583
-msgid   "invalid GPVTG sentence"
-msgstr  "недействительным GPVTG предложении"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:607
-msgid   "invalid GPHDT sentence"
-msgstr  "недействительным GPHDT предложении"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:623
-msgid   "invalid GPHDM sentence"
-msgstr  "недействительным GPHDM предложении"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:641
-msgid   "invalid GPROT sentence"
-msgstr  "недействительным GPROT предложении"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:660
-msgid   "invalid PSATHPR sentence"
-msgstr  "недействительным PSATHPR предложении"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex852/Task.cpp:263
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex881A/Task.cpp:343
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex852/Task.cpp:284
 msgid   "restarting to change UART device"
 msgstr  "перезапуска изменить устройство UART"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/XchangeSV/Task.cpp:122
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX1/Task.cpp:199
+msgid   "failed to stop device"
+msgstr  "не смогли остановить устройство"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX1/Task.cpp:208
+msgid   "failed to read EEPROM#130"
+msgstr  "удалось прочитать EEPROM # 130"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX1/Task.cpp:218
+msgid   "failed to read EEPROM#230"
+msgstr  "удалось прочитать EEPROM # 230"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX1/Task.cpp:307
+msgid   "unexpected byte"
+msgstr  "неожиданные байт"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:95
+msgid   "unable to stop continuous output"
+msgstr  "не в состоянии остановить непрерывный выходной"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:101
+msgid   "unable to configure time output"
+msgstr  "не может его настроить время выхода"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:107
+msgid   "unable to configure date output"
+msgstr  "невозможно настроить дату выхода"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:115
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:123
+msgid   "unable to set output format"
+msgstr  "не можете установить выходной формат"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:130
+msgid   "unable to request continuous output"
+msgstr  "не в состоянии запросить длительная мощность"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:152
+msgid   "unable to write full command to device"
+msgstr  "не в состоянии писать полную команду устройству"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/PTU300/Task.cpp:187
+msgid   "timeout waiting for device response"
+msgstr  "таймаут ожидания ответа устройства"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Genesys/Task.cpp:103
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:198
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:383
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:186
+msgid   "restarting to change IPv4 address"
+msgstr  "перезапуска изменить адрес IPv4"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Genesys/Task.cpp:106
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:386
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:189
+msgid   "restarting to change TCP port"
+msgstr  "перезапуска изменить TCP порт"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Genesys/Task.cpp:109
+#, fuzzy
+msgid   "restarting to change device address"
+msgstr  "перезапуска изменить адрес IPv4"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:234
+msgid   "no reply to command"
+msgstr  "Ответа не командовать"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:235
+msgid   "failed to setup device"
+msgstr  "Не могу выполнить устройство"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:516
+msgid   "invalid GPZDA sentence"
+msgstr  "недействительным приговор GPZDA"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:540
+msgid   "invalid GPGGA sentence"
+msgstr  "недействительным приговор GPGGA"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:588
+msgid   "invalid PUBX,00 sentence"
+msgstr  "недействительным PUBX, 00 предложение"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:639
+msgid   "invalid GPVTG sentence"
+msgstr  "недействительным GPVTG предложении"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:663
+msgid   "invalid GPHDT sentence"
+msgstr  "недействительным GPHDT предложении"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:679
+msgid   "invalid GPHDM sentence"
+msgstr  "недействительным GPHDM предложении"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:697
+msgid   "invalid GPROT sentence"
+msgstr  "недействительным GPROT предложении"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/GPS/Task.cpp:716
+msgid   "invalid PSATHPR sentence"
+msgstr  "недействительным PSATHPR предложении"
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex852/Task.cpp:254
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:205
+msgid   "Use Device at Surface"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/XchangeSV/Task.cpp:123
 msgid   "failed to enter command mode"
 msgstr  "не удалось войти командный режим"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/XchangeSV/Task.cpp:125
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/XchangeSV/Task.cpp:126
 msgid   "failed to set sampling rate"
 msgstr  "не удалось установить частоту дискретизации"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/XchangeSV/Task.cpp:128
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/XchangeSV/Task.cpp:129
 msgid   "failed to enter monitor mode"
 msgstr  "не в режим монитора"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/AIM104MultiIO/Task.cpp:150
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/AIM104MultiIO/Task.cpp:147
 msgid   "invalid message"
 msgstr  "недопустимое сообщение"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/AIM104MultiIO/Task.cpp:195
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/AIM104MultiIO/Task.cpp:192
 msgid   "timeout"
 msgstr  "Тайм-аут"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:128
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:130
 msgid   "High-Frequency Channels"
 msgstr  "ВЧ каналов"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:129
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:145
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:131
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:147
 msgid   "None, Port, Starboard, Both"
 msgstr  "Нет, порт, борта, оба"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:133
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:135
 #, fuzzy
 msgid   "High-frequency subsystem channels"
 msgstr  "ВЧ каналов"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:135
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:137
 msgid   "High-Frequency Range"
 msgstr  "Высокочастотный диапазон"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:142
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:158
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:144
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:160
 msgid   "Enable high frequency subsystem"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:144
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:146
 msgid   "Low-Frequency Channels"
 msgstr  "Низкочастотных каналов"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:149
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:151
 #, fuzzy
 msgid   "Low-frequency subsystem channels"
 msgstr  "Низкочастотных каналов"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:151
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:153
 msgid   "Low-Frequency Range"
 msgstr  "Низкочастотный диапазон"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:160
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:162
 msgid   "Range Multiplier"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:166
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:168
 msgid   "Range multiplier"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:196
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:372
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:184
-msgid   "restarting to change IPv4 address"
-msgstr  "перезапуска изменить адрес IPv4"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:199
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:201
 msgid   "restarting to change TCP command port"
 msgstr  "перезапуска изменить TCP порт команды"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:202
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Edgetech2205/Task.cpp:204
 msgid   "restarting to change TCP data port"
 msgstr  "перезапуска изменить TCP порт"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:277
-msgid   "Enable Reports"
-msgstr  ""
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:282
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:289
 msgid   "Make Reports Verbose"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:287
-msgid   "Reports Periodicity"
-msgstr  ""
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:323
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:336
 msgid   "waiting beacons configuration"
 msgstr  "ожидания маяки конфигурации"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:329
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:342
 msgid   "serial port communication error, modem not responding"
 msgstr  "Ошибка последовательного порта связи, модем не отвечает"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:331
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:344
 msgid   "failed to configure modem, possible serial port communication error"
 msgstr  "удалось настроить модем, возможно ошибку последовательного порта связи"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:333
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:346
 msgid   "failed to set modem address"
 msgstr  "не удалось установить модем адрес"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:381
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:389
 #, c-format
 msgid   "modem address for agent '%s' is invalid"
 msgstr  "адресом модема для агента '%s' недопустим"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:503
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:443
-msgid   "dynamic sound speed corrections are disabled"
-msgstr  "динамической корректировки скорости звук отключаются"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:584
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:592
 msgid   "invalid change plan message"
 msgstr  "недопустимое сообщение плана изменений"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:603
-#, fuzzy
-msgid   "start plan detected"
-msgstr  "обнаружения утечки"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:611
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:619
 #, fuzzy
 msgid   "plan acknowledged"
 msgstr  "прервать признал"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:613
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:621
 #, fuzzy
 msgid   "failed to acknowledge plan start"
 msgstr  "не признал прервать"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:627
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:635
 msgid   "received system restart request"
 msgstr  "получил запрос перезагрузки системы"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:635
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:643
 msgid   "restart request acknowledged"
 msgstr  "перезапустить запрос признал"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:637
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:645
 msgid   "failed to acknowledge restart request"
 msgstr  "не признал перезапуска запроса"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:644
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:652
 msgid   "acoustic abort detected"
 msgstr  "акустических прервать обнаружены"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:654
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:662
 msgid   "abort acknowledged"
 msgstr  "прервать признал"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:658
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:666
 msgid   "failed to acknowledge abort"
 msgstr  "не признал прервать"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:694
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:702
 #, c-format
 msgid   "discarded invalid range %0.2f"
 msgstr  "отбрасываются неверный диапазон %0.2f"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:776
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:784
 msgid   "failed to ping beacons, modem seems busy"
 msgstr  "не удалось проверить связь маяки, модем кажется занятым"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:965
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:973
 #, c-format
 msgid   "reported range to %s = %u m"
 msgstr  "сообщили диапазона %s = %u м"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:969
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBL/Task.cpp:977
 #, c-format
 msgid   "failed to report range to %s"
 msgstr  "не сообщил диапазоне %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/SW100/Task.cpp:186
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/SW100/Task.cpp:182
 #, c-format
 msgid   "depth offset is %0.2f m"
 msgstr  "Глубина смещения %0.2f м"
@@ -2002,92 +2069,77 @@ msgstr  "Не удалось отключить триггер низкой ла
 msgid   "unexpected response"
 msgstr  "неожиданный ответ"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/WorkhorseNavigator/Task.cpp:259
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/WorkhorseNavigator/Task.cpp:258
 msgid   "failed to wake device"
 msgstr  "не смогли разбудить устройство"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/WorkhorseNavigator/Task.cpp:275
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/WorkhorseNavigator/Task.cpp:274
 msgid   "unable to read prompt"
 msgstr  "не в состоянии читать быстрое"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/WorkhorseNavigator/Task.cpp:289
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:452
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/WorkhorseNavigator/Task.cpp:288
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:585
 msgid   "failed to start data sampling"
 msgstr  "Не удалось запустить выборки данных"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:153
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:154
 msgid   "Level the device and hit NEXT"
 msgstr  "Уровень устройства и нажмите Далее"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:158
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:159
 msgid   "Rotate the device and keep it levelled (rotation must last +20s)"
 msgstr  "Поверните устройство и сохранить его выровняли (вращение должно продолжаться +20 с)"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:163
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:164
 msgid   "Device is calibrated"
 msgstr  "Прибор калибруется"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:170
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:171
 #, fuzzy
 msgid   "Calibration error, calibration procedure must be restarted"
 msgstr  "Ошибка калибровки. Необходимо перезапустить"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:410
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/OS4000/Task.cpp:406
 #, c-format
 msgid   "Level the device and hit NEXT (Roll: %0.2f | Pitch: %0.2f)"
 msgstr  "Уровень устройства и нажмите Далее (Рулон: %0.2f | Шаг: %0.2f)"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/LIMU/Task.cpp:191
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:197
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/MCD4R/Task.cpp:326
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:180
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/LIMU/Task.cpp:179
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:202
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/MCD4R/Task.cpp:333
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:227
 msgid   "device is using unstable firmware"
 msgstr  "Устройство использует нестабильной прошивки"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/LIMU/Task.cpp:214
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/LIMU/Task.cpp:245
 msgid   "failed to configure output frequency"
 msgstr  "удалось настроить выходной частоты"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/LIMU/Task.cpp:217
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/LIMU/Task.cpp:237
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:403
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/LIMU/Task.cpp:294
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:389
 msgid   "failed to set hard-iron correction factors"
 msgstr  "не удалось установить Hard-Iron поправочных коэффициентов"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:262
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:152
-msgid   "Range"
-msgstr  "Диапазон"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:375
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:187
-msgid   "restarting to change TCP port"
-msgstr  "перезапуска изменить TCP порт"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:669
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:287
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:687
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:289
 msgid   "failed to read header"
 msgstr  "удалось прочитать заголовок"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:679
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:292
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:697
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:294
 msgid   "failed to read data"
 msgstr  "Не удалось прочитать данные"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:683
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:296
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex837B/Task.cpp:701
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:298
 msgid   "failed to read footer"
 msgstr  "удалось прочитать нижний колонтитулы"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:144
-msgid   "Frequency"
-msgstr  "Частота"
-
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:150
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:152
 msgid   "Operating frequency"
 msgstr  "Рабочая частота"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:160
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Imagenex872/Task.cpp:162
 msgid   "Operating range"
 msgstr  "Рабочий диапазон"
 
@@ -2095,98 +2147,98 @@ msgstr  "Рабочий диапазон"
 msgid   "failed to receive state"
 msgstr  "не удалось получить государственную"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/XR620CTD/Task.cpp:460
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/XR620CTD/Task.cpp:456
 #, c-format
 msgid   "parse error: %s"
 msgstr  "Ошибка разбора: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:409
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:395
 msgid   "resetting device"
 msgstr  "сброс устройства"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:428
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:414
 msgid   "failed to read magnetic calibration parameters from device"
 msgstr  "удалось прочитать магнитных параметров калибровки с устройства"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:447
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:433
 msgid   "different calibration parameters"
 msgstr  "различные параметры калибровки"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:492
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Microstrain3DMGX3/Task.cpp:478
 #, c-format
 msgid   "new hard-iron calibration parameters: %f | %f"
 msgstr  "Новый жесткий железа параметры калибровки: %f | %f"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:245
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:254
 msgid   "restarting to change transducer detection GPIO"
 msgstr  "перезапуска менять датчик обнаружения GPIO"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:264
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:273
 #, c-format
 msgid   "unable to use GPIO %d for transducer detection"
 msgstr  "не в состоянии использовать GPIO %d для обнаружения преобразователя"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:329
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:338
 msgid   "transducer not connected"
 msgstr  "датчик не подключен"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:606
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:615
 #, fuzzy
 msgid   "plan started"
 msgstr  "План остановилась"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:625
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/MLBLTracker/Task.cpp:634
 msgid   "range to"
 msgstr  "варьироваться в"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:253
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:248
 msgid   "echo handling enabled, but got no RS-485 echo"
 msgstr  "обработка эхо включено, но не получил RS-485 эхо"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:263
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:258
 msgid   "received RS-485 echo doesn't match"
 msgstr  "получили RS-485 эха не соответствует"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:300
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:295
 msgid   "invalid CRC"
 msgstr  "недействительным CRC"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:302
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:297
 msgid   "exceeded maximum consecutive CRC error count"
 msgstr  "превысил максимально последовательными ошибками контрольной суммы счета"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:380
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:375
 msgid   "device not initialized, initializing"
 msgstr  "Устройство не инициализирован, инициализация"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:386
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:381
 #, c-format
 msgid   "got exception %d for command %d"
 msgstr  "возникло исключение %d для команды %d"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:397
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:392
 #, c-format
 msgid   "initialized device: class=%d.%d firmware=%d"
 msgstr  "инициализировать устройство: класс = %d. %d прошивки = %d"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:403
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:398
 #, c-format
 msgid   "device serial number=%u"
 msgstr  "серийный номер устройства = %u"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:430
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:425
 msgid   "unable to initialize the device"
 msgstr  "не смог инициализировать устройство"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:438
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:433
 msgid   "unable to retrieve the serial number"
 msgstr  "удалось получить серийный номер"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:456
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/Keller/Task.cpp:451
 msgid   "unable to zero the device"
 msgstr  "неспособный к нулю устройства"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/DLV3/Task.cpp:174
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/DLV3/Task.cpp:169
 #, fuzzy
 msgid   "waking up device"
 msgstr  "пробуждения устройства"
@@ -2196,25 +2248,25 @@ msgstr  "пробуждения устройства"
 msgid   "file '%s' doesn't exist"
 msgstr  "Файл '%s' не существует"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:229
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:234
 msgid   "failed to configure trigger frequency"
 msgstr  "удалось настроить Частота срабатывания"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:239
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:244
 msgid   "failed to turn on device"
 msgstr  "не удалось включить устройство"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:343
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:348
 #, c-format
 msgid   "IMU failure: %04X"
 msgstr  "ИДУ неудачи: %04X"
 
-#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:348
+#: /home/josebraga/workspace/dune/trunk/src/Sensors/IFOG/Task.cpp:353
 #, c-format
 msgid   "data might be unreliable: %04X"
 msgstr  "данные могут быть ненадежны: %04X"
 
-#: /home/josebraga/workspace/dune/trunk/src/Autonomy/TREX/Task.cpp:130
+#: /home/josebraga/workspace/dune/trunk/src/Autonomy/TREX/Task.cpp:124
 #, c-format
 msgid   "TREX disconnected for more than %d seconds"
 msgstr  "TREX отсоединен более чем %d секунд"
@@ -2229,15 +2281,15 @@ msgstr  "получил SMS запрос на запуск плана '%s'"
 msgid   "got abort request from '%s'"
 msgstr  "получил прервать запрос '%s'"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/FuelLevel/Task.cpp:266
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/FuelLevel/Task.cpp:271
 msgid   "invalid model"
 msgstr  "недействительным модели"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/FuelLevel/Task.cpp:273
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/FuelLevel/Task.cpp:278
 msgid   "operation mode list labels and values have different sizes"
 msgstr  "Режим списка меток и значений имеют различные размеры"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/FuelLevel/Task.cpp:281
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/FuelLevel/Task.cpp:286
 msgid   "invalid opmode value (zero)"
 msgstr  "недопустимое значение OPMODE (ноль)"
 
@@ -2261,88 +2313,88 @@ msgstr  "Ошибка"
 msgid   "Failure"
 msgstr  "Провал"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:178
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:179
 #, c-format
 msgid   "can not monitor %s (%s), is there a task failure or a configuration error?"
 msgstr  "не может контролировать %s (%s), есть задачи завершилось с ошибкой или ошибкой конфигурации?"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:189
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:190
 msgid   "EntityState message without source entity"
 msgstr  "EntityState сообщения без исходный объект"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:213
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:214
 #, c-format
 msgid   "%s entity state is unstable (%s <-> %s), ignoring"
 msgstr  "%s лицом состояние неустойчиво (%s <-> %s), не обращая внимания"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:223
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:224
 #, c-format
 msgid   "%s : State stabilized in %s | %s"
 msgstr  "%s: Государственный стабилизировался в %s | %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:249
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:250
 msgid   "reconfiguration command issued"
 msgstr  "выдается команда реконфигурации"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:262
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:263
 msgid   "invalid reconfiguration command"
 msgstr  "недопустимую команду реконфигурации"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:300
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:301
 #, c-format
 msgid   "%s - monitoring enabled"
 msgstr  "%s - мониторинг поддержкой"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:306
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:307
 #, c-format
 msgid   "%s - current state not normal - %s"
 msgstr  "%s - текущее состояние не является нормальным - %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:310
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:311
 #, c-format
 msgid   "%s - monitoring previously enabled"
 msgstr  "%s - мониторинг ранее включенную"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:323
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:324
 #, c-format
 msgid   "%s - monitoring disabled"
 msgstr  "%s - мониторинг инвалидов"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:330
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:331
 #, c-format
 msgid   "%s - monitoring previously disabled"
 msgstr  "%s - мониторинг ранее отключенные"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:354
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:355
 #, c-format
 msgid   "entity %s: %s"
 msgstr  "лица %s: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:428
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:429
 #, c-format
 msgid   "%s -- status not reported after %0.2f seconds"
 msgstr  "%s - статус не сообщается после %0.2f секунд"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:431
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Entities/Task.cpp:432
 #, fuzzy, c-format
 msgid   "%s: entity state timeout"
 msgstr  ": Государственное образование тайм-аут"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Clock/Task.cpp:165
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Clock/Task.cpp:168
 #, c-format
 msgid   "adjusting CPU clock by %0.4f s"
 msgstr  "регулировки частоты процессора по %0.4f с"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Clock/Task.cpp:168
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Clock/Task.cpp:171
 msgid   "failed to execute clock sync command"
 msgstr  "не удалось выполнить команду синхронизации часов"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Servos/Task.cpp:329
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Servos/Task.cpp:331
 #, c-format
 msgid   "potential fault in servo#%d, %s"
 msgstr  "потенциальные неисправности сервопривода # %d, %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Servos/Task.cpp:360
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Servos/Task.cpp:362
 #, c-format
 msgid   "potential fault in servo#%d, current consumption above %f"
 msgstr  "потенциальные неисправности сервопривода # %d, потребляемый ток выше %f"
@@ -2355,17 +2407,17 @@ msgstr  "SMS номер получателя"
 msgid   "Phone number of the SMS recipient"
 msgstr  "Телефонный номер SMS получатель"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Emergency/Task.cpp:84
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Emergency/Task.cpp:85
 #, fuzzy
 msgid   "Lost Communications Timeout"
 msgstr  "Потеряна связь SMS Тайм-аут"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Emergency/Task.cpp:144
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Emergency/Task.cpp:147
 #, c-format
 msgid   "sending SMS %s | %u"
 msgstr  "отправки SMS %s | %u"
 
-#: /home/josebraga/workspace/dune/trunk/src/Monitors/Emergency/Task.cpp:154
+#: /home/josebraga/workspace/dune/trunk/src/Monitors/Emergency/Task.cpp:157
 #, fuzzy
 msgid   "unknown location"
 msgstr  "Неизвестное исключение"
@@ -2408,33 +2460,78 @@ msgstr  "минимальная высота"
 msgid   "Operational Area"
 msgstr  "Район Оперативной"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/SCRT/Task.cpp:350
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/SCRT/Task.cpp:352
 #, c-format
 msgid   "servo number out of bounds: %u"
 msgstr  "серво числа за пределами границ: %u"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/SCRT/Task.cpp:486
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:478
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/SCRTv4/Task.cpp:280
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/SCRT/Task.cpp:488
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:483
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/SCRTv4/Task.cpp:277
 #, c-format
 msgid   "device reported: %s"
 msgstr  "Устройство сообщил: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:196
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:152
+msgid   "LED - Patterns"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:157
+msgid   "List of LED patterns"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:159
+msgid   "LED - Patterns Pulse Width"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:165
+msgid   "Pulse width for LED patterns"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:167
+msgid   "LED - External Driver"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:171
+#, fuzzy
+msgid   "Enable external LED driver"
+msgstr  "удалось настроить режим строба"
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:173
+msgid   "LED - External Trigger"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:177
+#, fuzzy
+msgid   "Enable external LED trigger"
+msgstr  "удалось настроить режим строба"
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:243
 #, fuzzy
 msgid   "failed to get constant parameters"
 msgstr  "не удалось установить частоту дискретизации"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:199
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:262
 #, fuzzy
-msgid   "failed to configured external LED driver"
+msgid   "failed to set LED patterns"
+msgstr  "не удалось погрузить"
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:290
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:293
+#, fuzzy
+msgid   "failed to configure LED driver"
 msgstr  "удалось настроить режим строба"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/SingleSIMCT01/Task.cpp:144
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/LED4R/Task.cpp:296
+#, fuzzy
+msgid   "failed to configure LED pattern pulse width"
+msgstr  "удалось настроить режим строба"
+
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/SingleSIMCT01/Task.cpp:139
 msgid   "invalid value for 'Motor Id'"
 msgstr  "недопустимое значение для 'дв-ля'"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/SingleSIMCT01/Task.cpp:147
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/SingleSIMCT01/Task.cpp:142
 msgid   "invalid value for 'Thruster Id'"
 msgstr  "недопустимое значение для 'Thruster Id'"
 
@@ -2470,24 +2567,24 @@ msgstr  "Мост температуры"
 msgid   "motor temperature"
 msgstr  "Температура двигателя"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:238
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:243
 msgid   "Motor control mode must be one of 'none', 'voltage', 'current', 'rpm'"
 msgstr  "Режим управления двигателем должен быть одним из 'None', 'напряжение', 'текущие', 'RPM'"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:312
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:317
 #, c-format
 msgid   "device error: %s"
 msgstr  "Устройство ошибке: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:318
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:323
 msgid   "power is not good"
 msgstr  "мощности нехороши"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:322
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:327
 msgid   "device init error, requesting reset"
 msgstr  "Ошибка инициализации устройства с просьбой сбросить"
 
-#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:332
+#: /home/josebraga/workspace/dune/trunk/src/Actuators/Broom/Task.cpp:337
 msgid   "CMD_ACTUATE Data size doesn't match!"
 msgstr  "CMD_ACTUATE Данные размеры не совпадают!"
 
@@ -2538,60 +2635,60 @@ msgstr  "состояние базы данных"
 msgid   "database initialization"
 msgstr  "инициализации базы данных"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:140
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:135
 #, c-format
 msgid   "database file: '%s'"
 msgstr  "Файл базы данных: '%s'"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:170
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:165
 msgid   "initialization complete"
 msgstr  "полная инициализация"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:217
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:212
 #, c-format
 msgid   "storing plan '%s' issued through a PlanControl request"
 msgstr  "хранение план »%s 'выпущены через PlanControl запросу"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:247
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:242
 msgid   "unexpected message"
 msgstr  "неожиданное сообщение"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:293
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:288
 msgid   "unsupported operation"
 msgstr  "недопустимую операцию"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:325
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:320
 msgid   "database is corrupt"
 msgstr  "база данных повреждена"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:333
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:409
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:444
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:479
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:753
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:328
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:404
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:439
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:474
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:716
 msgid   "undefined plan id"
 msgstr  "неопределенная ID плана"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:341
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:336
 msgid   "no plan specification given"
 msgstr  "Нет плана техническим требованиям, приведенным"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:347
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:342
 msgid   "plan id mismatch"
 msgstr  "несоответствие плана ID"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:401
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:396
 msgid   "OK (updated)"
 msgstr  "OK (обновлено)"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:401
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:396
 msgid   "OK (new entry)"
 msgstr  "OK (впервые в списке)"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:434
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:455
-#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:489
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:763
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:429
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:450
+#: /home/josebraga/workspace/dune/trunk/src/Plan/DB/Task.cpp:484
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:726
 msgid   "undefined plan"
 msgstr  "неопределенная плана"
 
@@ -2627,112 +2724,106 @@ msgstr  "ИНиЦиАЛиЗАЦиЯ"
 msgid   "EXECUTING"
 msgstr  "ВЫПОЛНЕНИЕ"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:269
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:266
 #, c-format
 msgid   "failed to activate %s: %s"
 msgstr  "Не удалось активировать %s: %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:421
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:417
 msgid   "vehicle ready"
 msgstr  "транспортное средство готово"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:457
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:451
 msgid   "plan completed"
 msgstr  "план завершен"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:479
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:472
 msgid   "vehicle errors: "
 msgstr  "автомобиль ошибок:"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:512
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:505
 msgid   "vehicle in CALIBRATION mode"
 msgstr  "транспортного средства в режиме калибровки"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:525
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:518
 msgid   "vehicle in EXTERNAL mode"
 msgstr  "транспортного средства в режиме внешнего"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:540
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:533
 #, c-format
 msgid   "request -- %s (%s)"
 msgstr  "Запрос - %s (%s)"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:546
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:539
 msgid   "engine not ready: entity state not normal"
 msgstr  "Двигатель не готова: государственное образование не нормально"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:579
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:572
 msgid   "cannot load plan now"
 msgstr  "не может загрузить план теперь"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:612
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:605
 msgid   "plan load failed: undefined maneuver or plan"
 msgstr  "План загрузка не удалась: Не определено маневра или плана"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:625
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:618
 msgid   "plan load failed: "
 msgstr  "План загрузка не удалась:"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:633
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:626
 msgid   "plan validation failed: "
 msgstr  "План проверки не удалось:"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:642
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:647
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:633
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:635
 msgid   "plan loaded"
 msgstr  "План загружается"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:650
-msgid   "plan loaded but vehicle not ready"
-msgstr  "План загружен, но транспортное средство не готово"
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:646
+#, fuzzy
+msgid   "no plan is running"
+msgstr  "топливо на исходе"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:662
-msgid   "no plan is loaded"
-msgstr  "план не загружается"
-
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:685
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:669
 msgid   "plan stopped"
 msgstr  "План остановилась"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:703
-msgid   "loaded plan is not running, request ignored"
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:682
+#, fuzzy
+msgid   "no plan is running, request ignored"
 msgstr  "загруженных план не работает, просим игнорируются"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:708
-msgid   "no plan is even loaded, request ignored"
-msgstr  "план не загружается даже, запрос игнорируется"
-
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:796
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:759
 msgid   "plan initializing: "
 msgstr  "План инициализации:"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:848
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:811
 msgid   "cannot initialize plan in BLOCKED state"
 msgstr  "не может инициализировать плана в заблокированном состоянии"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:864
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:827
 msgid   ": invalid maneuver ID"
 msgstr  ": Invalid ID маневра"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:871
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:834
 msgid   ": executing maneuver"
 msgstr  ": Выполнение маневра"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:890
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:853
 #, c-format
 msgid   "reply -- %s (%s) -- %s"
 msgstr  "Ответ - %s (%s) - %s"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:949
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:909
 #, c-format
 msgid   "now in %s state"
 msgstr  "Сейчас в %s состоянии"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:1044
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:1002
 msgid   "vehicle state timeout"
 msgstr  "Тайм-аут состояние транспортного средства"
 
-#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:1059
+#: /home/josebraga/workspace/dune/trunk/src/Plan/Engine/Task.cpp:1017
 msgid   "vehicle reply timeout"
 msgstr  "Тайм-аут автомобиля Ответить"
 
@@ -2761,89 +2852,84 @@ msgstr  "сделка отменяется"
 msgid   "daemon crashed with signal "
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:148
-#, fuzzy, c-format
-msgid   "creating a serial connection | %s %u"
-msgstr  "создание сервер на порт %u"
-
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:153
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:142
 #, fuzzy, c-format
 msgid   "creating a TCP connection | %s %u"
 msgstr  "принятие запроса на соединение"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:156
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:144
 #, fuzzy
 msgid   "Piccolo interface initialized"
 msgstr  "Ardupilot интерфейс инициализируется"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:178
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:166
 #, c-format
 msgid   "%s - deactivating"
 msgstr  "%s - отключение"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:180
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:168
 #, c-format
 msgid   "%s - activating"
 msgstr  "%s - активирующий"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:193
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:181
 #, fuzzy
 msgid   "tracker is NOT enabled"
 msgstr  "Тема включена"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:200
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:188
 msgid   "speed control"
 msgstr  "управление скоростью"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:201
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:189
 msgid   "altitude control"
 msgstr  "руль высоты"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:202
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:190
 msgid   "bank control"
 msgstr  "регулирование угла крена"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:203
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:191
 msgid   "heading control"
 msgstr  "управление курсом"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:204
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:192
 #, fuzzy
 msgid   "vertical rate control"
 msgstr  "вертикальная скорость"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:205
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:193
 msgid   "path control"
 msgstr  "управления траекторией"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:213
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:251
 #, fuzzy
 msgid   "speed control is NOT active"
 msgstr  "Путь контроль будет выключен,"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:234
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:272
 msgid   "altitude control is NOT active"
 msgstr  "высота контроль будет выключен"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:240
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:278
 msgid   "Not a valid height reference"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:261
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:299
 msgid   "bank control is NOT active"
 msgstr  "банковского контроля не участвует"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:282
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:320
 #, fuzzy
 msgid   "heading control is NOT active"
 msgstr  "банковского контроля не участвует"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:308
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:346
 #, fuzzy
 msgid   "vertical rate control is NOT active"
 msgstr  "высота контроль будет выключен"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:332
+#: /home/josebraga/workspace/dune/trunk/private/src/Piccolo/Task.cpp:370
 msgid   "path control is NOT active"
 msgstr  "Путь контроль будет выключен,"
 
@@ -2889,46 +2975,51 @@ msgstr  "не удалось установить выходной формат"
 msgid   "failed to set sampling frequency"
 msgstr  "не удалось установить частоту дискретизации"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:274
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:286
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:211
+#, fuzzy
+msgid   "Operator Control"
+msgstr  "Пути управления"
+
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:406
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:418
 #, fuzzy
 msgid   "failed to request current output formats"
 msgstr  "не удалось установить выходной формат"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:299
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:431
 #, fuzzy
 msgid   "failed to configure output format"
 msgstr  "удалось настроить выходной частоты"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:465
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:598
 #, fuzzy
 msgid   "failed to stop data sampling"
 msgstr  "Не удалось запустить выборки данных"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:472
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:605
 msgid   "failed to enable user-defined sound speed"
 msgstr  "не позволяла скорость звука определяется пользователем"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:479
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:612
 #, fuzzy
 msgid   "failed to set initial sound speed"
 msgstr  "не удалось инициализировать камеру"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:561
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:694
 #, fuzzy
 msgid   "invalid sample"
 msgstr  "недопустимое сообщение"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:686
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:823
 #, fuzzy
 msgid   "sensor data timeout"
 msgstr  ": Государственное образование тайм-аут"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:692
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:829
 msgid   "too many samples below threshold"
 msgstr  "слишком много образцов ниже порогового"
 
-#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:717
+#: /home/josebraga/workspace/dune/trunk/private/src/Sensors/NavQuestDVL/Task.cpp:854
 #, fuzzy
 msgid   "rebooting"
 msgstr  "перезапуска"
@@ -3031,12 +3122,12 @@ msgid   "Communications Relay Maneuver"
 msgstr  "Маневр ретранслятор"
 
 #: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:18
-msgid   "Compass"
-msgstr  "Компас"
-
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:19
 msgid   "Compass Calibration Maneuver"
 msgstr  "Маневр калибровки компаса"
+
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:19
+msgid   "Cover Area"
+msgstr  ""
 
 #: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:20
 msgid   "DVL"
@@ -3203,225 +3294,295 @@ msgid   "Loiter Maneuver"
 msgstr  "Маневр Лойтера"
 
 #: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:61
+msgid   "Lost Comms"
+msgstr  "Забыли Comms"
+
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:62
 #, fuzzy
 msgid   "Lost Comms Monitor"
 msgstr  "Забыли Comms плана"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:62
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:63
 msgid   "MCD4R"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:63
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:64
 msgid   "Mainboard"
 msgstr  "Плата"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:64
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:65
 msgid   "Medium"
 msgstr  "Среда"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:65
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:66
 msgid   "Motor"
 msgstr  "Двигатель"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:66
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:67
 #, fuzzy
 msgid   "Motor Controller"
 msgstr  "Дистанционное управление"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:67
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:68
 msgid   "Multibeam"
 msgstr  "Многолучевой"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:68
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:69
 msgid   "Navigation"
 msgstr  "Навигация"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:69
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:70
+msgid   "Noptilus"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:71
 msgid   "Operational Limits"
 msgstr  "Пределы"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:70
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:72
 msgid   "Panel"
 msgstr  "Панель"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:71
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:73
 msgid   "Panel Buttons"
 msgstr  "Кнопки панели"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:72
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:74
 msgid   "Path Control"
 msgstr  "Пути управления"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:73
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:75
+msgid   "Pencil Beam"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:76
 msgid   "Photo Trigger"
 msgstr  ""
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:74
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:77
 msgid   "Piccolo Communications"
 msgstr  "Piccolo связи"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:75
-msgid   "Piccolo Control Loops"
-msgstr  "Петли Piccolo управления"
-
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:76
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:78
 msgid   "Piccolo Gateway"
 msgstr  "Piccolo шлюз"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:77
-msgid   "Piccolo Supervision"
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:79
+#, fuzzy
+msgid   "Piccolo Serial"
 msgstr  "Piccolo надзору"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:78
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:80
 msgid   "Plan Database"
 msgstr  "План баз данных"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:79
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:81
 msgid   "Plan Engine"
 msgstr  "План двигателя"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:80
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:82
 msgid   "Plan Generator"
 msgstr  "План Генератор"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:81
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:83
 msgid   "Pop Up Maneuver"
 msgstr  "Pop Up Маневр"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:82
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:84
 msgid   "Port Bow Motor"
 msgstr  "Левого борта двигателя"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:83
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:85
 msgid   "Port Stern Motor"
 msgstr  "Порт Стерн двигателя"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:84
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:86
+#, fuzzy
+msgid   "Power Source"
+msgstr  "Питание"
+
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:87
 msgid   "Power Supervisor"
 msgstr  "Мощность Supervisor"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:85
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:88
 msgid   "Power Supply"
 msgstr  "Питание"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:86
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:89
 msgid   "Remote Control"
 msgstr  "Дистанционное управление"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:87
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:90
 msgid   "Remote Operation"
 msgstr  "Дистанционное управление"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:88
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:91
 msgid   "Rows Maneuver"
 msgstr  "Строки Маневр"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:89
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:92
 msgid   "Service Announcer"
 msgstr  "Служба Диктор"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:90
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:93
 msgid   "Service Discovery"
 msgstr  "Service Discovery"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:91
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:94
 #, fuzzy
 msgid   "Servo Controller"
 msgstr  "Servo монитор"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:92
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:95
 msgid   "Servo Monitor"
 msgstr  "Servo монитор"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:93
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:96
 msgid   "Servos"
 msgstr  "Сервоприводы"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:94
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:97
 msgid   "Sidescan"
 msgstr  "Sidescan"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:95
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:98
 msgid   "Simulation Engine"
 msgstr  "Моделирование двигателя"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:96
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:99
 msgid   "Sound Speed Sensor"
 msgstr  "Датчик скорости звука"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:97
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:100
 msgid   "Speed Control"
 msgstr  "Управление скоростью"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:98
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:101
 msgid   "Starboard Bow Motor"
 msgstr  "Правый борт Лук Motor"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:99
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:102
 msgid   "Starboard Stern Motor"
 msgstr  "Правый борт Стерн двигателя"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:100
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:103
 msgid   "Station Keeping Maneuver"
 msgstr  "Маневр удержания на орбите"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:101
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:104
 msgid   "TASE"
 msgstr  "TASE"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:102
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:105
 msgid   "TCP Server"
 msgstr  "TCP сервера"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:103
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:106
 #, fuzzy
 msgid   "TCP to Camera CPU"
 msgstr  "TCP в DOAM CPU"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:104
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:107
 msgid   "TCP to Master"
 msgstr  "TCP мастеру"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:105
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:108
 msgid   "TREX"
 msgstr  "TREX"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:106
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:109
 msgid   "Teleoperation Maneuver"
 msgstr  "Маневр Teleoperation"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:107
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:110
 msgid   "Text Message Parser"
 msgstr  "Анализа текстовых сообщений"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:108
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:111
 msgid   "Thermal Zone"
 msgstr  "Термальная зона"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:109
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:112
+msgid   "UAN"
+msgstr  ""
+
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:113
 msgid   "UDP"
 msgstr  "UDP"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:110
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:114
 #, fuzzy
 msgid   "UDP to PTU"
 msgstr  "UDP для TREX"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:111
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:115
 msgid   "UDP to TREX"
 msgstr  "UDP для TREX"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:112
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:116
 msgid   "USBL"
 msgstr  "USBL"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:113
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:117
 msgid   "Underwater Acoustics Simulator"
 msgstr  "Подводные Simulator акустика"
 
-#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:114
+#: /home/josebraga/workspace/dune/trunk/i18n/entity_labels.txt:118
 msgid   "Vehicle Supervisor"
 msgstr  "Автомобиль Supervisor"
+
+#~ msgid        "disregarding trajectory's time constraints"
+#~ msgstr       "без учета времени траектории стесненность"
+
+#~ msgid        "plan loaded but vehicle not ready"
+#~ msgstr       "План загружен, но транспортное средство не готово"
+
+#~ msgid        "no plan is loaded"
+#~ msgstr       "план не загружается"
+
+#~ msgid        "no plan is even loaded, request ignored"
+#~ msgstr       "план не загружается даже, запрос игнорируется"
+
+#~ msgid        "inside"
+#~ msgstr       "внутри"
+
+#~ msgid        "outside"
+#~ msgstr       "за пределами"
+
+#~ msgid        "stopping (%0.1f m)"
+#~ msgstr       "остановки (%0.1f м)"
+
+#~ msgid        "moving (distance: %0.1f m)"
+#~ msgstr       "перемещения (расстояние: %0.1f м)"
+
+#~ msgid        "Compass"
+#~ msgstr       "Компас"
+
+#, fuzzy
+#~ msgid        "creating a serial connection | %s %u"
+#~ msgstr       "создание сервер на порт %u"
+
+#~ msgid        "Piccolo Control Loops"
+#~ msgstr       "Петли Piccolo управления"
+
+#~ msgid        "waiting for human intervention"
+#~ msgstr       "ждет вмешательства человека"
+
+#~ msgid        "write: %s"
+#~ msgstr       "пишут: %s"
+
+#~ msgid        "discarding %d bytes"
+#~ msgstr       "отбрасывая %d байт"
+
+#~ msgid        "opening file '%s' with %u frames"
+#~ msgstr       "открытии файла '%s' %u с кадрами"
+
+#~ msgid        "file is complete"
+#~ msgstr       "файл загружен полностью"
+
+#~ msgid        "no file is open"
+#~ msgstr       "файл не открыт"
 
 #, fuzzy
 #~ msgid        "zoom_in"
@@ -3533,9 +3694,6 @@ msgstr  "Автомобиль Supervisor"
 
 #~ msgid        "PTU Transports"
 #~ msgstr       "ПТУ Транспорт"
-
-#~ msgid        "Lost Comms"
-#~ msgstr       "Забыли Comms"
 
 #~ msgid        "error"
 #~ msgstr       "ошибка"
@@ -3677,9 +3835,6 @@ msgstr  "Автомобиль Supervisor"
 
 #~ msgid        "next slot in"
 #~ msgstr       "В следующем слоте"
-
-#~ msgid        "unknown system"
-#~ msgstr       "неизвестной системы"
 
 #~ msgid        "handling abort to"
 #~ msgstr       "чтобы прервать обработку"

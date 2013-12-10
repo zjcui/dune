@@ -25,95 +25,90 @@
 // Author: Ricardo Martins                                                  *
 //***************************************************************************
 
-#ifndef DUNE_NETWORK_HTTP_REQUEST_HANDLER_HPP_INCLUDED_
-#define DUNE_NETWORK_HTTP_REQUEST_HANDLER_HPP_INCLUDED_
-
-// ISO C++ 98 headers.
-#include <map>
-#include <string>
-#include <cstddef>
-
 // DUNE headers.
-#include <DUNE/Network/TCPSocket.hpp>
-#include <DUNE/Utils/TupleList.hpp>
+#include <DUNE/Time/Utils.hpp>
+#include <DUNE/System/Error.hpp>
+#include <DUNE/Hardware/ESCC.hpp>
+
+// Linux headers.
+#if defined(DUNE_OS_LINUX)
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#  include <sys/select.h>
+#  include <fcntl.h>
+#  include <unistd.h>
+#endif
 
 namespace DUNE
 {
-  namespace Network
+  namespace Hardware
   {
-    // Export DLL Symbol.
-    class DUNE_DLL_SYM HTTPRequestHandler;
-
-    class HTTPRequestHandler
+    inline void
+    throwLastError(const std::string& msg)
     {
-    public:
-      typedef std::map<std::string, std::string> HeaderFieldsMap;
+      throw std::runtime_error(msg + System::Error::getLastMessage());
+    }
 
-      HTTPRequestHandler(void)
-      { }
+    ESCC::ESCC(const std::string& dev):
+      m_dev(dev),
+      m_handle(-1)
+    {
+#if defined(DUNE_OS_LINUX)
+      if (m_handle != -1)
+        ::close(m_handle);
 
-      virtual
-      ~HTTPRequestHandler(void)
-      { }
+      m_handle = ::open(m_dev.c_str(), O_RDWR);
+      if (m_handle == -1)
+        throwLastError("failed to open ESCC device");
+#else
+      throw std::runtime_error("unsupported operation");
+#endif
+    }
 
-      virtual void
-      handleGET(TCPSocket* sock, Utils::TupleList& headers, const char* uri);
+    ESCC::~ESCC(void)
+    {
+#if defined(DUNE_OS_LINUX)
+      if (m_handle != -1)
+        ::close(m_handle);
+#endif
+    }
 
-      virtual void
-      handlePOST(TCPSocket* sock, Utils::TupleList& headers, const char* uri);
+    size_t
+    ESCC::doRead(uint8_t* data, size_t data_size)
+    {
+#if defined(DUNE_OS_LINUX)
+      ssize_t rv = ::read(m_handle, data, data_size);
+      if (rv <= 0)
+        throwLastError("read failure");
 
-      virtual void
-      handlePUT(TCPSocket* sock, Utils::TupleList& headers, const char* uri);
+      return (unsigned)rv;
+#else
+      (void)data;
+      (void)data_size;
+      return 0;
+#endif
+    }
 
-      void
-      sendHeader(TCPSocket* sock, const char* status_line, int64_t length, HeaderFieldsMap* hdr_fields = 0);
+    size_t
+    ESCC::doWrite(const uint8_t* data, size_t data_size)
+    {
+#if defined(DUNE_OS_LINUX)
+      ssize_t rv = ::write(m_handle, data, data_size);
+      return rv;
 
-      void
-      sendResponse100(TCPSocket* sock);
+#else
+      (void)data;
+      (void)data_size;
+      return 0;
+#endif
+    }
 
-      void
-      sendResponse201(TCPSocket* sock);
-
-      void
-      sendResponse200(TCPSocket* sock);
-
-      void
-      sendResponse403(TCPSocket* sock);
-
-      void
-      sendResponse404(TCPSocket* sock, const std::string& message);
-
-      inline void
-      sendResponse404(TCPSocket* sock)
-      {
-        sendResponse404(sock, "Not Found");
-      }
-
-      void
-      sendResponse416(TCPSocket* sock);
-
-      void
-      sendResponse500(TCPSocket* sock);
-
-      void
-      sendResponse503(TCPSocket* sock);
-
-      void
-      sendData(TCPSocket* sock, const char* data, int size, HeaderFieldsMap* hdr_fields = 0);
-
-      inline void
-      sendData(TCPSocket* sock, const std::string& data, HeaderFieldsMap* hdr_fields = 0)
-      {
-        sendData(sock, data.c_str(), (int)data.size(), hdr_fields);
-      }
-
-      void
-      sendFile(TCPSocket* sock, const std::string& file, HeaderFieldsMap& hdr_fields, int64_t off_beg = -1, int64_t off_end = -1);
-
-      void
-      handleRequest(TCPSocket* sock);
-    };
+    void
+    ESCC::doFlush(void)
+    {
+#if defined(DUNE_OS_LINUX)
+      fsync(m_handle);
+#endif
+    }
   }
 }
-
-#endif

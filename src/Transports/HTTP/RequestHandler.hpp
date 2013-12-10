@@ -25,62 +25,93 @@
 // Author: Ricardo Martins                                                  *
 //***************************************************************************
 
+#ifndef TRANSPORTS_HTTP_REQUEST_HANDLER_HPP_INCLUDED_
+#define TRANSPORTS_HTTP_REQUEST_HANDLER_HPP_INCLUDED_
+
+// ISO C++ 98 headers.
+#include <map>
+#include <string>
+#include <cstddef>
+
 // DUNE headers.
-#include <DUNE/Memory.hpp>
-#include <DUNE/Time/Delay.hpp>
-#include <DUNE/Hardware/UCTK/Constants.hpp>
-#include <DUNE/Hardware/UCTK/InterfaceUART.hpp>
+#include <DUNE/DUNE.hpp>
 
-namespace DUNE
+namespace Transports
 {
-  namespace Hardware
+  namespace HTTP
   {
-    namespace UCTK
-    {
-      //! Constant baud rate.
-      static const unsigned c_baud_rate = 115200;
+    using DUNE_NAMESPACES;
 
-      InterfaceUART::InterfaceUART(const std::string& dev):
-        m_dev(dev),
-        m_handle(NULL)
+    class RequestHandler
+    {
+    public:
+      typedef std::map<std::string, std::string> HeaderFieldsMap;
+
+      RequestHandler(void)
       { }
 
-      InterfaceUART::~InterfaceUART(void)
+      virtual
+      ~RequestHandler(void)
+      { }
+
+      virtual void
+      handleGET(TCPSocket* sock, Utils::TupleList& headers, const char* uri);
+
+      virtual void
+      handlePOST(TCPSocket* sock, Utils::TupleList& headers, const char* uri);
+
+      virtual void
+      handlePUT(TCPSocket* sock, Utils::TupleList& headers, const char* uri);
+
+      void
+      sendHeader(TCPSocket* sock, const char* status_line, int64_t length, HeaderFieldsMap* hdr_fields = 0);
+
+      void
+      sendResponse100(TCPSocket* sock);
+
+      void
+      sendResponse201(TCPSocket* sock);
+
+      void
+      sendResponse200(TCPSocket* sock);
+
+      void
+      sendResponse403(TCPSocket* sock);
+
+      void
+      sendResponse404(TCPSocket* sock, const std::string& message);
+
+      inline void
+      sendResponse404(TCPSocket* sock)
       {
-        if (m_handle != NULL)
-          delete m_handle;
+        sendResponse404(sock, "Not Found");
       }
 
       void
-      InterfaceUART::doOpen(void)
-      {
-        Memory::clear(m_handle);
-        m_handle = new SerialPort(m_dev, c_baud_rate);
-      }
+      sendResponse416(TCPSocket* sock);
 
-      bool
-      InterfaceUART::doPoll(double timeout)
+      void
+      sendResponse500(TCPSocket* sock);
+
+      void
+      sendResponse503(TCPSocket* sock);
+
+      void
+      sendData(TCPSocket* sock, const char* data, int size, HeaderFieldsMap* hdr_fields = 0);
+
+      inline void
+      sendData(TCPSocket* sock, const std::string& data, HeaderFieldsMap* hdr_fields = 0)
       {
-        return m_handle->hasNewData(timeout) == System::IOMultiplexing::PRES_OK;
+        sendData(sock, data.c_str(), (int)data.size(), hdr_fields);
       }
 
       void
-      InterfaceUART::doWrite(const uint8_t* data, unsigned data_size)
-      {
-        m_handle->write((const char*)data, data_size);
-      }
-
-      unsigned
-      InterfaceUART::doRead(uint8_t* data, unsigned data_size)
-      {
-        return (unsigned)m_handle->read((char*)data, data_size);
-      }
+      sendFile(TCPSocket* sock, const std::string& file, HeaderFieldsMap& hdr_fields, int64_t off_beg = -1, int64_t off_end = -1);
 
       void
-      InterfaceUART::doFlush(void)
-      {
-        m_handle->flushInput();
-      }
-    }
+      handleRequest(TCPSocket* sock);
+    };
   }
 }
+
+#endif

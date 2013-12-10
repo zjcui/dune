@@ -120,7 +120,6 @@ namespace Sensors
       ~Task(void)
       {
         delete [] m_bfr;
-        Task::onResourceRelease();
       }
 
       void
@@ -143,7 +142,7 @@ namespace Sensors
 
         while (retries--)
         {
-          if (m_uart->hasNewData(0.001) != IOMultiplexing::PRES_OK)
+          if (!Poll::poll(*m_uart, 0.001))
           {
             Scheduler::yield();
             continue;

@@ -254,12 +254,6 @@ namespace Control
           .description("Limit of a fixed number of incoming samples per second");
         }
 
-        //! Destructor
-        ~Task(void)
-        {
-          Task::onResourceRelease();
-        }
-
         //! Initialize resources
         void
         onResourceInitialization(void)
@@ -306,6 +300,8 @@ namespace Control
         void
         onUpdateParameters(void)
         {
+          reset();
+
           for (unsigned i = 0; i < LP_MAX_LOOPS; ++i)
           {
             if (paramChanged(m_args.max_int[i]))

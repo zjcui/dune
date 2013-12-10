@@ -34,25 +34,27 @@
 // DUNE headers.
 #include <DUNE/Streams/Terminal.hpp>
 #include <DUNE/Concurrency/TSQueue.hpp>
-#include <DUNE/System/IOMultiplexing.hpp>
 #include <DUNE/Concurrency/Condition.hpp>
 #include <DUNE/Concurrency/Mutex.hpp>
 #include <DUNE/Network.hpp>
 
-namespace DUNE
+// Local headers.
+#include "Server.hpp"
+
+namespace Transports
 {
-  namespace Network
+  namespace HTTP
   {
     class Handler: public Concurrency::Thread
     {
     public:
-      Handler(HTTPRequestHandler& hdler, Concurrency::TSQueue<TCPSocket*>& queue):
+      Handler(RequestHandler& hdler, Concurrency::TSQueue<TCPSocket*>& queue):
         m_handler(hdler),
         m_queue(queue)
       { }
 
     private:
-      HTTPRequestHandler& m_handler;
+      RequestHandler& m_handler;
       Concurrency::TSQueue<TCPSocket*>& m_queue;
 
       void
@@ -76,7 +78,7 @@ namespace DUNE
           }
           catch (std::runtime_error& e)
           {
-            DUNE_ERR("HTTPHandler", e.what());
+            DUNE_ERR("Handler", e.what());
           }
 
           delete sock;
@@ -84,12 +86,12 @@ namespace DUNE
       }
     };
 
-    HTTPServer::HTTPServer(int port, unsigned threads, HTTPRequestHandler& handler):
+    Server::Server(int port, unsigned threads, RequestHandler& handler):
       m_handler(handler)
     {
       m_sock.bind(port);
       m_sock.listen(1024);
-      m_sock.addToPoll(m_iom);
+      m_poll.add(m_sock);
 
       for (unsigned int i = 0; i < threads; ++i)
       {
@@ -99,7 +101,7 @@ namespace DUNE
       }
     }
 
-    HTTPServer::~HTTPServer(void)
+    Server::~Server(void)
     {
       m_queue.close();
 
@@ -124,11 +126,11 @@ namespace DUNE
     }
 
     void
-    HTTPServer::poll(double timeout)
+    Server::poll(double timeout)
     {
-      if (m_iom.poll(timeout))
+      if (m_poll.poll(timeout))
       {
-        if (m_sock.wasTriggered(m_iom))
+        if (m_poll.wasTriggered(m_sock))
         {
           try
           {
@@ -137,7 +139,7 @@ namespace DUNE
           }
           catch (std::runtime_error& e)
           {
-            DUNE_ERR("HTTPServer", e.what());
+            DUNE_ERR("Server", e.what());
           }
         }
       }

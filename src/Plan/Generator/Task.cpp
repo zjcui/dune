@@ -356,7 +356,9 @@ namespace Plan
           std::string loc = params.get("loc");
           double lat = Angles::radians(params.get("lat", 0.0));
           double lon = Angles::radians(params.get("lon", 0.0));
-          double depth = params.get("depth", m_args.travel_depth);
+          double depth = params.get("depth", (double)-1);
+          if (depth == -1)
+        	  depth = params.get("d", m_args.travel_depth);
 
           // Searches for a beacon whose name matches given loc
           // in which case updates lat/lon with the beacon's location
@@ -488,15 +490,17 @@ namespace Plan
         // This template makes the vehicle dive for some time
         if (plan_id == "dive")
         {
+
           double lat, lon, depth;
           getCurrentPosition(&lat, &lon, &depth);
+          depth = params.get("depth", m_args.dive_depth);
 
           IMC::MessageList<IMC::Maneuver> maneuvers;
 
           IMC::Loiter* loiter = new IMC::Loiter();
           loiter->lat = lat;
           loiter->lon = lon;
-          loiter->z = m_args.dive_depth;
+          loiter->z = depth;
           loiter->z_units = IMC::Z_DEPTH;
           loiter->type = IMC::Loiter::LT_CIRCULAR;
           loiter->duration = m_args.dive_time;

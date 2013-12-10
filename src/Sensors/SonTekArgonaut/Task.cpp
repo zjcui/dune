@@ -97,6 +97,7 @@ namespace Sensors
 
         param("Watchdog Timeout", m_args.wdog_tout)
         .defaultValue("2.0")
+        .minimumValue("1.0")
         .units(Units::Second)
         .description("Number of seconds without data before reporting an error");
 
@@ -123,8 +124,8 @@ namespace Sensors
           m_wdog.setTop(m_args.wdog_tout);
 
         IMC::BeamConfig bc;
-        bc.beam_width = -1;
-        bc.beam_height = -1;
+        bc.beam_width = Math::Angles::radians(2.0);
+        bc.beam_height = Math::Angles::radians(2.0);
 
         IMC::DeviceState ds;
         ds.x = m_args.position[0];
@@ -176,7 +177,7 @@ namespace Sensors
 
         while (!timer.overflow())
         {
-          if (m_uart->hasNewData(timer.getRemaining()) == IOMultiplexing::PRES_OK)
+          if (Poll::poll(*m_uart, timer.getRemaining()))
           {
             char bfr[128];
             m_uart->readString(bfr, sizeof(bfr));
@@ -191,7 +192,7 @@ namespace Sensors
       bool
       sendCommand(const char* str, const char* reply, double timeout = 2.0)
       {
-        m_uart->write(str);
+        m_uart->writeString(str);
         return read(reply, timeout);
       }
 
@@ -233,7 +234,7 @@ namespace Sensors
       void
       readSample(void)
       {
-        if (m_uart->hasNewData(1.0) != IOMultiplexing::PRES_OK)
+        if (!Poll::poll(*m_uart, 1.0))
           return;
 
         m_uart->readString(m_buffer, sizeof(m_buffer));

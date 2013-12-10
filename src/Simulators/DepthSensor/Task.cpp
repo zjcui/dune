@@ -83,11 +83,6 @@ namespace Simulators
         bind<IMC::SimulatedState>(this);
       }
 
-      ~Task(void)
-      {
-        Task::onResourceRelease();
-      }
-
       //! Acquire resources.
       void
       onResourceAcquisition(void)
@@ -105,8 +100,12 @@ namespace Simulators
       void
       consume(const IMC::SimulatedState* msg)
       {
-        setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
-        requestActivation();
+        if (!isActive())
+        {
+          setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
+          requestActivation();
+        }
+
         m_sstate = *msg;
       }
 

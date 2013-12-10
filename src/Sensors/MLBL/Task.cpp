@@ -252,27 +252,34 @@ namespace Sensors
         .description("Serial port baud rate");
 
         param("Sound Speed - Default Value", m_args.sound_speed_def)
+        .defaultValue("1500")
+        .minimumValue("1375")
+        .maximumValue("1900")
         .units(Units::MeterPerSecond)
-        .defaultValue("1500");
+        .description("Water sound speed");
 
         param("Sound Speed - Entity Label", m_args.sound_speed_elabel)
         .description("Entity label of sound speed provider");
 
         param("Length of Transmit Pings", m_args.tx_length)
         .units(Units::Millisecond)
-        .defaultValue("3");
+        .defaultValue("3")
+        .minimumValue("0");
 
         param("Length of Receive Pings", m_args.rx_length)
         .units(Units::Millisecond)
-        .defaultValue("3");
+        .defaultValue("3")
+        .minimumValue("0");
 
         param("Ping Timeout", m_args.ping_tout)
         .units(Units::Millisecond)
-        .defaultValue("1000");
+        .defaultValue("1000")
+        .minimumValue("0");
 
         param("Ping Periodicity", m_args.ping_period)
         .units(Units::Second)
-        .defaultValue("2");
+        .defaultValue("2")
+        .minimumValue("2");
 
         param(DTR_RT("Enable Reports"), m_args.report)
         .visibility(Tasks::Parameter::VISIBILITY_USER)
@@ -294,27 +301,33 @@ namespace Sensors
 
         param("Good Range Age", m_args.good_range_age)
         .units(Units::Second)
-        .defaultValue("5");
+        .defaultValue("5")
+        .minimumValue("0");
 
         param("Mini-Packet Delay - Before", m_args.mpk_delay_bef)
         .units(Units::Second)
-        .defaultValue("1.0");
+        .defaultValue("1.0")
+        .minimumValue("0");
 
         param("Mini-Packet Delay - After", m_args.mpk_delay_aft)
         .units(Units::Second)
-        .defaultValue("0.5");
+        .defaultValue("0.5")
+        .minimumValue("0");
 
         param("Range Reports Delay - Before", m_args.report_delay_bef)
         .units(Units::Second)
-        .defaultValue("0.5");
+        .defaultValue("0.5")
+        .minimumValue("0");
 
         param("Range Reports Delay - After", m_args.report_delay_aft)
         .units(Units::Second)
-        .defaultValue("1.0");
+        .defaultValue("1.0")
+        .minimumValue("0");
 
         param("Turn Around Time", m_args.turn_around_time)
         .units(Units::Millisecond)
-        .defaultValue("20");
+        .defaultValue("20")
+        .minimumValue("0");
 
         // Initialize state messages.
         m_states[STA_BOOT].state = IMC::EntityState::ESTA_BOOT;
@@ -342,11 +355,6 @@ namespace Sensors
         bind<IMC::QueryEntityState>(this);
         bind<IMC::SoundSpeed>(this);
         bind<IMC::VehicleMedium>(this);
-      }
-
-      ~Task(void)
-      {
-        Task::onResourceRelease();
       }
 
       void
@@ -710,7 +718,7 @@ namespace Sensors
         {
           consumeMessages();
 
-          if (m_uart->hasNewData(0.01) != IOMultiplexing::PRES_OK)
+          if (!Poll::poll(*m_uart, 0.01))
             continue;
 
           m_uart->readString(m_bfr, c_bfr_size);
@@ -764,7 +772,7 @@ namespace Sensors
                                       m_args.rx_length, m_args.ping_tout,
                                       freqs[0], freqs[1], freqs[2], freqs[3]);
 
-        m_uart->write(cmd.c_str());
+        m_uart->writeString(cmd.c_str());
 
         processInput(m_args.ping_period);
         if (consumeResult(RS_PNG_ACKD) && consumeResult(RS_PNG_TIME))
@@ -815,11 +823,11 @@ namespace Sensors
         std::string hex = String::toHex(msg);
         std::string cmd = String::str("$CCTXD,%u,%u,0,%s\r\n",
                                       m_addr, 0, hex.c_str());
-        m_uart->write(cmd.c_str());
+        m_uart->writeString(cmd.c_str());
 
         std::string cyc = String::str("$CCCYC,0,%u,%u,0,0,1\r\n",
                                       m_addr, 0);
-        m_uart->write(cyc.c_str());
+        m_uart->writeString(cyc.c_str());
 
         int i = 0;
         for (i = 0; i < 7; ++i)

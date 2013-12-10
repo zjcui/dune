@@ -113,11 +113,16 @@ namespace Actuators
 
         param("Scale Factor", m_args.scale)
         .defaultValue("100.0")
+        .minimumValue("0.0")
+        .maximumValue("100.0")
+        .visibility(Tasks::Parameter::VISIBILITY_USER)
+        .scope(Tasks::Parameter::SCOPE_MANEUVER)
         .units(Units::Percentage)
         .description("Scale factor to be multiplied to the thruster actuation reference");
 
         param("Feedback Querying Frequency", m_args.feedback_freq)
         .defaultValue("1.0")
+        .minimumValue("0.1")
         .units(Units::Hertz)
         .description("Frequency with which the motors are queried for current and RPMs");
 
@@ -228,11 +233,11 @@ namespace Actuators
       sendCommand(const char* cmd, char* reply, unsigned reply_size)
       {
         m_uart->flushInput();
-        m_uart->write(cmd);
+        m_uart->writeString(cmd);
 
         if (m_args.echo)
         {
-          if (m_uart->hasNewData(m_reply_tout) != IOMultiplexing::PRES_OK)
+          if (!Poll::poll(*m_uart, m_reply_tout))
             return false;
 
           readString(reply, reply_size);
@@ -243,7 +248,7 @@ namespace Actuators
           }
         }
 
-        if (m_uart->hasNewData(m_reply_tout) != IOMultiplexing::PRES_OK)
+        if (!Poll::poll(*m_uart, m_reply_tout))
           return false;
 
         readString(reply, reply_size);

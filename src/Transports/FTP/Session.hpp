@@ -45,15 +45,14 @@ namespace Transports
     class Session: public DUNE::Concurrency::Thread
     {
     public:
-      Session(DUNE::Tasks::Context& ctx, DUNE::Network::TCPSocket* sock,
+      Session(const DUNE::FileSystem::Path& root,
+              DUNE::Network::TCPSocket* sock,
               const DUNE::Network::Address& local_addr,
               double timeout);
 
       ~Session(void);
 
     private:
-      //! Current context.
-      DUNE::Tasks::Context& m_ctx;
       //! Control socket.
       DUNE::Network::TCPSocket* m_sock;
       //! Address of the local interface.
@@ -92,6 +91,9 @@ namespace Transports
       sendFileInfo(const DUNE::FileSystem::Path& path, DUNE::Network::TCPSocket* sock, DUNE::Time::BrokenDown& time_ref);
 
       void
+      sendFileInfoMLSD(const DUNE::FileSystem::Path& path, DUNE::Network::TCPSocket* sock);
+
+      void
       closeControlConnection(void);
 
       DUNE::Network::TCPSocket*
@@ -105,6 +107,9 @@ namespace Transports
 
       void
       handleNOOP(const std::string& arg);
+
+      void
+      handleMLSD(const std::string& arg);
 
       void
       handleLIST(const std::string& arg);

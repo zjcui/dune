@@ -25,48 +25,33 @@
 // Author: Ricardo Martins                                                  *
 //***************************************************************************
 
-#ifndef DUNE_HARDWARE_UCTK_INTERFACE_UART_HPP_INCLUDED_
-#define DUNE_HARDWARE_UCTK_INTERFACE_UART_HPP_INCLUDED_
+#ifndef TRANSPORTS_EVOLOGICS_TICKET_HPP_INCLUDED_
+#define TRANSPORTS_EVOLOGICS_TICKET_HPP_INCLUDED_
+
+// ISO C++ 98 headers.
+#include <sstream>
+#include <string>
 
 // DUNE headers.
-#include <DUNE/Hardware/SerialPort.hpp>
-#include <DUNE/Hardware/UCTK/Interface.hpp>
+#include <DUNE/DUNE.hpp>
 
-namespace DUNE
+namespace Transports
 {
-  namespace Hardware
+  namespace Evologics
   {
-    namespace UCTK
+    struct Ticket
     {
-      class InterfaceUART: public Interface
-      {
-      public:
-        InterfaceUART(const std::string& dev);
-
-        ~InterfaceUART(void);
-
-      private:
-        //! Device name.
-        std::string m_dev;
-        //! Serial port handle.
-        SerialPort* m_handle;
-
-        void
-        doOpen(void);
-
-        bool
-        doPoll(double timeout);
-
-        void
-        doWrite(const uint8_t* data, unsigned data_size);
-
-        unsigned
-        doRead(uint8_t* data, unsigned data_size);
-
-        void
-        doFlush(void);
-      };
-    }
+      //! IMC source address.
+      uint16_t imc_sid;
+      //! IMC source entity.
+      uint8_t imc_eid;
+      //! Sequence number.
+      uint16_t seq;
+      //! Destination modem address.
+      uint16_t addr;
+      //! Wait for ack.
+      bool ack;
+    };
   }
 }
 

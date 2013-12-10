@@ -25,51 +25,42 @@
 // Author: Ricardo Martins                                                  *
 //***************************************************************************
 
-#ifndef DUNE_NETWORK_HTTP_SERVER_HPP_INCLUDED_
-#define DUNE_NETWORK_HTTP_SERVER_HPP_INCLUDED_
+#ifndef TRANSPORTS_EVOLOGICS_REPLIES_HPP_INCLUDED_
+#define TRANSPORTS_EVOLOGICS_REPLIES_HPP_INCLUDED_
 
 // ISO C++ 98 headers.
 #include <vector>
 
 // DUNE headers.
-#include <DUNE/Concurrency/TSQueue.hpp>
-#include <DUNE/Concurrency/Thread.hpp>
-#include <DUNE/Network/TCPSocket.hpp>
-#include <DUNE/Network/HTTPRequestHandler.hpp>
+#include <DUNE/DUNE.hpp>
 
-namespace DUNE
+namespace Transports
 {
-  namespace Network
+  namespace Evologics
   {
-    // Export DLL Symbol.
-    class DUNE_DLL_SYM HTTPServer;
-
-    class HTTPServer
+    struct RecvIM
     {
-    public:
-      //! Constructor.
-      //! @param port listening port.
-      //! @param threads number of worker threads.
-      //! @param handler HTTP request handler.
-      HTTPServer(int port, unsigned threads, HTTPRequestHandler& handler);
+      RecvIM(void):
+        src(0),
+        dst(0),
+        ack(false),
+        bitrate(0),
+        rssi(0),
+        velocity(0),
+        propagation_time(0),
+        duration(0)
+      { }
 
-      //! Destructor.
-      ~HTTPServer(void);
-
-      void
-      poll(double timeout);
-
-    private:
-      //! HTTP request handler.
-      HTTPRequestHandler& m_handler;
-      //! Server socket.
-      TCPSocket m_sock;
-      //! Worker threads pool.
-      std::vector<Concurrency::Thread*> m_pool;
-      //! Socket queue.
-      Concurrency::TSQueue<TCPSocket*> m_queue;
-      //! I/O multiplexing.
-      System::IOMultiplexing m_iom;
+      unsigned src;
+      unsigned dst;
+      bool ack;
+      unsigned bitrate;
+      float rssi;
+      unsigned integrity;
+      float velocity;
+      float propagation_time;
+      std::vector<uint8_t> data;
+      unsigned duration;
     };
   }
 }

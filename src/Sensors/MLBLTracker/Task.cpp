@@ -173,31 +173,40 @@ namespace Sensors
 
         param("Length of Transmit Pings", m_args.tx_length)
         .units(Units::Millisecond)
-        .defaultValue("5");
+        .defaultValue("5")
+        .minimumValue("0");
 
         param("Length of Receive Pings", m_args.rx_length)
         .units(Units::Millisecond)
-        .defaultValue("5");
+        .defaultValue("5")
+        .minimumValue("0");
 
         param("Sound Speed on Water", m_args.sspeed)
+        .defaultValue("1500")
+        .minimumValue("1375")
+        .maximumValue("1900")
         .units(Units::MeterPerSecond)
-        .defaultValue("1500");
+        .description("Water sound speed");
 
         param("Timeout - Micro-Modem Ping", m_args.tout_mmping)
         .units(Units::Second)
-        .defaultValue("5.0");
+        .defaultValue("5.0")
+        .minimumValue("0");
 
         param("Timeout - Narrow Band Ping", m_args.tout_nbping)
         .units(Units::Second)
-        .defaultValue("5.0");
+        .defaultValue("5.0")
+        .minimumValue("0");
 
         param("Timeout - Abort", m_args.tout_abort)
         .units(Units::Second)
-        .defaultValue("5.0");
+        .defaultValue("5.0")
+        .minimumValue("0");
 
         param("Timeout - Input", m_args.tout_input)
         .units(Units::Second)
-        .defaultValue("20.0");
+        .defaultValue("20.0")
+        .minimumValue("0");
 
         param("GPIO - Transducer Detection", m_args.gpio_txd)
         .defaultValue("-1");
@@ -336,7 +345,7 @@ namespace Sensors
       sendCommand(const std::string& cmd)
       {
         inf("%s", sanitize(cmd).c_str());
-        m_uart->write(cmd.c_str());
+        m_uart->writeString(cmd.c_str());
         m_dev_data.value.assign(sanitize(cmd));
         dispatch(m_dev_data);
       }
@@ -801,7 +810,7 @@ namespace Sensors
         {
           consumeMessages();
 
-          if (m_uart->hasNewData(0.1) == IOMultiplexing::PRES_OK)
+          if (Poll::poll(*m_uart, 0.1))
           {
             readSentence();
             m_last_stn.reset();

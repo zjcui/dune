@@ -102,10 +102,9 @@ namespace DUNE
         debug("enabling");
         signalProgress(65535, "in progress");
 
-        static_cast<T*>(this)->consume(maneuver);
+        requestActivation();
 
-        if (m_mcs.state == IMC::ManeuverControlState::MCS_EXECUTING)
-          requestActivation();
+        static_cast<T*>(this)->consume(maneuver);
       }
 
       template <typename T, typename M>
@@ -227,6 +226,11 @@ namespace DUNE
       //! Unlock maneuver so that other maneuver may start
       void
       unlock(void);
+
+      //! Update the scope reference
+      //! @return new sequence number for the scope
+      uint32_t
+      changeScopeRef(void);
 
       IMC::ManeuverControlState m_mcs;
       IMC::RegisterManeuver m_rm;

@@ -104,6 +104,8 @@ namespace Sensors
       bool pattern_filter;
       //! Pattern maximum difference
       unsigned pattern_diff;
+      //! True to activate device at surface.
+      bool activate_at_surface;
     };
 
     //! Device uses this constant sound speed.
@@ -115,7 +117,7 @@ namespace Sensors
     //! This device has only one frequency (Hz).
     static const unsigned c_frequency = 675000;
     //! Echo sounder practical minimum range.
-    static const float c_min_range = 0.30;
+    static const float c_min_range = 0.150;
     //! Pattern filter pattern size
     static const unsigned c_pattern_size = 5;
     //! Pattern filter maximum samples
@@ -144,21 +146,22 @@ namespace Sensors
       SwitchData m_switch;
       //! Return data parser.
       Parser m_parser;
-      //! Pattern filter
+      //! Pattern filter.
       PatternFilter* m_pfilt;
+      //! Medium handler.
+      Monitors::MediumHandler m_hand;
 
       //! %Task constructor.
       Task(const std::string& name, Tasks::Context& ctx):
         Tasks::Task(name, ctx),
         m_uart(NULL),
-        m_sound_speed(0),
+        m_sound_speed(c_sound_speed),
         m_parser(m_profile.data),
         m_pfilt(NULL)
       {
         // Define configuration parameters.
-        paramActive(Tasks::Parameter::SCOPE_MANEUVER,
-                    Tasks::Parameter::VISIBILITY_USER,
-                    true);
+        paramActive(Tasks::Parameter::SCOPE_IDLE,
+                    Tasks::Parameter::VISIBILITY_USER);
 
         param("Serial Port - Device", m_args.uart_dev)
         .defaultValue("")
@@ -166,26 +169,38 @@ namespace Sensors
 
         param("Sampling Frequency", m_args.sample_frequency)
         .defaultValue("5")
+        .minimumValue("0.1")
+        .maximumValue("10")
         .units(Units::Hertz)
         .description("Number of samples per second");
 
         param("Range", m_args.range)
-        .units(Units::Meter)
         .defaultValue("50")
+        .values("5, 10, 20, 30, 40, 50")
+        .visibility(Tasks::Parameter::VISIBILITY_USER)
+        .scope(Tasks::Parameter::SCOPE_MANEUVER)
+        .units(Units::Meter)
         .description("Default range");
 
         param("Start Gain", m_args.start_gain)
         .defaultValue("20")
+        .minimumValue("0")
+        .maximumValue("40")
+        .units(Units::Decibel)
         .description("Start gain");
 
         param("Pulse Length", m_args.pulse_length)
-        .units(Units::Second)
         .defaultValue("0.000015")
+        .minimumValue("0.000001")
+        .maximumValue("0.000255")
+        .units(Units::Second)
         .description("Pulse length");
 
         param("Profile Minimum Range", m_args.profile_range)
-        .units(Units::Meter)
         .defaultValue("0")
+        .minimumValue("0")
+        .maximumValue("25")
+        .units(Units::Meter)
         .description("Profile minimum range");
 
         param("Data Points", m_args.data_points)
@@ -194,11 +209,15 @@ namespace Sensors
         .description("Number of sonar return data points");
 
         param("Sound Speed on Water", m_args.sspeed)
+        .defaultValue("1500")
+        .minimumValue("1375")
+        .maximumValue("1900")
         .units(Units::MeterPerSecond)
-        .defaultValue("1500");
+        .description("Water sound speed");
 
         param("Use Dynamic Sound Speed", m_args.sspeed_dyn)
-        .defaultValue("false");
+        .defaultValue("false")
+        .description("Update measurements according with measured sound speed");
 
         param("Sonar position", m_args.position)
         .defaultValue("1, 0, 0")
@@ -231,6 +250,12 @@ namespace Sensors
         .defaultValue("0")
         .description("Pattern maximum difference");
 
+        param(DTR_RT("Use Device at Surface"), m_args.activate_at_surface)
+        .defaultValue("false")
+        .visibility(Tasks::Parameter::VISIBILITY_USER)
+        .scope(Tasks::Parameter::SCOPE_IDLE)
+        .description("Enable to activate device when at surface");
+
         m_dist.validity = IMC::Distance::DV_VALID;
 
         // Filling constant Sonar Data.
@@ -240,12 +265,7 @@ namespace Sensors
         m_profile.scale_factor = 1.0f;
 
         bind<IMC::SoundSpeed>(this);
-      }
-
-      //! Destructor.
-      ~Task(void)
-      {
-        Task::onResourceRelease();
+        bind<IMC::VehicleMedium>(this);
       }
 
       //! Update parameters.
@@ -282,7 +302,7 @@ namespace Sensors
 
         IMC::BeamConfig bc;
         bc.beam_width = Math::Angles::radians(c_beam_width);
-        bc.beam_height = -1;
+        bc.beam_height = Math::Angles::radians(c_beam_width);
         m_dist.beam_config.clear();
         m_dist.beam_config.push_back(bc);
 
@@ -342,7 +362,11 @@ namespace Sensors
       void
       onDeactivation(void)
       {
-        setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_IDLE);
+        if (m_hand.isKnown())
+          setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_IDLE);
+        else
+          setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_NO_MEDIUM_IDLE);
+
         m_trigger.setActive(false);
       }
 
@@ -356,6 +380,40 @@ namespace Sensors
       }
 
       void
+      consume(const IMC::VehicleMedium* msg)
+      {
+        m_hand.update(msg);
+
+        // Request activation.
+        if ((m_hand.isWaterSurface() && m_args.activate_at_surface) ||
+            m_hand.isUnderwater())
+        {
+          if (!isActive())
+            requestActivation();
+        }
+
+        // Request deactivation.
+        if (m_hand.outWater() || (m_hand.isWaterSurface() && !m_args.activate_at_surface))
+        {
+          if (isActive())
+            requestDeactivation();
+
+          setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_IDLE);
+        }
+
+        // Medium is unknown.
+        if (!m_hand.isKnown() && m_hand.changed())
+        {
+          if (isActive())
+            setEntityState(getEntityState(), Status::CODE_NO_MEDIUM_ACTIVE);
+          else
+            setEntityState(getEntityState(), Status::CODE_NO_MEDIUM_IDLE);
+
+          err("%s", DTR(Status::getString(Status::CODE_NO_MEDIUM)));
+        }
+      }
+
+      void
       onMain(void)
       {
         uint8_t bfr[1024];
@@ -364,7 +422,6 @@ namespace Sensors
         {
           if (!isActive())
           {
-            setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_IDLE);
             waitForMessages(1.0);
             continue;
           }
@@ -374,14 +431,14 @@ namespace Sensors
           if (m_wdog.overflow())
             setEntityState(IMC::EntityState::ESTA_ERROR, Status::CODE_COM_ERROR);
 
-          if (m_uart->hasNewData(1.0) != IOMultiplexing::PRES_OK)
+          if (!Poll::poll(*m_uart, 1.0))
             continue;
 
-          int rv = m_uart->read(bfr, sizeof(bfr));
-          if (rv <= 0)
+          size_t rv = m_uart->read(bfr, sizeof(bfr));
+          if (rv == 0)
             continue;
 
-          for (int i = 0; i < rv; ++i)
+          for (size_t i = 0; i < rv; ++i)
           {
             if (!m_parser.parse(bfr[i]))
               continue;
@@ -391,7 +448,7 @@ namespace Sensors
             m_dist.value = m_parser.getProfileRange();
 
             // If range is zero, there are no echoes.
-            if (m_dist.value == c_min_range)
+            if (m_dist.value < c_min_range)
               m_dist.value = m_parser.getRange();
 
             // Filter using data points
@@ -418,7 +475,11 @@ namespace Sensors
               dispatch(m_profile);
             }
 
-            setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
+            if (m_hand.isKnown())
+              setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
+            else
+              setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_NO_MEDIUM_ACTIVE);
+
             m_wdog.reset();
           }
         }

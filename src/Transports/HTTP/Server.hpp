@@ -25,62 +25,48 @@
 // Author: Ricardo Martins                                                  *
 //***************************************************************************
 
-#ifndef TRANSPORTS_EVOLOGICS_REPLY_HPP_INCLUDED_
-#define TRANSPORTS_EVOLOGICS_REPLY_HPP_INCLUDED_
+#ifndef TRANSPORTS_HTTP_SERVER_HPP_INCLUDED_
+#define TRANSPORTS_HTTP_SERVER_HPP_INCLUDED_
+
+// ISO C++ 98 headers.
+#include <vector>
+
+// DUNE headers.
+#include <DUNE/DUNE.hpp>
+
+// Local headers.
+#include "RequestHandler.hpp"
 
 namespace Transports
 {
-  namespace Evologics
+  namespace HTTP
   {
-    struct Reply
+    class Server
     {
-      enum Type
-      {
-        RPL_NONE        = 0,
-        RPL_OK          = 1 << 0,
-        RPL_BUSY        = 1 << 1,
-        RPL_RECV        = 1 << 2,
-        RPL_RECVIM      = 1 << 3,
-        RPL_DELIVERED   = 1 << 4,
-        RPL_DELIVEREDIM = 1 << 5,
-        RPL_FAILED      = 1 << 6,
-        RPL_FAILEDIM    = 1 << 7,
-        RPL_OTHER       = 1 << 31
-      } type;
+    public:
+      //! Constructor.
+      //! @param port listening port.
+      //! @param threads number of worker threads.
+      //! @param handler HTTP request handler.
+      Server(int port, unsigned threads, RequestHandler& handler);
 
-      union Data
-      {
-        struct
-        {
-          unsigned src;
-          unsigned dst;
-          bool flag;
-          unsigned bitrate;
-          int rms;
-          unsigned integrity;
-          unsigned prop_time;
-          float velocity;
-          char data[1024];
-          unsigned data_size;
-        } recv;
+      //! Destructor.
+      ~Server(void);
 
-        struct
-        {
-          unsigned addr;
-        } failed;
+      void
+      poll(double timeout);
 
-        struct
-        {
-          unsigned addr;
-        } delivered;
-
-        struct
-        {
-          unsigned addr;
-        } busy;
-
-        char other[1024];
-      } data;
+    private:
+      //! HTTP request handler.
+      RequestHandler& m_handler;
+      //! Server socket.
+      TCPSocket m_sock;
+      //! Worker threads pool.
+      std::vector<Concurrency::Thread*> m_pool;
+      //! Socket queue.
+      Concurrency::TSQueue<TCPSocket*> m_queue;
+      //! I/O multiplexing.
+      IO::Poll m_poll;
     };
   }
 }

@@ -50,11 +50,15 @@ namespace Supervisors
     static const float c_error_period = 2.0;
     //! Maneuver request timeout
     static const float c_man_timeout = 1.0;
+    //! Cooldown before checking control loops after change into service mode
+    static const float c_loops_check_time = 2.0;
 
     struct Arguments
     {
       //! Relevant entities when performing a safe plan.
       std::vector<std::string> safe_ents;
+      //! Allow external control
+      bool ext_control;
     };
 
     struct Task: public DUNE::Tasks::Periodic
@@ -75,14 +79,16 @@ namespace Supervisors
       IMC::StopManeuver m_stop;
       //! Idle maneuver message.
       IMC::IdleManeuver m_idle;
-      //! Control loops last reference time
-      float m_scope_ref;
+      //! Control loops last reference
+      uint32_t m_scope_ref;
       //! Vector of labels from entities in error
       std::vector<std::string> m_ents_in_error;
       //! Last vehicle state operation mode
       IMC::VehicleState::OperationModeEnum m_last_op;
       //! Entities booting
       unsigned m_eboot;
+      //! Time counter for enabled loops in service mode
+      Time::Counter<float> m_loops_timer;
       //! Task arguments.
       Arguments m_args;
 
@@ -90,11 +96,15 @@ namespace Supervisors
         Tasks::Periodic(name, ctx),
         m_switch_time(-1.0),
         m_in_safe_plan(false),
-        m_scope_ref(0.0)
+        m_scope_ref(0)
       {
         param("Safe Entities", m_args.safe_ents)
         .defaultValue("")
         .description("Relevant entities when performing a safe plan");
+
+        param("Allows External Control", m_args.ext_control)
+        .defaultValue("true")
+        .description("Allow for the vehicle to be externally controlled");
 
         bind<IMC::Abort>(this);
         bind<IMC::ControlLoops>(this);
@@ -109,6 +119,7 @@ namespace Supervisors
       {
         setInitialState();
         m_err_timer.setTop(c_error_period);
+        m_loops_timer.setTop(c_loops_check_time);
         m_idle.duration = 0;
       }
 
@@ -168,6 +179,9 @@ namespace Supervisors
 
           m_vs.op_mode = s;
 
+          if (serviceMode() && m_vs.control_loops)
+            m_loops_timer.reset();
+
           war(DTR("now in '%s' mode"), DTR(c_state_desc[s]));
 
           if (!maneuverMode())
@@ -203,7 +217,7 @@ namespace Supervisors
         m_vs.last_error_time = Clock::getSinceEpoch();
         err("%s", m_vs.last_error.c_str());
 
-        stopManeuver();
+        stopManeuver(true);
       }
 
       void
@@ -502,14 +516,14 @@ namespace Supervisors
       }
 
       void
-      stopManeuver(void)
+      stopManeuver(bool abort = false)
       {
         if (!errorMode() && !bootMode())
         {
           reset();
 
           if (!externalMode() || !nonOverridableLoops())
-            changeMode(IMC::VehicleState::VS_SERVICE);
+            changeMode(abort ? IMC::VehicleState::VS_ERROR : IMC::VehicleState::VS_SERVICE);
         }
       }
 
@@ -541,9 +555,28 @@ namespace Supervisors
       }
 
       void
+      disableLoops(void)
+      {
+        IMC::ControlLoops cloops;
+        cloops.enable = IMC::ControlLoops::CL_DISABLE;
+        cloops.mask = IMC::CL_ALL;
+        cloops.scope_ref = m_scope_ref;
+        dispatch(&cloops, DF_LOOP_BACK);
+      }
+
+      void
       task(void)
       {
         dispatch(m_vs);
+
+        if (serviceMode() && m_vs.control_loops && m_loops_timer.overflow())
+          changeMode(IMC::VehicleState::VS_EXTERNAL);
+
+        if (!m_args.ext_control && externalMode())
+        {
+          err(DTR("this vehicle does not allow for external control, disabling loops"));
+          disableLoops();
+        }
 
         if (m_switch_time < 0.0)
           return;

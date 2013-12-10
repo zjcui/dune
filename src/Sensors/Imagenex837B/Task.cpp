@@ -231,6 +231,8 @@ namespace Sensors
 
         param("TCP Port", m_args.port)
         .defaultValue("4040")
+        .minimumValue("0")
+        .maximumValue("65535")
         .description("TCP port");
 
         param("Start Gain", m_args.start_gain)
@@ -298,6 +300,8 @@ namespace Sensors
 
         param("Profile Tilt Angle", m_args.tilt_angle)
         .defaultValue("0.0")
+        .minimumValue("-30.0")
+        .maximumValue("30.0")
         .units(Units::Degree)
         .description("Mounting offset");
 
@@ -333,6 +337,7 @@ namespace Sensors
         param("Adaptive Range Modifier Multiplicative Constant", m_args.range_modifier_mul_k)
         .defaultValue("2")
         .minimumValue("1")
+        .maximumValue("3")
         .description("Adaptive Multibeam range modifier multiplicative constant");
 
         param("Adaptive Range Modifier Timer", m_args.range_modifier_timer)
@@ -395,11 +400,15 @@ namespace Sensors
 
         m_frame.setProfileTiltAngle(m_args.tilt_angle);
 
-        if (!m_args.auto_gain)
+        if (m_args.auto_gain)
         {
-          setAutoMode();
+          setAutoMode(true);
           setNadirAngle(m_args.nadir);
           setAutoGainValue(m_args.auto_gain_value);
+        }
+        else
+        {
+          setAutoMode(false);
         }
 
         m_power_channel_control.name = m_args.power_channel;
@@ -630,9 +639,12 @@ namespace Sensors
 
       //! Define switch command data auto mode.
       void
-      setAutoMode(void)
+      setAutoMode(bool auto_mode)
       {
-        m_sdata[SD_RUN_MODE] |= 0x10;
+        if (auto_mode)
+          m_sdata[SD_RUN_MODE] |= 0x10;
+        else
+          m_sdata[SD_RUN_MODE] &= 0xEF;
       }
 
       //! Define switch command data number nadir angle.
@@ -643,10 +655,10 @@ namespace Sensors
         if (m_args.xdcr)
           angle = -angle;
 
-        uint16_t value = (uint16_t)(std::abs(angle) * 65535 / 360);
+        if (angle < 0.0)
+          angle += 360.0;
 
-        if (angle < 0)
-          value |= 0x8000;
+        uint16_t value = (uint16_t)(angle / 360 * 65536);
 
         m_sdata[SD_NADIR_HI] = (uint8_t)((value & 0xff00) >> 8);
         m_sdata[SD_NADIR_LO] = (uint8_t)(value & 0x00ff);
