@@ -344,7 +344,13 @@ connect(Device& dev)
 bool
 disconnect(void)
 {
-  if (!sendCommand("K,1\r\n", "AOK\r\n"))
+  if (!enterCmdMode())
+    return false;
+
+  if (!sendCommand("K,1\r\n", "KILL\r\n"))
+    return false;
+
+  if (!enterCmdMode())
     return false;
 
   return true;
@@ -503,7 +509,7 @@ initDevice(const char* port, std::ostream* dbg)
 }
 
 bool
-connectToWavy(const char* name)
+connectToWavy(const char* name, std::vector<Device>& devs)
 {
   std::stringstream scan;
 
@@ -513,8 +519,6 @@ connectToWavy(const char* name)
     std::cerr << "\t" << "Failed to scan" << std::endl;
     return false;
   }
-
-  std::vector<Device> devs;
 
   parseScan(scan, devs);
 
