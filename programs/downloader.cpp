@@ -1103,11 +1103,12 @@ main(int argc, char* argv[])
     std::cerr << "Device configured successfully" << std::endl;
   }
 
+  std::vector<Device> devices;
   const char* name = argv[2];
 
   std::cerr << "Attempting to connect to '" << name << "'" << std::endl;
-    std::cerr << "--------------------" << std::endl;
-  if (!connectToWavy(name))
+  std::cerr << "--------------------" << std::endl;
+  if (!connectToWavy(name, devices))
   {
     std::cerr << "Failed to connect to '" << name << "' device" << std::endl;
     closeDevice();
@@ -1272,6 +1273,70 @@ main(int argc, char* argv[])
         std::cerr << "INF: Jumping to boot has succeeded!" << std::endl;
         break;
       }
+    }
+
+    // Disconnect and reconnect
+    if (!disconnect())
+    {
+      std::cerr << "ERR: Failed to disconnect." << std::endl;
+    }
+    else
+    {
+      std::cerr << "Attempting to reconnect to '" << name << "'" << std::endl;
+      std::cerr << "--------------------" << std::endl;
+
+      unsigned tries = 0;
+
+      while (1)
+      {
+        if (!connectToWavy(name, devices))
+        {
+          std::cerr << "Failed to reconnect to '" << name << "' device" << std::endl;
+
+          if (tries >= 4)
+          {
+            closeDevice();
+            return -1;
+          }
+        }
+        else
+        {
+          std::cerr << "--------------------" << std::endl;
+          std::cerr << "Reconnection to '" << name << "' successful" << std::endl;
+          break;
+        }
+
+        std::cerr << "trying again" << std::endl;
+      }
+
+      // // Will now attempt to reconnect to the current device
+      // for (unsigned i = 0; i < devices.size(); ++i)
+      // {
+      //   if (!devices[i].name.compare(name))
+      //   {
+      //     for (unsigned tries = 0; tries < 4; ++tries)
+      //     {
+      //       if (connect(devices[i]))
+      //       {
+      //         (*ss_dbg) << "Reconnection successful" << std::endl;
+      //         break;
+      //       }
+      //       else
+      //       {
+      //         (*ss_dbg) << "Reconnection failed!" << std::endl;
+      //       }
+      //     }
+
+      //     break;
+      //   }
+      // }
+    }
+
+    while (1)
+    {
+      uint8_t byte;
+      if (m_uart->read(&byte, 1) == 1)
+        std::cerr << (unsigned)byte << " ";
     }
   }
 
