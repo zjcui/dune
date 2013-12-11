@@ -354,6 +354,7 @@ download_handler(uint8_t cmd, uint8_t* data, uint8_t data_len)
     case WAVY_CMD_PARAM_USER:
     case WAVY_CMD_PARAM_FACTORY:
     case WAVY_CMD_STATUS:
+    case WAVY_CMD_CMS:
     case CMD_FW_NAME:
     case CMD_GIT_INFO:
       return cmd;
@@ -939,48 +940,13 @@ onGetStatus(download_manager_t dldr, const char* name)
 void
 onJumpBoot(download_manager_t dldr)
 {
-  int cmd;
-  cmd = ptl_process(&dldr->parser, dldr->temp_frame.data, &dldr->temp_frame.size);
+  bool success = false;
 
-  printCmd(cmd);
+  uploader_goto_mode_t cms = GOTO_BOOTLOADER;
+  success = onGetCommand(dldr, WAVY_CMD_CMS, (uint8_t*)&cms, 1);
 
-  switch (dldr->state)
-  {
-    case DLDR_IDLE:
-      if (cmd == WAVY_CMD_NACK)
-      {
-        std::cerr << "ERR: Wavy has rejected or misread request." << std::endl;
-      }
-      else if (cmd == WAVY_CMD_CMS)
-      {
-        std::cerr << "INF: Wavy has received change mode request command." << std::endl;
-
-        dldr->state = DLDR_DONE;
-      }
-      else if ((cmd != 0) && (cmd != -1))
-      {
-        std::cerr << "WRN: Got corrupted or out of context message (IDLE)." << std::endl;
-        std::cerr << "WRN: " << (unsigned)cmd << std::endl;
-        ptl_out_cmd(WAVY_CMD_NACK, 0, 0);
-      }
-      else if (Clock::get() - dldr->timer >= DLDR_REQ_PERIOD)
-      {
-        uploader_goto_mode_t cms = GOTO_BOOTLOADER;
-
-        (*ss_dbg) << "INF: Sending request ..." << std::endl;
-        ptl_out_cmd(WAVY_CMD_CMS,
-                    (uint8_t*)&cms,
-                    sizeof(cms));
-
-        dldr->timer = Clock::get();
-      }
-      break;
-    case DLDR_DONE:
-    case DLDR_FAILED:
-      break;
-    default:
-      break;
-  }
+  if (success)
+    std::cerr << "INF: Wavy has received change mode request command." << std::endl;
 }
 
 void
