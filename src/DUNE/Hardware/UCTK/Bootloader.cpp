@@ -48,26 +48,26 @@ namespace DUNE
       //! Size of fill chunk.
       static const unsigned c_fill_chunk_size = 32;
       //! Bootloader name.
-      static const char* c_boot_name = "BOOT";
+      // static const char* c_boot_name = "BOOT";
 
       Bootloader::Bootloader(Interface* itf, bool verbose):
         m_itf(itf),
         m_verbose(verbose)
       {
-        FirmwareInfo info = m_itf->getFirmwareInfo();
-        printFirmwareInfo(info);
+        // FirmwareInfo info = m_itf->getFirmwareInfo();
+        // printFirmwareInfo(info);
 
-        if (info.name != c_boot_name)
-        {
-          print("\nJumping to bootloader... ");
-          itf->setBootStop(true);
-          itf->resetDevice();
-          Time::Delay::wait(c_jump_boot_delay);
-          info = m_itf->getFirmwareInfo();
-          if (info.name != c_boot_name)
-            throw std::runtime_error(DTR("failed to enter bootloader"));
-          printOK();
-        }
+        // if (info.name != c_boot_name)
+        // {
+        //   print("\nJumping to bootloader... ");
+        //   itf->setBootStop(true);
+        //   itf->resetDevice();
+        //   Time::Delay::wait(c_jump_boot_delay);
+        //   info = m_itf->getFirmwareInfo();
+        //   if (info.name != c_boot_name)
+        //     throw std::runtime_error(DTR("failed to enter bootloader"));
+        //   printOK();
+        // }
 
         getFlashInfo();
       }
@@ -75,26 +75,34 @@ namespace DUNE
       Bootloader::~Bootloader(void)
       {
         print("\nJumping to application... ");
-        try
-        {
+        // try
+        // {
           m_itf->setBootStop(false);
-          m_itf->resetDevice();
-          Time::Delay::wait(c_jump_appl_delay);
-          FirmwareInfo info = m_itf->getFirmwareInfo();
-          if (info.name == c_boot_name)
-            throw std::runtime_error(DTR("failed to jump to application"));
-          printOK();
-          printFirmwareInfo(info);
-          printSuccess();
-        }
-        catch (...)
-        {
-          printFailed();
-        }
+        // m_itf->resetDevice();
+        //   Time::Delay::wait(c_jump_appl_delay);
+        //   FirmwareInfo info = m_itf->getFirmwareInfo();
+        //   if (info.name == c_boot_name)
+        //     throw std::runtime_error(DTR("failed to jump to application"));
+        //   printOK();
+        //   printFirmwareInfo(info);
+        //   printSuccess();
+        // }
+        // catch (...)
+        // {
+        //   printFailed();
+        // }
       }
 
       void
       Bootloader::program(const std::string& file_name)
+      {
+        uint32_t size;
+        program(file_name, size);
+        (void)size;
+      }
+
+      void
+      Bootloader::program(const std::string& file_name, uint32_t& size)
       {
         title("Program Info");
 
@@ -102,7 +110,7 @@ namespace DUNE
         IntelHEX ihex(file_name, m_page_size);
 
         // Compute program size.
-        uint32_t size = ihex.getTable().size() * m_page_size;
+        size = ihex.getTable().size() * m_page_size;
         print("%-20s: %u\n", "Intel HEX - Size", size);
 
         // Compute program CRC.

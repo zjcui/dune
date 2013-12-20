@@ -51,6 +51,9 @@ namespace DUNE
         void
         program(const std::string& file_name);
 
+        void
+        program(const std::string& file_name, uint32_t& size);
+
       private:
         Interface* m_itf;
         bool m_verbose;
