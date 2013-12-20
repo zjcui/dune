@@ -1284,60 +1284,61 @@ main(int argc, char* argv[])
     {
       std::cerr << "Attempting to reconnect to '" << name << "'" << std::endl;
       std::cerr << "--------------------" << std::endl;
+      std::cerr << "After 5 seconds..." << std::endl;
 
-      unsigned tries = 0;
+      Delay::wait(5.0);
 
-      while (1)
+      // Will now attempt to reconnect to the current device
+      for (unsigned i = 0; i < devices.size(); ++i)
       {
-        if (!connectToWavy(name, devices))
+        if (!devices[i].name.compare(name))
         {
-          std::cerr << "Failed to reconnect to '" << name << "' device" << std::endl;
-
-          if (tries >= 4)
+          for (unsigned tries = 0; tries < 4; ++tries)
           {
-            closeDevice();
-            return -1;
+            if (connect(devices[i]))
+            {
+              (*ss_dbg) << "Reconnection successful" << std::endl;
+              break;
+            }
+            else
+            {
+              (*ss_dbg) << "Reconnection failed!" << std::endl;
+            }
           }
-        }
-        else
-        {
-          std::cerr << "--------------------" << std::endl;
-          std::cerr << "Reconnection to '" << name << "' successful" << std::endl;
+
           break;
         }
-
-        std::cerr << "trying again" << std::endl;
       }
-
-      // // Will now attempt to reconnect to the current device
-      // for (unsigned i = 0; i < devices.size(); ++i)
-      // {
-      //   if (!devices[i].name.compare(name))
-      //   {
-      //     for (unsigned tries = 0; tries < 4; ++tries)
-      //     {
-      //       if (connect(devices[i]))
-      //       {
-      //         (*ss_dbg) << "Reconnection successful" << std::endl;
-      //         break;
-      //       }
-      //       else
-      //       {
-      //         (*ss_dbg) << "Reconnection failed!" << std::endl;
-      //       }
-      //     }
-
-      //     break;
-      //   }
-      // }
     }
 
-    while (1)
-    {
-      uint8_t byte;
-      if (m_uart->read(&byte, 1) == 1)
-        std::cerr << (unsigned)byte << " ";
-    }
+    double start_time = Clock::get();
+
+    uint32_t prog_size;
+
+    UCTK::Interface itf(m_uart);
+    UCTK::Bootloader* boot = new UCTK::Bootloader(&itf, true);
+    boot->program("/home/caladolsts/wcb/wcb.hex", prog_size);
+    delete boot;
+
+    std::cerr << "Took " << Clock::get() - start_time
+              << " seconds to flash."
+              << std::endl;
+
+    float speed = (float)prog_size / (Clock::get() - start_time);
+
+    std::cerr << "Average speed of " << (unsigned)speed
+              << " bytes per second." << std::endl;
+
+    // while (1)
+    // {
+    //   Delay::wait(0.4);
+    //   std::string str = "c";
+    //   m_uart->write(str.c_str(), 1);
+
+    //   uint8_t byte;
+    //   if (m_uart->read(&byte, 1))
+    //     std::cerr << (unsigned)byte << std::endl;
+    // }
   }
 
   (*ss_dbg) << "Done" << std::endl;
