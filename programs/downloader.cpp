@@ -168,8 +168,6 @@ struct params_user
 {
   //! Version.
   uint8_t version;
-  //! Enabled GPS devices (bitfield).
-  uint8_t gps_devices;
   //! GPS fix periodicity.
   uint8_t gps_fix_per;
   //! GSM recipient.
@@ -243,7 +241,6 @@ printUserParams(struct params_user* puser)
 {
   printf("USER PARAMS\n");
   printf("  VERSION     : %u\n", puser->version);
-  printf("  GPS DEVS    : %u\n", puser->gps_devices);
   printf("  GPS FIX PER : %u\n", puser->gps_fix_per);
   printf("  GSM RECP    : %s\n", puser->gsm_recipient);
   printf("  GSM REP FRQ : %u\n", puser->gsm_report_per);
@@ -955,10 +952,6 @@ getUserParams(struct params_user* puser, Parsers::Config* config, const std::str
   uint8_t version;
   config->get(sec, "Version", "0", version);
   puser->version = version;
-
-  uint8_t gps_devices;
-  config->get(sec, "GPS Devices", "0x03", gps_devices);
-  puser->gps_devices = gps_devices;
 
   uint8_t gps_fix_per;
   config->get(sec, "GPS Fix Periodicity", "2", gps_fix_per);
