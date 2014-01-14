@@ -26,44 +26,40 @@
 
 enum blue_ptl_states
 {
-  //! FSM state: no command.
-  PTL_ST_NONE = 0,
-  //! FSM state: command start.
-  PTL_ST_SYNC = 1,
-  //! FSM state: command size.
-  PTL_ST_SIZE = 2,
-  //! FSM state: command type.
-  PTL_ST_CMD  = 3,
-  //! FSM state: comand arguments.
-  PTL_ST_DATA = 4
+  //! Parsing synchronization byte.
+  PTL_ST_SYNC,
+  //! Parsing message size.
+  PTL_ST_SIZE,
+  //! Parsing message id.
+  PTL_ST_ID,
+  //! Parsing message payload.
+  PTL_ST_DATA,
+  //! Checksum.
+  PTL_ST_CSUM
 };
 
 enum blue_ptl_errors
 {
   //! Invalid command error.
-  PTL_ERROR_INVAL = 0xE0,
-  //! Out of sync error.
-  PTL_ERROR_OSYN  = 0xE1,
-  //! Parser error.
-  PTL_ERROR_PARSE = 0xE2,
-  //! USART data overrun.
-  PTL_ERROR_OVRUN = 0xE3,
-  //! Data overflow.
-  PTL_ERROR_DOVFW = 0xE4,
-  //! Wrong CSUM.
-  PTL_ERROR_CSUM  = 0xE5,
-  //! Parser bug.
-  PTL_ERROR_PBUG  = 0xE6,
+  PTL_ERR_INVAL  = 0,
   //! Invalid command arguments.
-  PTL_ERROR_INVARG = 0xE7
+  PTL_ERR_INVARG = 1,
+  //! Invalid checksum.
+  PTL_ERR_CSUM   = 2,
+  //! Out of sync error.
+  PTL_ERR_OSYN   = 3,
+  //! Parser error.
+  PTL_ERR_PARSE  = 4,
+  //! Data overrun.
+  PTL_ERR_OVRUN  = 5,
+  //! Data overflow.
+  PTL_ERR_DOVFW  = 6
 };
 
 enum blue_ptl_commands
 {
-  //! Downloader Info
-  CMD_INFO     = 0xF0,
-  //! Downloader name
-  CMD_NAME     = 0xF1,
+  //! Error command
+  CMD_ERROR    = 0xF0,
   //! Request of answer with the firmware's name
   CMD_FW_NAME  = 0xFB,
   //! Request or answer with the git information
@@ -84,7 +80,7 @@ struct ptl_parser
   int state;
   uint8_t size;
   //! Current command type.
-  uint8_t cmd;
+  uint8_t id;
   //! Current command arguments.
   uint8_t data[PTL_DATA_MAX];
   //! Current command arguments write index.
@@ -105,9 +101,9 @@ typedef struct ptl_parser* ptl_parser_t;
 static inline void
 ptl_reset(ptl_parser_t parser)
 {
-  parser->state = PTL_ST_NONE;
+  parser->state = PTL_ST_SYNC;
   parser->size = 0;
-  parser->cmd = 0;
+  parser->id = 0;
   parser->data_idx = 0;
   parser->csum = 0;
 }
@@ -122,12 +118,12 @@ static inline void
 ptl_out_cmd(uint8_t cmd, const uint8_t* data, uint8_t data_len)
 {
   uint8_t i;
-  uint8_t csum = PTL_SYNC ^ (data_len + 1) ^ cmd;
+  uint8_t csum = PTL_SYNC ^ data_len ^ cmd;
 
   ptl_write(PTL_SYNC);
-  ptl_write(data_len + 1);
+  ptl_write(data_len);
   ptl_write(cmd);
-  
+
   for (i = 0; i < data_len; ++i)
   {
     ptl_write(data[i]);
@@ -137,22 +133,10 @@ ptl_out_cmd(uint8_t cmd, const uint8_t* data, uint8_t data_len)
   ptl_write(PTL_CSUM_MSK(csum));
 }
 
-//! Send device information to USART.
 static inline void
-ptl_cmd_info(void)
+ptl_send_error(ptl_parser_t parser, uint8_t error)
 {
-  ptl_out_cmd(CMD_INFO, (const uint8_t*)"wavy", strlen("wavy"));
-}
-
-//! Send device information to USART.
-static inline void
-ptl_cmd_name(void)
-{
-#if defined(DEV_NAME) && defined(DEV_NAME_SIZE)
-  ptl_out_cmd(CMD_NAME, (uint8_t*)DEV_NAME, DEV_NAME_SIZE);
-#else
-  ptl_out_cmd(CMD_NAME, (uint8_t*)"NONE", 4);
-#endif
+  ptl_out_cmd(CMD_ERROR, &error, 1);
 }
 
 //! Parse byte.
@@ -161,84 +145,80 @@ ptl_cmd_name(void)
 static inline int
 ptl_parse(ptl_parser_t parser, uint8_t byte, uint8_t* recv_data, uint8_t* recv_size)
 {
-  int call_handler = 0;
+  bool has_command = false;
 
   switch (parser->state)
   {
-    case PTL_ST_NONE:
-      if (byte != PTL_SYNC)
-        return PTL_ERROR_OSYN;
-      parser->state = PTL_ST_SIZE;
-      parser->csum = PTL_SYNC;
-      break;
-
-    case PTL_ST_SIZE:
-      parser->size = byte;
-      parser->csum ^= byte;
-      parser->state = PTL_ST_CMD;
-      break;
-
-    case PTL_ST_CMD:
-      parser->cmd = byte;
-      parser->csum ^= byte;
-      parser->state = PTL_ST_DATA;
-      break;
-
-    case PTL_ST_DATA:
-      if (parser->data_idx == PTL_DATA_MAX - 1)
-        return PTL_ERROR_DOVFW;
-
-      parser->data[parser->data_idx++] = byte;
-      if (parser->data_idx == parser->size)
+    case PTL_ST_SYNC:
+      if (byte == PTL_SYNC)
       {
-        if (PTL_CSUM_MSK(parser->csum) != parser->data[parser->data_idx - 1])
-          return PTL_ERROR_CSUM;
-
-        call_handler = 1;
+        parser->size = 0;
+        parser->id = 0;
+        parser->data_idx = 0;
+        parser->csum = byte;
+        parser->state = PTL_ST_SIZE;
       }
       else
       {
-        parser->csum ^= byte;
+        ptl_send_error(parser, PTL_ERR_OSYN);
       }
       break;
 
-    default:
-      return PTL_ERROR_INVAL;
+    case PTL_ST_SIZE:
+      if (byte > sizeof(parser->data))
+      {
+        parser->state = PTL_ST_SYNC;
+        ptl_send_error(parser, PTL_ERR_INVARG);
+      }
+      else
+      {
+        parser->size = byte;
+        parser->csum ^= byte;
+        parser->state = PTL_ST_ID;
+      }
+      break;
+
+    case PTL_ST_ID:
+      parser->id = byte;
+      parser->csum ^= byte;
+      if (parser->size == 0)
+        parser->state = PTL_ST_CSUM;
+      else
+        parser->state = PTL_ST_DATA;
+      break;
+
+    case PTL_ST_DATA:
+      parser->data[parser->data_idx++] = byte;
+      parser->csum ^= byte;
+      if (parser->data_idx == parser->size)
+        parser->state = PTL_ST_CSUM;
+      break;
+
+    case PTL_ST_CSUM:
+      parser->state = PTL_ST_SYNC;
+      if ((parser->csum | 0x80) == byte)
+        has_command = true;
+      else
+        ptl_send_error(parser, PTL_ERR_CSUM);
   }
 
-  if (call_handler)
-  {
-    int rv = 0;
-    
-    if (parser->cmd == CMD_INFO)
-      ptl_cmd_info();
-    /* else if (parser->cmd == CMD_BLDR) */
-    /*   ptl_cmd_bldr_halt(); */
-    /* else if (parser->cmd == CMD_RESET) */
-    /* { */
-    /*   ptl_cmd_reset(); */
-    /* } */
-    else if (parser->cmd == CMD_NAME)
-      ptl_cmd_name();
-    else
-    {
-      // copy data to recv_data
-      *recv_size = parser->size - 1;
-      uint8_t i;
-      for (i = 0; i < *recv_size; i++)
-	recv_data[i] = parser->data[i];
-      
-      rv = parser->handler(parser->cmd, parser->data, parser->size);
-      if (!rv)
-        ptl_out_cmd(PTL_ERROR_INVAL, 0, 0);
-    }
+  if (!has_command)
+    return 0;
 
-    ptl_reset(parser);
+  int rv = 0;
 
-    return rv;
-  }
+  // copy data to recv_data
+  *recv_size = parser->size;
 
-  return 0;
+  memcpy(recv_data, parser->data, parser->size);
+
+  rv = parser->handler(parser->id, parser->data, parser->size);
+
+  if (!rv)
+    ptl_send_error(parser, PTL_ERR_INVAL);
+
+  ptl_reset(parser);
+  return rv;
 }
 
 //! USART Implementation.
@@ -275,8 +255,6 @@ ptl_init(ptl_parser_t parser, ptl_handler_t handler)
 {
   parser->handler = handler;
   ptl_reset(parser);
-
-  /* ptl_cmd_info(); */
 }
 
 #endif
