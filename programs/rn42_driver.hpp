@@ -400,7 +400,7 @@ parseScan(std::stringstream& scan, std::vector<Device>& devices)
 
     Utils::String::split(line, ",", list);
 
-    if (list.size() != 3)
+    if (list.size() < 3)
     {
       std::cerr << "\t" << "Failed parsing" << std::endl;
       return 0;
@@ -408,7 +408,7 @@ parseScan(std::stringstream& scan, std::vector<Device>& devices)
 
     d.address = list[0];
     d.name = list[1];
-    d.cod = list[2];
+    d.cod = list.back();
 
     devices.push_back(d);
   }
