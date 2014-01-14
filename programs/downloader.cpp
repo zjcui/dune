@@ -321,7 +321,6 @@ printCmd(int cmd)
     case WAVY_CMD_PARAM_FACTORY:
     case WAVY_CMD_PARAM_USER:
     case CMD_GIT_INFO:
-    case CMD_NAME:
       break;
     default:
       (*ss_dbg) << "PTL: " << (unsigned)cmd << std::endl;
