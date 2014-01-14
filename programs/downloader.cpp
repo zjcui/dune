@@ -1028,6 +1028,28 @@ extractSerial(const char* name)
   return serial;
 }
 
+void
+flashProgram(void)
+{
+  double start_time = Clock::get();
+
+  uint32_t prog_size;
+
+  UCTK::Interface itf(m_uart);
+  UCTK::Bootloader* boot = new UCTK::Bootloader(&itf, true);
+  boot->program("/home/caladolsts/wcb/wcb.hex", prog_size);
+  delete boot;
+
+  std::cerr << "Took " << Clock::get() - start_time
+            << " seconds to flash."
+            << std::endl;
+
+  float speed = (float)prog_size / (Clock::get() - start_time);
+
+  std::cerr << "Average speed of " << (unsigned)speed
+            << " bytes per second." << std::endl;
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -1047,11 +1069,13 @@ main(int argc, char* argv[])
               << "-p (get user and factory parameters)" << std::endl
               << "-s (get status)" << std::endl
               << "-b (jump to bootloader)" << std::endl
+              << "-f (already in bootloader, just flash)" << std::endl
               << "Setting user parameters expects a file called user.ini in the same dir."
               << std::endl
               << "[operation] defaults to -d."
               << std::endl
               << "[debug] any string or char will enable debug"
+              << std::endl
               << "[debug] debug is disabled by default"
               << std::endl;
     return -1;
@@ -1061,7 +1085,7 @@ main(int argc, char* argv[])
   {
     op = argv[3][1];
 
-    if (op != 'd' && op != 'u' && op != 'p' && op != 's' && op != 'b')
+    if (op != 'd' && op != 'u' && op != 'p' && op != 's' && op != 'b' && op != 'f')
     {
       std::cerr << "invalid operation" << std::endl;
       return -1;
@@ -1247,40 +1271,53 @@ main(int argc, char* argv[])
       }
     }
   }
-  else if (op == 'b')
+  else if (op == 'b' || op == 'f')
   {
     downloadInit(&downloader, false);
 
-    while (1)
+    if (op == 'b')
     {
-      onJumpBoot(&downloader);
-
-      if (downloader.state == DLDR_FAILED)
+      while (1)
       {
-        std::cerr << "ERR: Jumping to boot has failed." << std::endl;
-        break;
-      }
+        onJumpBoot(&downloader);
 
-      if (downloader.state == DLDR_DONE)
-      {
-        std::cerr << "INF: Jumping to boot has succeeded!" << std::endl;
-        break;
+        if (downloader.state == DLDR_FAILED)
+        {
+          std::cerr << "ERR: Jumping to boot has failed." << std::endl;
+          break;
+        }
+
+        if (downloader.state == DLDR_DONE)
+        {
+          std::cerr << "INF: Jumping to boot has succeeded!" << std::endl;
+          break;
+        }
       }
     }
 
-    // Disconnect and reconnect
-    if (!disconnect())
+    bool flash = false;
+
+    if (op == 'b')
     {
-      std::cerr << "ERR: Failed to disconnect." << std::endl;
+      // Disconnect and reconnect
+      if (!disconnect())
+      {
+        std::cerr << "ERR: Failed to disconnect." << std::endl;
+      }
+      else
+      {
+        std::cerr << "Attempting to reconnect to '" << name << "'" << std::endl;
+        std::cerr << "--------------------" << std::endl;
+        std::cerr << "After 5 seconds..." << std::endl;
+
+        Delay::wait(5.0);
+
+        flash = true;
+      }
     }
-    else
+
+    if (flash)
     {
-      std::cerr << "Attempting to reconnect to '" << name << "'" << std::endl;
-      std::cerr << "--------------------" << std::endl;
-      std::cerr << "After 5 seconds..." << std::endl;
-
-      Delay::wait(5.0);
-
       // Will now attempt to reconnect to the current device
       for (unsigned i = 0; i < devices.size(); ++i)
       {
@@ -1302,25 +1339,13 @@ main(int argc, char* argv[])
           break;
         }
       }
+
+      flashProgram();
     }
-
-    double start_time = Clock::get();
-
-    uint32_t prog_size;
-
-    UCTK::Interface itf(m_uart);
-    UCTK::Bootloader* boot = new UCTK::Bootloader(&itf, true);
-    boot->program("/home/caladolsts/wcb/wcb.hex", prog_size);
-    delete boot;
-
-    std::cerr << "Took " << Clock::get() - start_time
-              << " seconds to flash."
-              << std::endl;
-
-    float speed = (float)prog_size / (Clock::get() - start_time);
-
-    std::cerr << "Average speed of " << (unsigned)speed
-              << " bytes per second." << std::endl;
+    else if (op == 'f')
+    {
+      flashProgram();
+    }
 
     // while (1)
     // {
