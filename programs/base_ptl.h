@@ -16,12 +16,12 @@
 #include <string.h>
 
 //! Synchronization number (command start)
-#define PTL_SYNC         0x2A
+#define PTL_SYNC         0x2C
 //! XOR checksum mask.
 #define PTL_CSUM_MSK(c)  (c | 0x80)
 //! Maximum command argument length.
 #ifndef PTL_DATA_MAX
-#  define PTL_DATA_MAX     60
+#  define PTL_DATA_MAX     64
 #endif
 
 enum blue_ptl_states
