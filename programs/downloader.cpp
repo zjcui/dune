@@ -1064,7 +1064,7 @@ main(int argc, char* argv[])
               << std::endl
               << "[operation] can be: " << std::endl
               << "-d (download)" << std::endl
-              << "-u (set user parameters)" << std::endl
+              << "-u (set user parameters, expects file)" << std::endl
               << "-p (get user and factory parameters)" << std::endl
               << "-s (get status)" << std::endl
               << "-b (jump to bootloader)" << std::endl
@@ -1124,7 +1124,7 @@ main(int argc, char* argv[])
 
   std::cerr << "Attempting to connect to '" << name << "'" << std::endl;
   std::cerr << "--------------------" << std::endl;
-  if (!connectToWavy(name, devices))
+  if (!connectToWavy(name, devices, false))
   {
     std::cerr << "Failed to connect to '" << name << "' device" << std::endl;
     closeDevice();
