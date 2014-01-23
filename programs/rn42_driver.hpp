@@ -463,6 +463,8 @@ initDevice(const char* port, std::ostream* dbg)
     m_uart->setBaudRate(BAUD_RATE_FAST);
   }
 
+  // setBaudRate(921600);
+
   std::cerr << "\t" << "In command mode" << std::endl;
 
   std::cerr << "\t" << "Checking role (slave)" << std::endl;
@@ -509,32 +511,39 @@ initDevice(const char* port, std::ostream* dbg)
 }
 
 bool
-connectToWavy(const char* name, std::vector<Device>& devs)
+connectToWavy(const char* name, std::vector<Device>& devs, bool skip_scan)
 {
-  std::stringstream scan;
-
-  std::cerr << "\t" << "Scanning for devices" << std::endl;
-  if (!performScan(scan))
+  if (!skip_scan)
   {
-    std::cerr << "\t" << "Failed to scan" << std::endl;
-    return false;
+    std::stringstream scan;
+
+    std::cerr << "\t" << "Scanning for devices" << std::endl;
+    if (!performScan(scan))
+    {
+      std::cerr << "\t" << "Failed to scan" << std::endl;
+      return false;
+    }
+
+    parseScan(scan, devs);
+
+    (*rn_dbg) << std::endl;
+    (*rn_dbg) << scan.str() << std::endl;
+
+    std::cerr << "\t" << "Printing devices" << std::endl;
+
+    printDevices(devs);
+
+    std::cerr << "\t" << std::endl;
+
+    if (!devs.size())
+    {
+      std::cerr << "\t" << "no devices" << std::endl;
+      return false;
+    }
   }
-
-  parseScan(scan, devs);
-
-  (*rn_dbg) << std::endl;
-  (*rn_dbg) << scan.str() << std::endl;
-
-  std::cerr << "\t" << "Printing devices" << std::endl;
-
-  printDevices(devs);
-
-  std::cerr << "\t" << std::endl;
-
-  if (!devs.size())
+  else
   {
-    std::cerr << "\t" << "no devices" << std::endl;
-    return false;
+    std::cerr << "\t" << "Skipping scan" << std::endl;
   }
 
   // Will now attempt to connect to the first device
