@@ -122,6 +122,8 @@ namespace Navigation
 
       struct Task: public DUNE::Tasks::Periodic
       {
+        double vx;
+        double vy;
         int task_management;
         float x_ant;
         int flag_init_nu_est;
@@ -341,6 +343,8 @@ namespace Navigation
           .defaultValue("0.2")
           .description("Luenberger term");
 
+          vx = 0;
+          vy = 0;
           task_management = 0;
           x_ant = 0;
           flag_init_nu_est = 0;
@@ -467,6 +471,9 @@ namespace Navigation
               gps_fix[3] = msg->height;
               flag_valid_pos = 1;
             }
+
+          vx = std::cos(msg->cog) * msg->sog;
+          vy = std::sin(msg->cog) * msg->sog;
 
             if ((flag_initial_point == 1 && flag_init_nu_est == 0) || flag_init_nu_est == 1)
               flag_init_nu_est++;
@@ -607,7 +614,7 @@ namespace Navigation
 
         /*********************Compute Rotation Matrix, is Derivative and Velocity measure Matrix*********************/
         Matrix
-        computeJ(double e_angles[])
+        computeJ(double e_angles[3])
         {
           // Pass euler angles to row matrix
           Math::Matrix ea(3,1);
@@ -950,6 +957,14 @@ namespace Navigation
             m_est.p = v_est(3,0);
             m_est.q = v_est(4,0);
             m_est.r = v_est(5,0);
+            // 1st Method - Velocity in the navigation frame.
+            Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
+                                                         m_est.u,   m_est.v,     m_est.w,
+                                                         &m_est.vx, &m_est.vy,   &m_est.vz);
+            // 2scd Method
+            /*m_est.vx=nu_dot_est(0);
+            m_est.vy=nu_dot_est(1);
+            m_est.vz=nu_dot_est(2);*/
             m_est.lat = gps_initial_point[0];
             m_est.lon = gps_initial_point[1];
             m_est.height = gps_initial_point[2];

@@ -69,7 +69,7 @@ namespace Navigation
         }
 
         static Matrix
-        computeC_RB1(float m,float xg,float yg,float zG,float Ixx,float Iyy,float Izz,float Ixz,float Ixy,float Iyz,double v_estimado[])
+        computeC_RB1(float m,float xg,float yg,float zG,float Ixx,float Iyy,float Izz,float Ixz,float Ixy,float Iyz,double v_estimado[6])
         {
           // Coriolis Matrix
 
@@ -92,7 +92,7 @@ namespace Navigation
         }
 
         static Matrix
-        computeC_A1(float Xdudt,float Ydvdt,float Zdwdt,float Kdpdt,float Mdqdt,float Ndrdt,double v_estimado[])
+        computeC_A1(float Xdudt,float Ydvdt,float Zdwdt,float Kdpdt,float Mdqdt,float Ndrdt,double v_estimado[6])
         {
           // Coriolis Matrix
 
@@ -115,7 +115,7 @@ namespace Navigation
 
 
         static Matrix
-        computeD1(double v_estimado[], float X_u, float Y_v, float Y_r, float Z_w, float Z_q, float K_p, float M_q, float M_w, float N_r, float N_v, float X_uabsu, float Y_vabsv, float Y_rabsr, float Z_wabsw, float Z_qabsq, float K_pabsp, float M_qabsq, float M_wabsw, float N_rabsr, float N_vabsv)
+        computeD1(double v_estimado[6], float X_u, float Y_v, float Y_r, float Z_w, float Z_q, float K_p, float M_q, float M_w, float N_r, float N_v, float X_uabsu, float Y_vabsv, float Y_rabsr, float Z_wabsw, float Z_qabsq, float K_pabsp, float M_qabsq, float M_wabsw, float N_rabsr, float N_vabsv)
         {
           // Damping Matrix
 
@@ -146,7 +146,7 @@ namespace Navigation
 
 
         static Matrix
-        computeL1(double v_estimado[])
+        computeL1(double v_estimado[6])
         {
           // Lift Matrix
 
@@ -165,7 +165,7 @@ namespace Navigation
 
 
         static Matrix
-        computeG1(float W,float B,float zG,double pos_estimado[])
+        computeG1(float W,float B,float zG,double pos_estimado[6])
         {
           // Restoring forces Matrix
 
@@ -188,7 +188,7 @@ namespace Navigation
 
 
         static Matrix
-        computeTau1(double thruster,double velocities[],double servo_pos[])
+        computeTau1(double thruster,double velocities[6],double servo_pos[3])
         {
           Matrix tau_tmp(6, 1, 0.0);
           Matrix deflections(3, 1, 0.0);

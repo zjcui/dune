@@ -43,7 +43,7 @@ namespace Navigation
       public:
 
         static Matrix
-        computeK1(float k1[])
+        computeK1(float k1[6])
         {
           Matrix K1 = Matrix(6, 6, 0.0);
           K1(0, 0) = k1[0];//0.7;
@@ -58,7 +58,7 @@ namespace Navigation
 
 
         static Matrix
-        computeK2(float k2[])
+        computeK2(float k2[6])
         {
           Matrix K2 = Matrix(6, 6, 0.0);
           K2(0, 0) = k2[0];//1;
@@ -72,7 +72,7 @@ namespace Navigation
         }
 
         static Matrix
-        computealfa1(float alfa_1[])
+        computealfa1(float alfa_1[6])
         {
           Matrix alfa1 = Matrix(6, 6, 0.0);
           alfa1(0, 0) = alfa_1[0];//0.7;
@@ -86,7 +86,7 @@ namespace Navigation
         }
 
         static Matrix
-        computealfa2(float alfa_2[])
+        computealfa2(float alfa_2[6])
         {
           Matrix alfa2 = Matrix(6, 6, 0.0);
           alfa2(0, 0) = alfa_2[0];//1;
@@ -100,7 +100,7 @@ namespace Navigation
         }
 
         static Matrix
-        computesignum(double error[])
+        computesignum(double error[6])
         {
           Matrix signum = Matrix(6, 1, 0.0);
           int i=0;
@@ -121,7 +121,7 @@ namespace Navigation
         }
 
         static Matrix
-        computetanh(double error[], double boundary_layer)
+        computetanh(double error[6], double boundary_layer)
         {
           Matrix tgh=Matrix(6,1,0.0);
           int i=0;
