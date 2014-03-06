@@ -472,9 +472,6 @@ namespace Navigation
               flag_valid_pos = 1;
             }
 
-          vx = std::cos(msg->cog) * msg->sog;
-          vy = std::sin(msg->cog) * msg->sog;
-
             if ((flag_initial_point == 1 && flag_init_nu_est == 0) || flag_init_nu_est == 1)
               flag_init_nu_est++;
 
