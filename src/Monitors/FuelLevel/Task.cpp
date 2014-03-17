@@ -147,6 +147,8 @@ namespace Monitors
       unsigned m_eids[BatteryData::BM_TOTAL];
       //! Timer Counter for stabilization time after maneuvering
       Time::Counter<float> m_sane_timer;
+      //! Revolutions per minute.
+      int16_t m_rpm;
       //! True if maneuvering. Start as true.
       bool m_is_maneuvering;
       //! Task arguments.
@@ -249,11 +251,14 @@ namespace Monitors
         .units(Units::DegreeCelsius)
         .description("Acceptable temperature level for estimating.");
 
+        m_rpm = 0;
+
         // Register listeners.
         bind<IMC::Voltage>(this);
         bind<IMC::Current>(this);
         bind<IMC::Temperature>(this);
         bind<IMC::VehicleState>(this);
+        bind<IMC::Rpm>(this);
       }
 
       void
@@ -379,6 +384,12 @@ namespace Monitors
         {
           m_is_maneuvering = true;
         }
+      }
+
+      void
+      consume(const IMC::Rpm* msg)
+      {
+        m_rpm = msg->value;
       }
 
       //! Compute deviation from model
@@ -720,6 +731,17 @@ namespace Monitors
         }
 
         m_fuel.opmodes = ss.str();
+
+        if (m_bdata->getVoltage() < 23)
+        {
+          if (std::abs(m_rpm) > 1)
+          {
+            IMC::SetThrusterActuation act;
+            act.id = 0;
+            act.value = 0;
+            dispatch(act);
+          }
+        }
 
         if (m_fuel.value < m_args.err_lvl)
           setEntityState(IMC::EntityState::ESTA_ERROR, Status::CODE_FUEL_RESERVE);
