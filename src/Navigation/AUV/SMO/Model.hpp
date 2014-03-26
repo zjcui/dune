@@ -190,7 +190,7 @@ namespace Navigation
         static Matrix
         computeTau1(double thruster,double velocities[6],double servo_pos[3])
         {
-          Matrix tau_tmp(6, 1, 0.0);
+         /* Matrix tau_tmp(6, 1, 0.0);
           Matrix deflections(3, 1, 0.0);
           Matrix m_fin_lift(5,1);
           double m_motor_friction = 0.06;
@@ -207,13 +207,48 @@ namespace Navigation
           tau_tmp(2) = m_fin_lift(1) * velocities[0] * velocities[0] * deflections(1);
           tau_tmp(3) = m_fin_lift(2) * velocities[0] * velocities[0] * deflections(0) + m_motor_friction * tau_tmp(0);
           tau_tmp(4) = m_fin_lift(3) * velocities[0] * velocities[0] * deflections(1);
-          tau_tmp(5) = m_fin_lift(4) * velocities[0] * velocities[0] * deflections(2);
+          tau_tmp(5) = m_fin_lift(4) * velocities[0] * velocities[0] * deflections(2);*/
+
+          Matrix tau_tmp(6, 1, 0.0);
+          tau_tmp(0,0) = thruster * 10/0.8;//thruster * 10;
+          tau_tmp(1,0) = (servo_pos[1] * 9.6 + servo_pos[2] * 9.6) * pow(velocities[0],2.0);
+          tau_tmp(2,0) = (servo_pos[0] * -9.6 + servo_pos[3] * -9.6) * pow(velocities[0],2.0);
+          tau_tmp(3,0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * -0.4 * pow(velocities[0],2.0) + 0.006 * tau_tmp(0,0);
+          tau_tmp(4,0) = (servo_pos[0] * -3.85 + servo_pos[3] * -3.85 ) * pow(velocities[0],2.0);
+          tau_tmp(5,0) = (servo_pos[1] * -3.85 + servo_pos[2] * -3.85 ) * pow(velocities[0],2.0);
 
 
           return tau_tmp;
         }
 
         /**************************************************************************************************/
+
+
+        /*static Matrix
+        compute_filtering(Matrix v, Matrix v_bar, double delta_t)
+        {
+
+          Matrix T = Matrix(6,6, 0.0);
+          T(0,0) = 1*delta_t;
+          T(1,1) = 1*delta_t;
+          T(2,2) = 1*delta_t;
+          T(3,3) = 1*delta_t;
+          T(4,4) = 1*delta_t;
+          T(5,5) = 1*delta_t;
+
+          /*Matrix v = Matrix(6,1, 0.0);
+          v(0, 0) = velocities[0];
+          v(1, 0) = velocities[1];
+          v(2, 0) = velocities[2];
+          v(3, 0) = velocities[3];
+          v(4, 0) = velocities[4];
+          v(5, 0) = velocities[5];*/
+
+          /*Matrix acc = Matrix(6,1, 0.0);
+          acc = inverse(T) * 0.05 * ( v - v_bar);
+
+          return acc;
+        }*/
 
       };
     }

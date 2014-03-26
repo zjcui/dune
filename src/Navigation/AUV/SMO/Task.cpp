@@ -41,8 +41,8 @@ namespace Navigation
       //AUV Parameters
 
       //Centriptal and Inertial Matrix terms
-      static const int xg=0;
-      static const int yg=0;
+      static const int xg = 0;
+      static const int yg = 0;
       static const float zG = 0.01;
       static const float zg=0.01;
 
@@ -67,23 +67,23 @@ namespace Navigation
 
 
       // Damping Matrix Terms
-      static const float X_u = -2.4;
+      static const float X_u = -2.1;
       static const float Y_v = -23;
       static const float Y_r = 11.5;
       static const float Z_w = -23;
       static const float Z_q = -11.5;
-      static const float K_p = -0.3;
+      static const float K_p = -0.82;//-0.3;
       static const float M_q = -9.7;
       static const float M_w = 3.1;
       static const float N_r = -9.7;
       static const float N_v = -3.1;
 
-      static const float X_uabsu = -2.4;
+      static const float X_uabsu = -2.1;
       static const float Y_vabsv = -80;
       static const float Y_rabsr = 0.3;
       static const float Z_wabsw = -80;
       static const float Z_qabsq = -0.3;
-      static const float K_pabsp = -6e-4;
+      static const float K_pabsp = -0.85;//-6e-4;
       static const float M_qabsq = -9.1;
       static const float M_wabsw = 1.5;
       static const float N_rabsr = -9.1;
@@ -101,9 +101,6 @@ namespace Navigation
         float alfa1[6];
         float alfa2[6];
 
-        //Roll estimation parameter on/off
-        int roll_estimation_on_off;
-
         //Attenuator for lateral estimation with rpm measures only
         float rpm_lateral_attenuator;
 
@@ -116,6 +113,7 @@ namespace Navigation
         // Resolve Entity string
         std::string imu_entities;
         std::string ahrs_entities;
+        std::string Identification_entities;
         std::string dvl_entities;
         std::string rpm_entities;
       };
@@ -141,8 +139,8 @@ namespace Navigation
         double gps_treshold;
         double euler_angles[3];
         double euler_angles_est[3];
-        double velocities[7];
-        double velocities_ant[7];
+        double velocities[6];
+        double velocities_ant[6];
         double profundity[2];
         double servo_pos[4];
         double thruster;
@@ -163,15 +161,19 @@ namespace Navigation
         double v_estimado[6];
         double pos_estimado[6];
         double error[6];
+        double filter_v_delta;
+     
 
 
         // Entity ID
         int imu_entity;
         int ahrs_entity;
+        int Identification_entity;
         int dvl_entity;
         int rpm_entity;
         int flag_imu_active;
         int flag_ahrs_active;
+        int flag_Identification_active;
         int flag_rpm_active;
         int flag_dvl_active;
         int error_counter;
@@ -189,6 +191,8 @@ namespace Navigation
         Math::Matrix tau;
         Math::Matrix v_est;
         Math::Matrix dv_dt_est;
+        Math::Matrix v_filtered;
+        Math::Matrix dv_dt_filtered;
         Math::Matrix J_ant;
         Math::Matrix J;
         Math::Matrix vel;
@@ -203,12 +207,18 @@ namespace Navigation
         IMC::EstimatedState m_est;
         IMC::NavigationUncertainty m_uncertainty;
 
+        // Identification Matrices
+        Math::Matrix acc_identification;
+        Math::Matrix vel_identification;
+
         //! Time window between values.
         DUNE::Time::Delta vel_delta;
         DUNE::Time::Delta dj_delta;
         DUNE::Time::Delta est_delta;
         DUNE::Time::Delta est_delta1;
         DUNE::Time::Delta est_uncertainty;
+        DUNE::Time::Delta delta_filter_v;
+        DUNE::Time::Delta delta_filter_dv; 
         Arguments m_args;
         Derivative<double> deriv;
 
@@ -227,10 +237,6 @@ namespace Navigation
           .defaultValue("1.2e-3")
           .description("RPM Multiplicative Factor");
 
-          param("roll on off", m_args.roll_estimation_on_off)
-          .defaultValue("1")
-          .description("On/off variable to test roll estimation");
-
           param("Entity Label IMU", m_args.imu_entities)
           .defaultValue("IMU")
           .description("Label of the IMU message");
@@ -238,6 +244,10 @@ namespace Navigation
           param("Entity Label AHRS", m_args.ahrs_entities)
           .defaultValue("AHRS")
           .description("Label of the AHRS message");
+
+          param("Entity Label Identification", m_args.Identification_entities)
+          .defaultValue("Identification")
+          .description("Label of the Identification message");
 
           param("Entity Label DVL", m_args.dvl_entities)
           .defaultValue("DVL")
@@ -343,6 +353,7 @@ namespace Navigation
           .defaultValue("0.2")
           .description("Luenberger term");
 
+          filter_v_delta = 0;
           vx = 0;
           vy = 0;
           task_management = 0;
@@ -385,6 +396,8 @@ namespace Navigation
           tau.resizeAndFill(6,1,0.0);
           v_est.resizeAndFill(6, 1, 0.0);
           dv_dt_est.resizeAndFill(6,1,0.0);
+          v_filtered.resizeAndFill(6,1,0.0);
+          dv_dt_filtered.resizeAndFill(6,1,0.0);
           J_ant.resizeAndFill(6,6,0.0);
           J.resizeAndFill(6,6,0.0);
           vel.resizeAndFill(6,1,0.0);
@@ -432,6 +445,16 @@ namespace Navigation
 
           try
           {
+            Identification_entity = resolveEntity(m_args.Identification_entities);
+          }
+          catch (...)
+          {
+            Identification_entity = -1;
+            flag_Identification_active = -1;
+          }
+
+          try
+          {
             dvl_entity = resolveEntity(m_args.dvl_entities);
           }
           catch (...)
@@ -453,7 +476,7 @@ namespace Navigation
 
         void
         consume(const IMC::GpsFix* msg)
-        {
+        { 
           gps_accuracy[0] = msg->hacc;
 
           if (flag_initial_point == 0)
@@ -547,6 +570,13 @@ namespace Navigation
             velocities[4] = msg->y;
             velocities[5] = msg->z;
           }
+
+          if (flag_ahrs_active == 1 && flag_imu_active == 0 &&msg->getSourceEntity() == ahrs_entity)
+          {
+            velocities[3] = msg->x;
+            velocities[4] = msg->y;
+            velocities[5] = msg->z;
+          }
         }
 
         void
@@ -590,6 +620,14 @@ namespace Navigation
               flag_ahrs_active = 1;
             else
               flag_ahrs_active = 0;
+          }
+
+          if (msg->getSourceEntity() == Identification_entity)
+          {
+            if (msg->state == IMC::EntityState::ESTA_NORMAL)
+              flag_Identification_active = 1;
+            else
+              flag_Identification_active = 0;
           }
 
           if (msg->getSourceEntity() == dvl_entity)
@@ -670,7 +708,7 @@ namespace Navigation
 
         void
         task(void)
-        {
+        {//inf("Flag");std::cout<<flag_Identification_active<<std::endl;
 
           /***********************Entity State Management**********************/
 
@@ -679,7 +717,7 @@ namespace Navigation
           /********************************************************************/
 
           if(task_management == 1)
-          {
+          {//inf("Flag TESTE DOIS");std::cout<<flag_Identification_active<<std::endl;
 
             /*******************GPS Signal Acquisition*******************/
             Coordinates::WGS84::getNEBearingAndRange(gps_initial_point[0], gps_initial_point[1], gps_fix[1], gps_fix[2], &bearing, &range);
@@ -724,7 +762,6 @@ namespace Navigation
 
             // Calculate nu_dot
             nu_dot = J * vel;
-
 
             // Integrate velocity in Earth-fixed Frame to obtain position
             vel_int_delta = vel_delta.getDelta();
@@ -909,25 +946,19 @@ namespace Navigation
 
             dn_est = J * v_est;
 
-            Math:: Matrix Mn_tmp = inverse(Mn);
-            Mn_tmp(3,0) = m_args.roll_estimation_on_off*Mn_tmp(3,0);
-            Mn_tmp(3,1) = m_args.roll_estimation_on_off*Mn_tmp(3,1);
-            Mn_tmp(3,2) = m_args.roll_estimation_on_off*Mn_tmp(3,2);
-            Mn_tmp(3,3) = m_args.roll_estimation_on_off*Mn_tmp(3,3);
-            Mn_tmp(3,4) = m_args.roll_estimation_on_off*Mn_tmp(3,4);
-            Mn_tmp(3,5) = m_args.roll_estimation_on_off*Mn_tmp(3,5);
-            Fn(3) = m_args.roll_estimation_on_off*Fn(3);
-
-            dv_dt_est = inverse(J) * ( -alfa2 * nu_error + Mn_tmp * Fn + inverse( Mn ) * ( 0*Fn - Cn * dn_est - Dn * dn_est - Ln * dn_est - Gn ) - dJ * v_est - K2 * tanghyper);//signum );
+            dv_dt_est = inverse(J) * ( -alfa2 * nu_error + inverse( Mn ) * ( Fn - Cn * dn_est - Dn * dn_est - Ln * dn_est - Gn ) - dJ * v_est - K2 * tanghyper);
 
             smo_delta = est_delta.getDelta();
 
             v_est = v_est + dv_dt_est * smo_delta;
+//inf("\n");std::cout<<v_est<<std::endl;
 
             if (v_est(0) > 2)
               v_est(0) = 2;
             if (v_est(0) < -2)
               v_est(0) = -2;
+
+            tanghyper = GainMatrices::computetanh(error,0.5);
 
             nu_dot_est = -alfa1 * nu_error + J * v_est - K1 * tanghyper;
 
@@ -942,6 +973,12 @@ namespace Navigation
             nu_est(4,0) = Math::Angles::normalizeRadian( nu_est(4,0) );
             nu_est(5,0) = Math::Angles::normalizeRadian( nu_est(5,0) );
 
+
+            // First Order Filter 
+            /*filter_v_delta = delta_filter_v.getDelta();
+            dv_dt_filtered = Model::compute_filtering(v_est,v_filtered, filter_v_delta);
+            v_filtered = v_filtered + dv_dt_filtered * filter_v_delta;  */
+
             m_est.x = nu_est(0,0);
             m_est.y = nu_est(1,0);
             m_est.z = gps_initial_point[2] + nu_est(2,0);
@@ -955,13 +992,13 @@ namespace Navigation
             m_est.q = v_est(4,0);
             m_est.r = v_est(5,0);
             // 1st Method - Velocity in the navigation frame.
-            Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
+            /*Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
                                                          m_est.u,   m_est.v,     m_est.w,
-                                                         &m_est.vx, &m_est.vy,   &m_est.vz);
+                                                         &m_est.vx, &m_est.vy,   &m_est.vz);*/
             // 2scd Method
-            /*m_est.vx=nu_dot_est(0);
+            m_est.vx=nu_dot_est(0);
             m_est.vy=nu_dot_est(1);
-            m_est.vz=nu_dot_est(2);*/
+            m_est.vz=nu_dot_est(2);
             m_est.lat = gps_initial_point[0];
             m_est.lon = gps_initial_point[1];
             m_est.height = gps_initial_point[2];
