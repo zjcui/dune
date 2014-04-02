@@ -210,10 +210,10 @@ namespace Navigation
           tau_tmp(5) = m_fin_lift(4) * velocities[0] * velocities[0] * deflections(2);*/
 
           Matrix tau_tmp(6, 1, 0.0);
-          tau_tmp(0,0) = thruster * 10/0.8;//thruster * 10;
+          tau_tmp(0,0) = thruster * 10/0.84;//thruster * 10;
           tau_tmp(1,0) = (servo_pos[1] * 9.6 + servo_pos[2] * 9.6) * pow(velocities[0],2.0);
           tau_tmp(2,0) = (servo_pos[0] * -9.6 + servo_pos[3] * -9.6) * pow(velocities[0],2.0);
-          tau_tmp(3,0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * -0.4 * pow(velocities[0],2.0) + 0.006 * tau_tmp(0,0);
+          tau_tmp(3,0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * /*-0.4*/-0.45 * pow(velocities[0],2.0) + /*0.006*/0.0054 * tau_tmp(0,0);
           tau_tmp(4,0) = (servo_pos[0] * -3.85 + servo_pos[3] * -3.85 ) * pow(velocities[0],2.0);
           tau_tmp(5,0) = (servo_pos[1] * -3.85 + servo_pos[2] * -3.85 ) * pow(velocities[0],2.0);
 

@@ -72,7 +72,7 @@ namespace Navigation
       static const float Y_r = 11.5;
       static const float Z_w = -23;
       static const float Z_q = -11.5;
-      static const float K_p = -0.82;//-0.3;
+      static const float K_p = -0.75;//-0.82;//-0.3;
       static const float M_q = -9.7;
       static const float M_w = 3.1;
       static const float N_r = -9.7;
@@ -482,8 +482,11 @@ namespace Navigation
           if (flag_initial_point == 0)
             gps_treshold = gps_accuracy[0] + 1;
 
+          if ( gps_treshold >= 25)
+            gps_treshold = 25;
+
           if (flag_initial_point != 0)
-            gps_treshold = 7;
+            gps_treshold = 15;
 
           if (msg->validity & IMC::GpsFix::GFV_VALID_POS)
           {
@@ -898,7 +901,7 @@ namespace Navigation
             dJ = (J-J_ant) / j_delta;
             J_ant = J;
 
-            // Compute AUV Dynamic i Body-fixed Frame
+            // Compute AUV Dynamic in Body-fixed Frame
             Math::Matrix M_RB(6,6);
             M_RB = Model::computeM_RB1(m,zG,Ixx,Iyy,Izz);
 

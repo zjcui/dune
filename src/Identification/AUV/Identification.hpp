@@ -189,106 +189,8 @@ namespace Identification
 
          }
 
-
         static Matrix
-        compute_G(double Mass, double Volume, double zG, double euler_angles[3])
-        {
-
-          double phi = euler_angles[0];
-          double theta = euler_angles[1];
-          double psi = euler_angles[2];
-
-          double W = 255;//Mass * 9.8;
-          double B = 256;//Volume * 9.8 * 1000;
-
-          Math::Matrix G_tmp(6,1);
-          G_tmp.resizeAndFill(6,1,0.0);
-          G_tmp(0,0) = (W - B) * std::sin(theta);
-          G_tmp(1,0) = -(W - B) * std::cos(theta) * std::sin(phi);
-          G_tmp(2,0) = -(W - B) * std::cos(theta) * std::cos(phi);
-          G_tmp(3,0) = zG * W * std::cos(theta) * std::sin(phi);
-          G_tmp(4,0) = zG * W * std::sin(theta);
-
-          return G_tmp;
-        
-        }
-
-
-        static Matrix
-        compute_L(double velocities[6])
-        {
-          Math::Matrix L_tmp(6,6);
-          L_tmp.resizeAndFill(6,6,0.0);
-          L_tmp(1,1) = -30 * velocities[0];
-          L_tmp(1,5) = 7.7 * velocities[0];
-          L_tmp(2,2) = -30 * velocities[0];
-          L_tmp(2,4) = -7.7 * velocities[0];
-          L_tmp(4,4) = -3.1 * velocities[0];
-          L_tmp(4,2) = -9.9 * velocities[0];
-          L_tmp(5,5) = -3.1 * velocities[0];
-          L_tmp(5,1) = 9.9 * velocities[0];
-
-          return -L_tmp;
-        }
-
-        static Matrix
-        compute_Tau(double thruster,double servo_pos[3],double velocities[6])
-        {
-
-          Matrix tau_tmp(6, 1, 0.0);
-          /*tau_tmp(0,0) = acc_identification[0]*26;//thruster * 10;
-          tau_tmp(1,0) = acc_identification[1]*26;//( servo_pos[1] * 9.6 + servo_pos[2] * 9.6 )  * pow(velocities[0],2.0);
-          tau_tmp(2,0) = acc_identification[2]*26;//( servo_pos[0] * -9.6 + servo_pos[3] * -9.6 )  * pow(velocities[0],2.0);
-          tau_tmp(3,0) = 0;//( servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * tmp(2)  * pow(velocities[0],2.0) + tmp(3) * tau_tmp(0,0);
-          tau_tmp(4,0) = acc_identification[4]*26;//( servo_pos[0] * -/*3.85*//*6.72 + servo_pos[3] * -/*3.85*//*6.72 )  * pow(velocities[0],2.0);
-          /*tau_tmp(5,0) = acc_identification[5]*26;//( servo_pos[1] * -/*3.85*//*6.72 + servo_pos[2] * -/*3.85*//*6.72 )  * pow(velocities[0],2.0);*/
-
-          tau_tmp(0,0) = thruster * 10/0.84;//thruster * 10;
-          tau_tmp(1,0) = ( servo_pos[1] * 9.6 + servo_pos[2] * 9.6 )  * pow(velocities[0],2.0);
-          tau_tmp(2,0) = ( servo_pos[0] * -9.6 + servo_pos[3] * -9.6 )  * pow(velocities[0],2.0);
-          tau_tmp(3,0) = ( servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * 1.82  * pow(velocities[0],2.0) + 0.06 * tau_tmp(0,0);
-          tau_tmp(4,0) = ( servo_pos[0] * -3.85 + servo_pos[3] * -3.85 )  * pow(velocities[0],2.0);
-          tau_tmp(5,0) = ( servo_pos[1] * -3.85 + servo_pos[2] * -3.85 )  * pow(velocities[0],2.0);
-
-
-
-          return tau_tmp;
-        } 
-
-
-        static Matrix
-        compute_D(double velocities[6], double x_parametros[2], double y_parametros[4], double z_parametros[4], double p_parametros[4], double q_parametros[4], double r_parametros[4])
-        {
-
-          double u = velocities[0];
-          double v = velocities[1];
-          double w = velocities[2];
-          double p = velocities[3];
-          double q = velocities[4];
-          double r = velocities[5];
-
-
-double D1_vector[36]={x_parametros[0], 0,   0,    0,   0,   0,
-                      0,   y_parametros[0], 0,    0,   0,   y_parametros[1],
-                      0,   0,   z_parametros[0],  0,   z_parametros[1], 0,
-                      0,   0,   0,    p_parametros[0], 0,   0,
-                      0,   0,   q_parametros[0],  0,   q_parametros[1], 0,
-                      0,   r_parametros[0], 0,    0,   0,   r_parametros[1]};
-
-double D2_vector[36]={x_parametros[1]*std::abs(u), 0,                    0,                    0,                    0,                    0,
-                      0,                     y_parametros[2]*std::abs(v), 0,                    0,                    0,                    y_parametros[3]*std::abs(r),
-                      0,                     0,                    z_parametros[2]*std::abs(w), 0,                    z_parametros[3]*std::abs(q), 0,
-                      0,                     0,                    0,                    p_parametros[1]*std::abs(p), 0,                    0,
-                      0,                     0,                    q_parametros[2]*std::abs(w), 0,                    q_parametros[3]*std::abs(q), 0,
-                      0,                     r_parametros[2]*std::abs(v), 0,                    0,                    0,                    r_parametros[3]*std::abs(r)};
-
-          return ( Matrix(D1_vector, 6, 6) + Matrix(D2_vector, 6, 6) );
-
-        }
-
-
-        static Matrix
-        compute_D1(double v_estimado[6], float X_u, float Y_v, float Y_r, float Z_w, float Z_q, float K_p, float M_q, float M_w, float N_r, float N_v, float X_uabsu, float Y_vabsv, float Y_rabsr, float Z_wabsw, float Z_qabsq, float K_pabsp, float M_qabsq, float M_wabsw, float N_rabsr, float N_vabsv)
+        compute_D(double v_estimado[6], float X_u, float Y_v, float Y_r, float Z_w, float Z_q, float K_p, float M_q, float M_w, float N_r, float N_v, float X_uabsu, float Y_vabsv, float Y_rabsr, float Z_wabsw, float Z_qabsq, float K_pabsp, float M_qabsq, float M_wabsw, float N_rabsr, float N_vabsv)
         {
           // Damping Matrix
 
@@ -314,10 +216,132 @@ double D2_vector[36]={x_parametros[1]*std::abs(u), 0,                    0,     
                                 0,                     N_vabsv*std::abs(vr), 0,                    0,                    0,                    N_rabsr*std::abs(rr)};
 
 
-          return ( Matrix(D1_vector, 6, 6) + Matrix(D2_vector, 6, 6) );
+          return (-Matrix(D1_vector, 6, 6) - Matrix(D2_vector, 6, 6) );
         }
 
-        /**************************************************/
+
+
+        static Matrix
+        compute_G(double Mass, double Volume, double zG, double euler_angles[3])
+        {
+
+          double phi = euler_angles[0];
+          double theta = euler_angles[1];
+          double psi = euler_angles[2];
+
+          double W = Mass * 9.8;
+          double B = Volume * 9.8 * 1000;
+/*std::cout<<W<<std::endl;
+std::cout<<B<<std::endl;*/
+          Math::Matrix G_tmp(6,1);
+          G_tmp.resizeAndFill(6,1,0.0);
+          G_tmp(0,0) = (W - B) * std::sin(theta);
+          G_tmp(1,0) = -(W - B) * std::cos(theta) * std::sin(phi);
+          G_tmp(2,0) = -(W - B) * std::cos(theta) * std::cos(phi);
+          G_tmp(3,0) = zG * W * std::cos(theta) * std::sin(phi);
+          G_tmp(4,0) = zG * W * std::sin(theta);
+
+          return G_tmp;
+        
+        }
+
+
+        static Matrix
+        compute_L(double velocities[6],double l, double d, double D, double Sfin)
+        {
+
+          Math::Matrix L_tmp(6,6);
+          L_tmp.resizeAndFill(6,6,0.0);
+          double CLF = 3;
+          double CLB = 1.24;
+          double Yb;
+          double Zb;
+          double Mb;
+          double Nb;
+
+          double Yf_uv;
+          double Zf_uw;
+          double Yf_ur;
+          double Zf_uq;
+          double Mf_uw;
+          double Mf_uq;
+          double Nf_uv;
+          double Nf_ur;
+
+          if(l/d>5 && l/d<10)
+          CLB = 1.24;
+
+          if(l/d>10 && l/d<15)
+          CLB = 3.3;
+
+          Yb = -0.5 * D * 3.14 * pow( d/2.0, 2 ) * CLB;
+
+          Zb = Yb;
+
+          Mb = -( -0.65 * l - (-0.35 * l)) * Zb;
+
+          Nb = -Mb;
+
+
+          Yf_uv = - D * CLF * Sfin;
+
+          Yf_ur = D * CLF * Sfin;
+
+          Zf_uw = -D * CLF * Sfin;
+ 
+          Zf_uq = Zf_uw;
+
+          Mf_uw = - (-0.35 * l) * Zf_uw;
+
+          Mf_uq = - (-0.35 * l)* - (-0.35 * l) * Zf_uq;
+ 
+          Nf_uv = -0.35 * l * Yf_uv;
+
+          Nf_ur = - (-0.35 * l) * (-0.35 * l) * Yf_ur;
+
+          L_tmp(1,1) = Yb + Yf_uv;
+          L_tmp(1,5) = Yf_ur * - ( -0.35 * l );
+          L_tmp(2,2) = Zb + Zf_uw;
+          L_tmp(2,4) = Zf_uq * - ( -0.35 * l );
+          L_tmp(4,2) = Mb + Mf_uw;
+          L_tmp(4,4) = Mf_uq;
+          L_tmp(5,1) = Nb + Nf_uv;
+          L_tmp(5,5) = Nf_ur;
+
+          return -L_tmp * velocities[0];
+        }
+
+        static Matrix
+        compute_Tau(double thruster,double servo_pos[3],double velocities[6],double l, double d, double D, double Sfin)
+        {
+
+          double Yf;
+          double Zf;
+          double Mf;
+          double Nf;
+          double CLF;
+
+          CLF = 3;
+
+          Yf = D * CLF * Sfin;
+        
+          Zf = -D * CLF * Sfin;
+
+          Mf = - ( -0.35 * l ) * Zf;
+
+          Nf = -0.35 * l * Yf;
+
+          Matrix tau_tmp(6, 1, 0.0);
+
+          tau_tmp(0,0) = thruster * 10/0.84;//thruster * 10;
+          tau_tmp(1,0) = (servo_pos[1] + servo_pos[2]) * Yf * pow(velocities[0],2.0);
+          tau_tmp(2,0) = (servo_pos[0] + servo_pos[3]) * Zf * pow(velocities[0],2.0);
+          tau_tmp(3,0) = 0;//( servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * 1.82  * pow(velocities[0],2.0) + 0.06 * tau_tmp(0,0);
+          tau_tmp(4,0) = (servo_pos[0] + servo_pos[3]) * Mf * pow(velocities[0],2.0);
+          tau_tmp(5,0) = (servo_pos[1] + servo_pos[2]) * Nf * pow(velocities[0],2.0);
+
+          return tau_tmp;
+        } 
 
 
         /***********Least Mean Square Algorithm***********/
