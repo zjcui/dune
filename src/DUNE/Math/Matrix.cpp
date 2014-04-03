@@ -1100,13 +1100,13 @@ namespace DUNE
         double vals[3] = {element(0, 0), element(1, 0), element(2, 0)};
         double cr = std::cos(vals[0]);
         double sr = std::sin(vals[0]);
-        double tr = std::tan(vals[0]);
+        //double tr = std::tan(vals[0]);
         double cp = std::cos(vals[1]);
         double sp = std::sin(vals[1]);
         double tp = std::tan(vals[1]);
         double cy = std::cos(vals[2]);
         double sy = std::sin(vals[2]);
-        double ty = std::tan(vals[2]);
+        //double ty = std::tan(vals[2]);
 
         double vector_j[36] = {cy * cp, -sy * cr + cy * sp * sr, sy * sr + cy * cr * sp, 0, 0, 0, 
                                sy * cp, cy * cr + sr * sp * sy, -cy * sr + sp * sy * cr, 0, 0, 0, 
