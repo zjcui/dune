@@ -171,7 +171,7 @@ namespace Navigation
 
           double phi = Angles::normalizeRadian(pos_estimado[3]);
           double theta = Angles::normalizeRadian(pos_estimado[4]);
-          //double psi = Angles::normalizeRadian(pos_estimado[5]);
+          double psi = Angles::normalizeRadian(pos_estimado[5]);
 
           // Pass euler angles to row matrix
           Matrix G(6,1);
@@ -181,6 +181,14 @@ namespace Navigation
           G(3) = zG*W*cos(theta)*sin(phi);
           G(4) = zG*W*sin(theta);
           G(5) = 0;
+
+Math::Matrix ea(3,1);
+            ea(0) = Math::Angles::normalizeRadian(phi);
+            ea(1) = Math::Angles::normalizeRadian(theta);
+            ea(2) = Math::Angles::normalizeRadian(psi);
+
+           Math::Matrix J(6,6,0.0); J = ea.toDCMSMO();
+
 
           return G;
 
