@@ -796,13 +796,13 @@ namespace Navigation
 
             vel_est = vel_est + acc_est * vel_est_delta;
 
-            inf("vel_est");std::cout<<vel_est<<std::endl;
+           // inf("vel_est");std::cout<<vel_est<<std::endl;
 
             tanghyper = GainMatrices::compute_tanh(nu_error,m_args.nu_bound);
 
             nu_dot_est = -alfa1 * nu_error + J * vel_est - k1 * tanghyper;
 
-inf("nu_dot_est");std::cout<<nu_dot_est<<std::endl;
+//inf("nu_dot_est");std::cout<<nu_dot_est<<std::endl;
             nu_est_delta = delta_nu_est.getDelta();
             if(nu_est_delta == -1)
             {
@@ -815,7 +815,7 @@ inf("nu_dot_est");std::cout<<nu_dot_est<<std::endl;
             nu_est(4,0) = Math::Angles::normalizeRadian( nu_est(4,0) );
             nu_est(5,0) = Math::Angles::normalizeRadian( nu_est(5,0) );
 
-           inf("nu_est");std::cout<<nu_est<<std::endl;
+    //       inf("nu_est");std::cout<<nu_est<<std::endl;
 
            euler_angles_est[0]=nu_est(3);
            euler_angles_est[1]=nu_est(4);
@@ -849,12 +849,20 @@ inf("nu_dot_est");std::cout<<nu_dot_est<<std::endl;
             m_est.phi = nu(3,0);
             m_est.theta = nu(4,0);
             m_est.psi = nu(5,0);
-             m_est.u = vel_est(0,0);
+            m_est.u = vel_est(0,0);
             m_est.v = vel_est(1,0);
             m_est.w = vel_est(2,0);
             m_est.p = vel_est(3,0);
             m_est.q = vel_est(4,0);
             m_est.r = vel_est(5,0);
+            // 1st Method - Velocity in the navigation frame.
+            /*Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
+                                                         m_est.u,   m_est.v,     m_est.w,
+                                                         &m_est.vx, &m_est.vy,   &m_est.vz);*/
+            // 2scd Method
+            m_est.vx=nu_dot_est(0);
+            m_est.vy=nu_dot_est(1);
+            m_est.vz=nu_dot_est(2);
             m_est.lat = gps_initial_point[0];
             m_est.lon = gps_initial_point[1];
             m_est.height = gps_initial_point[2];
