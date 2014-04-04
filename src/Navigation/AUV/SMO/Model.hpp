@@ -44,78 +44,130 @@ namespace Navigation
 
         /****************************************AUV MODEL MATRICES****************************************/
 
-        static Matrix
-        computeM_RB1(float m,float zG,float Ixx,float Iyy,float Izz)
-        {
-          //Inertia Matrix
-          double MRB_vector[36]={m,    0,     0, 0,     m*zG, 0,
-                                 0,    m,     0, -m*zG, 0,    0,
-                                 0,    0,     m, 0,     0,    0,
-                                 0,    -m*zG, 0, Ixx,   0,    0,
-                                 m*zG, 0,     0, 0,     Iyy,  0,
-                                 0,    0,     0, 0,     0,    Izz};
 
-          return ( Matrix(MRB_vector, 6, 6) );
+        static Matrix
+        compute_M(double Mass, double a, double b, double c, double zG)
+        {
+	  double Ixx = Mass / 5 * ( pow(b, 2.0) + pow(c, 2.0) );
+
+          double l_r = 0;
+
+          if(b>=c)
+            l_r=b;
+          if(c>b)
+            l_r=c;
+
+          double Iyy = Mass * ( pow(a*2, 2.0)/20 + pow(l_r, 2.0)/5 );
+
+          double Izz = Mass * ( pow(a*2, 2.0)/20 + pow(l_r, 2.0)/5 );
+
+          double e = 1 - pow(b / a, 2.0);
+
+          double alpha_0 = ( 2 * ( 1 - pow(e, 2.0) ) / pow(e, 3.0) ) * ( (1.0 / 2.0) * std::log( ( 1 + e ) / ( 1 - e ) ) - e );
+
+          double betha_0 = 1.0 / pow(e, 2.0) - ( 1 - pow(e, 2.0 ) )/ ( 2 * pow(e, 3.0)  ) * std::log( ( 1 + e ) / ( 1 - e ) );
+
+          double X_dudt = - alpha_0 / (2 - alpha_0) * Mass;
+
+          double Y_dvdt = - betha_0 / (2 - betha_0) * Mass;
+
+          double Z_dwdt = Y_dvdt;
+
+          double K_dpdt = 0;
+
+          double N_drdt = - (1.0/5) * ( pow( ( pow(b, 2.0) - pow(a, 2.0) ), 2.0) * (alpha_0 - betha_0) ) / ( 2 * ( pow(b, 2.0) - pow(a, 2.0) ) + ( pow(b, 2.0) + pow(a, 2.0) ) * ( betha_0 - alpha_0 ) ) * Mass;
+
+          double M_dqdt = N_drdt;
+
+          Math::Matrix M_tmp(6,6);
+          M_tmp.resizeAndFill(6,6,0.0);
+          M_tmp(0,0) = Mass - X_dudt;
+          M_tmp(1,1) = Mass - Y_dvdt;
+          M_tmp(2,2) = Mass - Z_dwdt;
+          M_tmp(3,3) = Ixx - K_dpdt;
+          M_tmp(4,4) = Iyy - M_dqdt;
+          M_tmp(5,5) = Izz - N_drdt;
+          M_tmp(0,4) = Mass * zG;
+          M_tmp(1,3) = - Mass * zG;
+          M_tmp(3,1) = - Mass * zG;
+          M_tmp(4,0) = Mass * zG;
+
+	  return M_tmp;
+
         }
 
-
         static Matrix
-        computeM_A1(float Xdudt,float Ydvdt,float Zdwdt,float Kdpdt,float Mdqdt,float Ndrdt)
+        compute_C(double Mass, double a, double b, double c, double zG, double velocities[6])
         {
-          //Inertia Matrix
-          double MA_vector[6]={-Xdudt, -Ydvdt, -Zdwdt, -Kdpdt, -Mdqdt, -Ndrdt};
+	  double Ixx = Mass / 5 * ( pow(b, 2.0) + pow(c, 2.0) );
 
-          return ( Matrix(MA_vector, 6) );
-        }
+          double l_r = 0;
+
+          if(b>=c)
+            l_r=b;
+          if(c>b)
+            l_r=c;
+
+          double Iyy = Mass * ( pow(a*2, 2.0)/20 + pow(l_r, 2.0)/5 );
+
+          double Izz = Mass * ( pow(a*2, 2.0)/20 + pow(l_r, 2.0)/5 );
+
+          double e = 1 - pow(b / a, 2.0);
+
+          double alpha_0 = ( 2 * ( 1 - pow(e, 2.0) ) / pow(e, 3.0) ) * ( (1.0 / 2.0) * std::log( ( 1 + e ) / ( 1 - e ) ) - e );
+
+          double betha_0 = 1.0 / pow(e, 2.0) - ( 1 - pow(e, 2.0 ) )/ ( 2 * pow(e, 3.0)  ) * std::log( ( 1 + e ) / ( 1 - e ) );
+
+          double X_dudt = - alpha_0 / (2 - alpha_0) * Mass;
+
+          double Y_dvdt = - betha_0 / (2 - betha_0) * Mass;
+
+          double Z_dwdt = Y_dvdt;
+
+          double K_dpdt = 0;
+
+          double N_drdt = - (1.0/5) * ( pow( ( pow(b, 2.0) - pow(a, 2.0) ), 2.0) * (alpha_0 - betha_0) ) / ( 2 * ( pow(b, 2.0) - pow(a, 2.0) ) + ( pow(b, 2.0) + pow(a, 2.0) ) * ( betha_0 - alpha_0 ) ) * Mass;
+
+          double M_dqdt = N_drdt;
+
+          double u = velocities[0];
+          double v = velocities[1];
+          double w = velocities[2];
+          double p = velocities[3];
+          double q = velocities[4];
+          double r = velocities[5];
+
+          Math::Matrix C_tmp(6,6);
+          C_tmp.resizeAndFill(6,6,0.0);
+          C_tmp(0,3) = Mass * zG * r;
+          C_tmp(0,4) = (Mass - Z_dwdt) * w;
+          C_tmp(0,5) = - (Mass - Y_dvdt) * v;
+          C_tmp(1,3) = - (Mass - Z_dwdt) * w;
+          C_tmp(1,4) = Mass * zG * r;
+          C_tmp(1,5) = (Mass - X_dudt) * u;
+          C_tmp(2,3) = - Mass * zG * p + (Mass - Y_dvdt) * v;
+          C_tmp(2,4) = - Mass * zG * q - (Mass - X_dudt) * u;
+          C_tmp(3,0) = - Mass * zG * r;
+          C_tmp(3,1) = (Mass - Z_dwdt) * w;
+          C_tmp(3,2) = Mass * zG * p - (Mass - Y_dvdt) * v;
+          C_tmp(3,4) = (Izz - N_drdt) * r;
+          C_tmp(3,5) = -(Iyy - M_dqdt) * q;
+          C_tmp(4,0) = - ( Mass - Z_dwdt) * w;
+          C_tmp(4,1) = - Mass * zG * r;
+          C_tmp(4,2) = Mass * zG *q + (Mass - X_dudt) * u;
+          C_tmp(4,3) = - (Izz - N_drdt) * r;
+          C_tmp(4,5) = (Ixx - K_dpdt) * p;
+          C_tmp(5,0) = (Mass - Y_dvdt) * v;
+          C_tmp(5,1) = -(Mass - X_dudt) * u;
+          C_tmp(5,3) = (Iyy - M_dqdt) * q;
+          C_tmp(5,4) = - (Ixx - K_dpdt) * p;
+
+          return C_tmp;
+
+         }
 
         static Matrix
-        computeC_RB1(float m,float xg,float yg,float zG,float Ixx,float Iyy,float Izz,float Ixz,float Ixy,float Iyz,double v_estimado[6])
-        {
-          // Coriolis Matrix
-
-          double u = v_estimado[0];
-          double v = v_estimado[1];
-          double w = v_estimado[2];
-          double p = v_estimado[3];
-          double q = v_estimado[4];
-          double r = v_estimado[5];
-
-          double CRB_vector[36]={0,              0,              0,              m*(yg*q+zG*r),      -m*(xg*q-w),       -m*(xg*r+v),
-                                 0,              0,              0,              -m*(yg*p+w),        m*(zG*r+xg*p),     -m*(yg*r-u),
-                                 0,              0,              0,              -m*(zG*p-v),        -m*(zG*q+u),       m*(xg*p+yg*q),
-                                 -m*(yg*q+zG*r), m*(yg*p+w),     m*(zG*p-v),     0,                  Iyz*q-Ixz*p+Izz*r, Iyz*r+Ixy*p-Iyy*q,
-                                 m*(xg*q-w),     -m*(zG*r+xg*p), m*(zG*q+u),     Iyz*q+Ixz*p-Izz*r,  0,                 -Ixz*r-Ixy*q+Ixx*p,
-                                 m*(xg*r+v),     m*(yg*r-u),     -m*(xg*p+yg*q), -Iyz*r-Ixy*p+Iyy*q, Ixz*r+Ixy*q-Ixx*p, 0};
-
-
-          return (Matrix(CRB_vector, 6, 6) );
-        }
-
-        static Matrix
-        computeC_A1(float Xdudt,float Ydvdt,float Zdwdt,float Kdpdt,float Mdqdt,float Ndrdt,double v_estimado[6])
-        {
-          // Coriolis Matrix
-
-          double ur = v_estimado[0];
-          double vr = v_estimado[1];
-          double wr = v_estimado[2];
-          double pr = v_estimado[3];
-          double qr = v_estimado[4];
-          double rr = v_estimado[5];
-
-          double CA_vector[36]={0,         0,         0,         0,         Zdwdt*wr,  Ydvdt*vr,
-                                0,         0,         0,         Zdwdt*wr,  0,         -Xdudt*ur,
-                                0,         0,         0,         -Ydvdt*vr, Xdudt*ur,  0,
-                                0,         -Zdwdt*wr, Ydvdt*vr,  0,         -Ndrdt*rr, Mdqdt*qr,
-                                Zdwdt*wr,  0,         -Xdudt*ur, Ndrdt*rr,  0,         -Kdpdt*pr,
-                                -Ydvdt*vr, Xdudt*ur,  0,         -Mdqdt*qr, Kdpdt*pr,  0};
-
-          return (Matrix(CA_vector, 6, 6) );
-        }
-
-
-        static Matrix
-        computeD1(double v_estimado[6], float X_u, float Y_v, float Y_r, float Z_w, float Z_q, float K_p, float M_q, float M_w, float N_r, float N_v, float X_uabsu, float Y_vabsv, float Y_rabsr, float Z_wabsw, float Z_qabsq, float K_pabsp, float M_qabsq, float M_wabsw, float N_rabsr, float N_vabsv)
+        compute_D(double v_estimado[6], float X_u, float Y_v, float Y_r, float Z_w, float Z_q, float K_p, float M_w, float M_q, float N_v, float N_r, float X_uabsu, float Y_vabsv, float Y_rabsr, float Z_wabsw, float Z_qabsq, float K_pabsp, float M_wabsw, float M_qabsq, float N_vabsv, float N_rabsr)
         {
           // Damping Matrix
 
@@ -141,123 +193,131 @@ namespace Navigation
                                 0,                     N_vabsv*std::abs(vr), 0,                    0,                    0,                    N_rabsr*std::abs(rr)};
 
 
-          return (-Matrix(D1_vector, 6, 6) - Matrix(D2_vector, 6, 6) );
+          return (Matrix(D1_vector, 6, 6) + Matrix(D2_vector, 6, 6) );
+        }
+
+
+
+        static Matrix
+        compute_G(double Mass, double Volume, double zG, double euler_angles[3])
+        {
+
+          double phi = euler_angles[0];
+          double theta = euler_angles[1];
+          //double psi = euler_angles[2];
+
+          double W = Mass * 9.8;
+          double B = Volume * 9.8 * 1000;
+
+          Math::Matrix G_tmp(6,1);
+          G_tmp.resizeAndFill(6,1,0.0);
+          G_tmp(0,0) = (W - B) * std::sin(theta);
+          G_tmp(1,0) = -(W - B) * std::cos(theta) * std::sin(phi);
+          G_tmp(2,0) = -(W - B) * std::cos(theta) * std::cos(phi);
+          G_tmp(3,0) = zG * W * std::cos(theta) * std::sin(phi);
+          G_tmp(4,0) = zG * W * std::sin(theta);
+
+          return G_tmp;
+        
         }
 
 
         static Matrix
-        computeL1(double v_estimado[6])
+        compute_L(double velocities[6],double l, double d, double D, double Sfin)
         {
-          // Lift Matrix
 
-          double ur = v_estimado[0];
+          Math::Matrix L_tmp(6,6);
+          L_tmp.resizeAndFill(6,6,0.0);
+          double CLF = 3;
+          double CLB = 1.24;
+          double Yb;
+          double Zb;
+          double Mb;
+          double Nb;
 
-          double L_vector[36]={0, 0,       0,      0, 0,       0,
-                               0, 30*ur,   0,      0, 0,      -7.7*ur,
-                               0, 0,       30*ur,  0, 7.7*ur, 0,
-                               0, 0,       0,      0, 0,      0,
-                               0, 0,       9.9*ur, 0, 3.1*ur, 0,
-                               0, -9.9*ur, 0,      0, 0,      3.1*ur};
+          double Yf_uv;
+          double Zf_uw;
+          double Yf_ur;
+          double Zf_uq;
+          double Mf_uw;
+          double Mf_uq;
+          double Nf_uv;
+          double Nf_ur;
 
-          return (Matrix(L_vector, 6, 6) );
+          if(l/d>5 && l/d<10)
+          CLB = 1.24;
 
+          if(l/d>10 && l/d<15)
+          CLB = 3.3;
+
+          Yb = -0.5 * D * 3.14 * pow( d/2.0, 2 ) * CLB;
+
+          Zb = Yb;
+
+          Mb = -( -0.65 * l - (-0.35 * l)) * Zb;
+
+          Nb = -Mb;
+
+
+          Yf_uv = - D * CLF * Sfin;
+
+          Yf_ur = D * CLF * Sfin;
+
+          Zf_uw = -D * CLF * Sfin;
+ 
+          Zf_uq = Zf_uw;
+
+          Mf_uw = - (-0.35 * l) * Zf_uw;
+
+          Mf_uq = - (-0.35 * l)* - (-0.35 * l) * Zf_uq;
+ 
+          Nf_uv = -0.35 * l * Yf_uv;
+
+          Nf_ur = - (-0.35 * l) * (-0.35 * l) * Yf_ur;
+
+          L_tmp(1,1) = Yb + Yf_uv;
+          L_tmp(1,5) = Yf_ur * - ( -0.35 * l );
+          L_tmp(2,2) = Zb + Zf_uw;
+          L_tmp(2,4) = Zf_uq * - ( -0.35 * l );
+          L_tmp(4,2) = Mb + Mf_uw;
+          L_tmp(4,4) = Mf_uq;
+          L_tmp(5,1) = Nb + Nf_uv;
+          L_tmp(5,5) = Nf_ur;
+
+          return -L_tmp * velocities[0];
         }
 
-
         static Matrix
-        computeG1(float W,float B,float zG,double pos_estimado[6])
+        compute_Tau(double thruster,double servo_pos[3],double velocities[6],double l, double D, double Sfin)
         {
-          // Restoring forces Matrix
 
-          double phi = Angles::normalizeRadian(pos_estimado[3]);
-          double theta = Angles::normalizeRadian(pos_estimado[4]);
-          double psi = Angles::normalizeRadian(pos_estimado[5]);
+          double Yf;
+          double Zf;
+          double Mf;
+          double Nf;
+          double CLF;
 
-          // Pass euler angles to row matrix
-          Matrix G(6,1);
-          G(0) = (W-B)*sin(theta);
-          G(1) = -(W-B)*cos(theta)*sin(phi);
-          G(2) = -(W-B)*cos(theta)*cos(phi);
-          G(3) = zG*W*cos(theta)*sin(phi);
-          G(4) = zG*W*sin(theta);
-          G(5) = 0;
+          CLF = 3;
 
-Math::Matrix ea(3,1);
-            ea(0) = Math::Angles::normalizeRadian(phi);
-            ea(1) = Math::Angles::normalizeRadian(theta);
-            ea(2) = Math::Angles::normalizeRadian(psi);
+          Yf = D * CLF * Sfin;
+        
+          Zf = -D * CLF * Sfin;
 
-           Math::Matrix J(6,6,0.0); J = ea.toDCMSMO();
+          Mf = - ( -0.35 * l ) * Zf;
 
-
-          return G;
-
-        }
-
-
-        static Matrix
-        computeTau1(double thruster,double velocities[6],double servo_pos[3])
-        {
-         /* Matrix tau_tmp(6, 1, 0.0);
-          Matrix deflections(3, 1, 0.0);
-          Matrix m_fin_lift(5,1);
-          double m_motor_friction = 0.06;
-          double fincoef[5] = {9.6, -9.6, 1.82, -3.84, -3.84};
-          m_fin_lift= Matrix(fincoef, 5, 1);
-
-
-          deflections(0) = servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2];
-          deflections(1) = servo_pos[1] + servo_pos[2];
-          deflections(2) = servo_pos[0] + servo_pos[3];
-
-          tau_tmp(0) = thruster * 10; // Times 10 to compute thruster force between -10 and 10
-          tau_tmp(1) = m_fin_lift(0) * velocities[0] * velocities[0] * deflections(2);
-          tau_tmp(2) = m_fin_lift(1) * velocities[0] * velocities[0] * deflections(1);
-          tau_tmp(3) = m_fin_lift(2) * velocities[0] * velocities[0] * deflections(0) + m_motor_friction * tau_tmp(0);
-          tau_tmp(4) = m_fin_lift(3) * velocities[0] * velocities[0] * deflections(1);
-          tau_tmp(5) = m_fin_lift(4) * velocities[0] * velocities[0] * deflections(2);*/
+          Nf = -0.35 * l * Yf;
 
           Matrix tau_tmp(6, 1, 0.0);
-          tau_tmp(0,0) = thruster * 10/0.84;//thruster * 10;
-          tau_tmp(1,0) = (servo_pos[1] * 9.6 + servo_pos[2] * 9.6) * pow(velocities[0],2.0);
-          tau_tmp(2,0) = (servo_pos[0] * -9.6 + servo_pos[3] * -9.6) * pow(velocities[0],2.0);
-          tau_tmp(3,0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * /*-0.4*/-0.45 * pow(velocities[0],2.0) + /*0.006*/0.0054 * tau_tmp(0,0);
-          tau_tmp(4,0) = (servo_pos[0] * -3.85 + servo_pos[3] * -3.85 ) * pow(velocities[0],2.0);
-          tau_tmp(5,0) = (servo_pos[1] * -3.85 + servo_pos[2] * -3.85 ) * pow(velocities[0],2.0);
 
+          tau_tmp(0,0) = thruster * 10/0.84;
+          tau_tmp(1,0) = (servo_pos[1] + servo_pos[2]) * Yf * pow(velocities[0],2.0);
+          tau_tmp(2,0) = (servo_pos[0] + servo_pos[3]) * Zf * pow(velocities[0],2.0);
+          tau_tmp(3,0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * -0.45 * pow(velocities[0],2.0) + 0.0054 * tau_tmp(0,0);
+          tau_tmp(4,0) = (servo_pos[0] + servo_pos[3]) * Mf * pow(velocities[0],2.0);
+          tau_tmp(5,0) = (servo_pos[1] + servo_pos[2]) * Nf * pow(velocities[0],2.0);
 
           return tau_tmp;
-        }
-
-        /**************************************************************************************************/
-
-
-        /*static Matrix
-        compute_filtering(Matrix v, Matrix v_bar, double delta_t)
-        {
-
-          Matrix T = Matrix(6,6, 0.0);
-          T(0,0) = 1*delta_t;
-          T(1,1) = 1*delta_t;
-          T(2,2) = 1*delta_t;
-          T(3,3) = 1*delta_t;
-          T(4,4) = 1*delta_t;
-          T(5,5) = 1*delta_t;
-
-          /*Matrix v = Matrix(6,1, 0.0);
-          v(0, 0) = velocities[0];
-          v(1, 0) = velocities[1];
-          v(2, 0) = velocities[2];
-          v(3, 0) = velocities[3];
-          v(4, 0) = velocities[4];
-          v(5, 0) = velocities[5];*/
-
-          /*Matrix acc = Matrix(6,1, 0.0);
-          acc = inverse(T) * 0.05 * ( v - v_bar);
-
-          return acc;
-        }*/
-
+        } 
       };
     }
   }

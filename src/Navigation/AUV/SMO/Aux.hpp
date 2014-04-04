@@ -84,6 +84,27 @@ namespace Navigation
             return J_tmp;
           }
 
+          static Matrix
+          compute_standard_error(Matrix nu_error)
+          {
+            if (nu_error(3,0) <= -3.14)
+              nu_error(3,0) = nu_error(3,0)+360*3.14/180;
+            if (nu_error(3,0) >= 3.14)
+              nu_error(3,0) = nu_error(3,0)-360*3.14/180;
+
+            if (nu_error(4,0) <= -3.14)
+              nu_error(4,0) = nu_error(4,0)+360*3.14/180;
+            if (nu_error(4,0) >= 3.14)
+              nu_error(4,0) = nu_error(4,0)-360*3.14/180;
+
+            if (nu_error(5,0) <= -3.14)
+              nu_error(5,0) = nu_error(5,0)+360*3.14/180;
+            if (nu_error(5,0) >= 3.14)
+              nu_error(5,0) = nu_error(5,0)-360*3.14/180;
+
+           return nu_error;
+          }
+
       };
     }
   }
