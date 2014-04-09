@@ -40,26 +40,26 @@ namespace Navigation
 
         //Identified Damping Matrix Terms
         static const float X_u = 2.1;
-        static const float Y_v = 23;//33;
-        static const float Y_r = -11.5;//-1.42;
+        static const float Y_v = 24.45;//23;//33;
+        static const float Y_r = -2.61;//-11.5;//-1.42;
         static const float Z_w = 23;//33;
         static const float Z_q = 11.5;//1.42;
         static const float K_p = 0.75;
         static const float M_w = -3.1;//-11.25;
         static const float M_q = 9.7;//-8;
-        static const float N_v = 3.1;//11.25;
-        static const float N_r = 9.7;//-8;
+        static const float N_v = 30.73;//3.1;//11.25;
+        static const float N_r = 16.9;//9.7;//-8;
 
         static const float X_uabsu = 2.1;
-        static const float Y_vabsv = 80;//90;
-        static const float Y_rabsr = -0.3;//9.77;
+        static const float Y_vabsv = 12;//80;//90;
+        static const float Y_rabsr = -26.31;//-0.3;//9.77;
         static const float Z_wabsw = 80;//90;
         static const float Z_qabsq = 0.3;//-9.77;
         static const float K_pabsp = 0.85;
         static const float M_wabsw = -1.5;//-2.2;
         static const float M_qabsq = 9.1;//5.6;
-        static const float N_vabsv = 1.5;//2.2;
-        static const float N_rabsr = 9.1;//5.6;
+        static const float N_vabsv = 19.22;//1.5;//2.2;
+        static const float N_rabsr = 1.17;//9.1;//5.6;
 
 
       struct Arguments
@@ -163,7 +163,6 @@ namespace Navigation
          double nu_est_delta;
          double J_delta;
          int init_nu_est;
-         int gps_counter;
          DUNE::Time::Delta delta_vel_est;
          DUNE::Time::Delta delta_nu_est;
          DUNE::Time::Delta delta_J;
@@ -183,6 +182,18 @@ namespace Navigation
          Math::Matrix Taun;
          double thruster;
          double servo_pos[4];
+
+         /*Vehicle Model coefficients*/
+         double Model_Coeff[26];
+         int model_coef_init;
+
+         /*Covariance Variables*/
+         Math::Matrix Cov_nu;
+         Math::Matrix Cov_vel;
+         Math::Matrix vel_cov;
+         double angular_vel[3];
+         int num_amostras;
+         int Cov_multiplier;
 
           //! Send message to Estimated State and Navigation Uncertainty
           IMC::EstimatedState m_est;
@@ -414,7 +425,6 @@ namespace Navigation
          nu_est_delta = 0;
          J_delta = 0;
          init_nu_est = 0;
-         gps_counter = 0;
 
          /*Vehicle Model*/
          M.resizeAndFill(6,6,0.0);
@@ -431,6 +441,18 @@ namespace Navigation
          Taun.resizeAndFill(6,1,0.0);
          thruster = 0;
          memset(servo_pos,0,sizeof(servo_pos));
+
+         /*Vehicle Model coefficients*/
+         memset(Model_Coeff,0,sizeof(Model_Coeff));
+         model_coef_init = 0;
+
+         /*Covariance Variables*/
+         Cov_nu.resizeAndFill(6,3,0.0);
+         Cov_vel.resizeAndFill(6,3,0.0);
+         vel_cov.resizeAndFill(6,1,0.0);
+         memset(angular_vel,0,sizeof(angular_vel));
+         num_amostras = 0;
+         Cov_multiplier = 0;
 
          //Register Consumers
          bind<IMC::EntityState>(this);
@@ -490,15 +512,14 @@ namespace Navigation
 
         void
         consume(const IMC::GpsFix* msg)
-        { 
-
+        {
           if (flag_initial_point == 0 && gps_treshold < 50)
             gps_treshold = msg->hacc + 1;
 
           if (flag_initial_point != 0)
             gps_treshold = 10;
 
-          if (msg->validity & IMC::GpsFix::GFV_VALID_POS)
+          if(msg->validity & IMC::GpsFix::GFV_VALID_POS)
           {
             if (msg->hacc < gps_treshold)
             {
@@ -506,10 +527,6 @@ namespace Navigation
               gps_fix[1] = msg->lon;
               gps_fix[2] = msg->height;
               flag_valid_pos = 1;
-
-              if(init_nu_est == 0)
-              gps_counter = gps_counter + 1;
-
             }
 
             if (flag_initial_point == 0)
@@ -519,10 +536,12 @@ namespace Navigation
               gps_initial_point[2] = msg->height;
               flag_initial_point = 1;
             }
-
-            if (msg->hacc >= gps_treshold || !(msg->validity & IMC::GpsFix::GFV_VALID_POS))
-              flag_valid_pos = 0;
           }
+            if (msg->hacc >= gps_treshold) 
+              flag_valid_pos = 0;
+
+            if ((msg->validity & IMC::GpsFix::GFV_VALID_POS)==0)
+              flag_valid_pos = 0;
         }
 
         void
@@ -585,6 +604,12 @@ namespace Navigation
              velocities[4] = msg->y;
              velocities[5] = msg->z;
            }
+           if (flag_ahrs_active == 1 && msg->getSourceEntity() == ahrs_entity_id)
+           {
+            angular_vel[0] = msg->x;
+            angular_vel[1] = msg->y;
+            angular_vel[2] = msg->z;
+           }
           }
 
          void
@@ -645,8 +670,13 @@ namespace Navigation
 
             /********************************************************************/
 
-            /*******************GPS Signal Acquisition**************************/
+            /********************Rotation Matrix and Velocities******************/
+            J = Aux::compute_J(euler_angles);
+            vel = Matrix(velocities,6,1);
+            /********************************************************************/
 
+            /*******************GPS Signal Acquisition**************************/
+            orientation_delta = delta_orientation.getDelta();
             if (flag_valid_pos == 1)
             {
             Coordinates::WGS84::getNEBearingAndRange(gps_initial_point[0], gps_initial_point[1], gps_fix[0], gps_fix[1], &bearing, &range);
@@ -657,9 +687,9 @@ namespace Navigation
 
             if(flag_imu_active == 1)
             {
-            J = Aux::compute_J(euler_angles);
-            vel = Matrix(velocities,6,1);
-            orientation_delta = delta_orientation.getDelta();
+           /* J = Aux::compute_J(euler_angles);
+            vel = Matrix(velocities,6,1);*/
+
             if(orientation_delta == -1)
             {
             orientation_delta = 0.05;
@@ -677,11 +707,14 @@ namespace Navigation
             nu(5,0) = euler_angles[2];
             }
 
-            if(init_nu_est == 0 && gps_counter == 2)
+            if(init_nu_est == 0)
             {
             nu_est(0,0) = range * std::cos(bearing);
             nu_est(1,0) = range * std::sin(bearing);
             nu_est(2,0) = depth;
+            nu_est(3,0) = euler_angles[0];
+            nu_est(4,0) = euler_angles[1];
+            nu_est(5,0) = euler_angles[2];
             init_nu_est = init_nu_est + 1;
             }
 
@@ -692,14 +725,10 @@ namespace Navigation
 
             /*********************Position from measured Velocities**************/
 
+            posfromvel_delta = delta_posfromvel.getDelta();
+
             if(flag_valid_pos == 0)
             {
-
-            J = Aux::compute_J(euler_angles);
-
-            vel = Matrix(velocities,6,1);
-
-            posfromvel_delta = delta_posfromvel.getDelta();
             if(posfromvel_delta == -1)
             {
             posfromvel_delta = 0.05;
@@ -737,27 +766,48 @@ namespace Navigation
             //Normalize orientation error
             nu_error = Aux::compute_standard_error(nu_error);
 
+            //To minimize peaks by GPS Corrections
+            if(nu_error(0,0) >= 2) 
+            {
+            nu_error(0,0) = 0.01;
+            nu_est(0,0) = nu(0,0);
+            }
+
+            if(nu_error(1,0) >= 2) 
+            {
+            nu_error(1,0) = 0.01;
+            nu_est(1,0) = nu(1,0);
+            }
+ 
+            //Calculate Vehicle Model Coefficients and M Matrix one time
+            if( model_coef_init == 0)
+            {
+            Model::compute_Model_Coeff(m_args.Mass,m_args.a,m_args.b,m_args.c,m_args.Volume,m_args.l,m_args.d,m_args.Density,m_args.Sfin,Model_Coeff);
+
             //Calculate Vehicle Model
-            M = Model::compute_M(m_args.Mass,m_args.a,m_args.b,m_args.c,m_args.zG);
+            M = Model::compute_M(m_args.Mass,Model_Coeff,m_args.zG);
 
-            C = Model::compute_C(m_args.Mass,m_args.a,m_args.b,m_args.c,m_args.zG,velocities_est);
+            model_coef_init = model_coef_init + 1;
+            }
+       
+            C = Model::compute_C(m_args.Mass,Model_Coeff,m_args.zG,vel_est);
 
-            D = Model::compute_D(velocities_est, X_u, Y_v, Y_r, Z_w, Z_q, K_p, M_w,  M_q, N_v,  N_r,  X_uabsu,  Y_vabsv,  Y_rabsr,  Z_wabsw,  Z_qabsq,  K_pabsp,  M_wabsw,  M_qabsq, N_vabsv,  N_rabsr);
+            D = Model::compute_D(vel_est, X_u, Y_v, Y_r, Z_w, Z_q, K_p, M_w,  M_q, N_v,  N_r,  X_uabsu,  Y_vabsv,  Y_rabsr,  Z_wabsw,  Z_qabsq,  K_pabsp,  M_wabsw,  M_qabsq, N_vabsv,  N_rabsr);
 
-            G = Model::compute_G(m_args.Mass,m_args.Volume,m_args.zG,euler_angles_est);
+            G = Model::compute_G(Model_Coeff,m_args.zG,nu_est);
 
-            L = Model::compute_L(velocities_est,m_args.l,m_args.d,m_args.Density,m_args.Sfin);
+            L = Model::compute_L(vel_est,m_args.l,Model_Coeff);
 
-            Tau = Model::compute_Tau(thruster,servo_pos,velocities_est,m_args.l,m_args.Density,m_args.Sfin);
-
-            J = Aux::compute_J(euler_angles);
+            Tau = Model::compute_Tau(thruster,servo_pos,vel,Model_Coeff);
 
             J_delta = delta_J.getDelta();
             if(J_delta == -1)
+            {
             J_delta=0.05;
-
+            }
             J_diff = (J - J_ant) / J_delta;
             J_ant = J;
+
 
             //Calculate Vehicle Mode in Earth-fixed Frame
             Mn = inverse (transpose(J) ) * ( M )  * inverse(J);
@@ -796,43 +846,26 @@ namespace Navigation
 
             vel_est = vel_est + acc_est * vel_est_delta;
 
-           // inf("vel_est");std::cout<<vel_est<<std::endl;
-
             tanghyper = GainMatrices::compute_tanh(nu_error,m_args.nu_bound);
 
             nu_dot_est = -alfa1 * nu_error + J * vel_est - k1 * tanghyper;
 
-//inf("nu_dot_est");std::cout<<nu_dot_est<<std::endl;
             nu_est_delta = delta_nu_est.getDelta();
             if(nu_est_delta == -1)
             {
             nu_est_delta = 0.05;
             }
 
-           nu_est = nu_est + nu_dot_est * nu_est_delta;
+            nu_est = nu_est + nu_dot_est * nu_est_delta;
 
             nu_est(3,0) = Math::Angles::normalizeRadian( nu_est(3,0) );
             nu_est(4,0) = Math::Angles::normalizeRadian( nu_est(4,0) );
             nu_est(5,0) = Math::Angles::normalizeRadian( nu_est(5,0) );
 
-    //       inf("nu_est");std::cout<<nu_est<<std::endl;
-
-           euler_angles_est[0]=nu_est(3);
-           euler_angles_est[1]=nu_est(4);
-           euler_angles_est[2]=nu_est(5);
-
-           velocities_est[0] = vel_est(0);
-           velocities_est[1] = vel_est(1);
-           velocities_est[2] = vel_est(2);
-           velocities_est[3] = vel_est(3);
-           velocities_est[4] = vel_est(4);
-           velocities_est[5] = vel_est(5);
-
-
+           }
             /********************************************************************/
 
-
-            //Filters velocities before send to estimated state
+            //Filters velocities and position before send to estimated state
             /*filter_delta = delta_filter.getDelta();
             if(filter_delta == -1)
             {
@@ -843,12 +876,12 @@ namespace Navigation
 
             //std::cout<<vel_filter<<std::endl;
 
-            m_est.x = nu(0,0);
-            m_est.y = nu(1,0);
-            m_est.z = gps_initial_point[2] + nu(2,0);
-            m_est.phi = nu(3,0);
-            m_est.theta = nu(4,0);
-            m_est.psi = nu(5,0);
+            m_est.x = nu_est(0,0);
+            m_est.y = nu_est(1,0);
+            m_est.z = gps_initial_point[2] + nu_est(2,0);
+            m_est.phi = nu_est(3,0);
+            m_est.theta = nu_est(4,0);
+            m_est.psi = nu_est(5,0);
             m_est.u = vel_est(0,0);
             m_est.v = vel_est(1,0);
             m_est.w = vel_est(2,0);
@@ -859,10 +892,10 @@ namespace Navigation
             /*Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
                                                          m_est.u,   m_est.v,     m_est.w,
                                                          &m_est.vx, &m_est.vy,   &m_est.vz);*/
-            // 2scd Method
-            m_est.vx=nu_dot_est(0);
-            m_est.vy=nu_dot_est(1);
-            m_est.vz=nu_dot_est(2);
+            // 2nd Method
+            m_est.vx=nu_dot_est(0,0);
+            m_est.vy=nu_dot_est(1,0);
+            m_est.vz=nu_dot_est(2,0);
             m_est.lat = gps_initial_point[0];
             m_est.lon = gps_initial_point[1];
             m_est.height = gps_initial_point[2];
@@ -870,20 +903,50 @@ namespace Navigation
             dispatch( m_est );
 
 
-           /* m_uncertainty.x = velocities[0];
-            m_uncertainty.y = velocities[1];
-            m_uncertainty.z = velocities[2];
-            m_uncertainty.phi = velocities[3];
-            m_uncertainty.theta = velocities[4];
-            m_uncertainty.psi = velocities[5];
-            m_uncertainty.u = vel_filter(0);
-            m_uncertainty.v = vel_filter(1);
-            m_uncertainty.w = vel_filter(2);
-            m_uncertainty.p = vel_filter(3);
-            m_uncertainty.q = vel_filter(4);
-            m_uncertainty.r = vel_filter(5);
-            dispatch( m_uncertainty );*/
+            /*Covariance between measure and estimated*/
+            num_amostras++;
+            Cov_nu = Aux::compute_Cov(Cov_nu,nu_est,nu,num_amostras);
+
+            /*Verify what angular velocities to use IMU/AHRS*/
+            if(flag_imu_active == 1)
+            {
+             vel_cov = vel;
             }
+            if((flag_imu_active == 0 || flag_imu_active == -1) && flag_ahrs_active == 1)
+            {
+             vel_cov(0) = vel(0);
+             vel_cov(1) = vel(1);
+             vel_cov(2) = vel(2);
+             vel_cov(3) = angular_vel[0];
+             vel_cov(4) = angular_vel[1];
+             vel_cov(5) = angular_vel[2];
+            }
+      
+            Cov_vel = Aux::compute_Cov(Cov_vel,vel_est,vel_cov,num_amostras);
+
+            /*If no GPS is available Cov increases more for X and Y*/
+            if(flag_valid_pos == 1)
+            {
+            Cov_multiplier = 1;
+            }
+            if(flag_valid_pos == 0)
+            {
+            Cov_multiplier = 2;
+            }
+
+            m_uncertainty.x = Cov_nu(0,2) * Cov_multiplier;
+            m_uncertainty.y = Cov_nu(1,2) * Cov_multiplier;
+            m_uncertainty.z = Cov_nu(2,2);
+            m_uncertainty.phi = Cov_nu(3,2);
+            m_uncertainty.theta = Cov_nu(4,2);
+            m_uncertainty.psi = Cov_nu(5,2);
+            m_uncertainty.u = Cov_vel(0,2);
+            m_uncertainty.v = Cov_vel(1,2);
+            m_uncertainty.w = Cov_vel(2,2);
+            m_uncertainty.p = Cov_vel(3,2);
+            m_uncertainty.q = Cov_vel(4,2);
+            m_uncertainty.r = Cov_vel(5,2);
+            dispatch( m_uncertainty );
 
          }
         }
