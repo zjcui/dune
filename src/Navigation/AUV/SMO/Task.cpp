@@ -38,28 +38,74 @@ namespace Navigation
     {
       using DUNE_NAMESPACES;
 
-        //Identified Damping Matrix Terms
-        static const float X_u = 2.1;
-        static const float Y_v = 24.45;//23;//33;
-        static const float Y_r = -2.61;//-11.5;//-1.42;
-        static const float Z_w = 23;//33;
-        static const float Z_q = 11.5;//1.42;
+        //Damping Matrix Terms from Article
+        /*static const float X_u = -7.1;
+        static const float Y_v = 71.5;//23;
+        static const float Y_r = -14.51;//-11.5;
+        static const float Z_w = 23;
+        static const float Z_q = 11.5;
         static const float K_p = 0.75;
-        static const float M_w = -3.1;//-11.25;
-        static const float M_q = 9.7;//-8;
-        static const float N_v = 30.73;//3.1;//11.25;
-        static const float N_r = 16.9;//9.7;//-8;
+        static const float M_w = -3.1;
+        static const float M_q = 9.7;
+        static const float N_v = 4.8;//3.1;
+        static const float N_r = 3.5;//9.7;
 
-        static const float X_uabsu = 2.1;
-        static const float Y_vabsv = 12;//80;//90;
-        static const float Y_rabsr = -26.31;//-0.3;//9.77;
-        static const float Z_wabsw = 80;//90;
-        static const float Z_qabsq = 0.3;//-9.77;
+        static const float X_uabsu = 8.5;
+        static const float Y_vabsv = 48.6;//80;
+        static const float Y_rabsr = -1.096;//-0.3;
+        static const float Z_wabsw = 80;
+        static const float Z_qabsq = 0.3;
         static const float K_pabsp = 0.85;
-        static const float M_wabsw = -1.5;//-2.2;
-        static const float M_qabsq = 9.1;//5.6;
-        static const float N_vabsv = 19.22;//1.5;//2.2;
-        static const float N_rabsr = 1.17;//9.1;//5.6;
+        static const float M_wabsw = -1.5;
+        static const float M_qabsq = 9.1;
+        static const float N_vabsv = 4.35;//1.5;
+        static const float N_rabsr = 13.5;//9.1;*/
+
+        //Identified Damping Matrix Terms from Simulation
+        /*static const float X_u = 2.2;
+        static const float Y_v = 41.23;
+        static const float Y_r = 1.22;
+        static const float Z_w = 41.23;
+        static const float Z_q = -1.22;
+        static const float K_p = 0.75;
+        static const float M_w = -29.8;
+        static const float M_q = 19.14;
+        static const float N_v = 29.8;
+        static const float N_r = 19.14;
+
+        static const float X_uabsu = 2.2;
+        static const float Y_vabsv = 72.8;
+        static const float Y_rabsr = 2.1;
+        static const float Z_wabsw = 72.8;
+        static const float Z_qabsq = -2.1;
+        static const float K_pabsp = 0.85;
+        static const float M_wabsw = 71.4;
+        static const float M_qabsq = -27.8;
+        static const float N_vabsv = -71.4;
+        static const float N_rabsr = -27.8;*/
+
+        //Identified Damping Matrix Terms from Replay
+        static const float X_u = 2.2;
+        static const float Y_v = 60;
+        static const float Y_r = 25.18;
+        static const float Z_w = 60;
+        static const float Z_q = -25.18;
+        static const float K_p = 0.75;
+        static const float M_w = 11.8;
+        static const float M_q = -5.2;
+        static const float N_v = -11.8;
+        static const float N_r = -5.2;
+
+        static const float X_uabsu = 2.2;
+        static const float Y_vabsv = 116;
+        static const float Y_rabsr = 36;
+        static const float Z_wabsw = 116;
+        static const float Z_qabsq = -36;
+        static const float K_pabsp = 0.85;
+        static const float M_wabsw = 13.4;
+        static const float M_qabsq = -5.7;
+        static const float N_vabsv = -13.4;
+        static const float N_rabsr = -5.7;
 
 
       struct Arguments
@@ -78,6 +124,7 @@ namespace Navigation
           // Resolve Entity string
           std::string imu_entity_name;
           std::string ahrs_entity_name;
+          std::string dvl_entity_name;
 
           //AUV caracteristic    
           double Mass;
@@ -129,8 +176,10 @@ namespace Navigation
          /*Entity Variables*/
          int flag_imu_active;
          int flag_ahrs_active;
+         int flag_dvl_active;
          int imu_entity_id;
          int ahrs_entity_id;
+         int dvl_entity_id;
 
 
          /*Task management variables*/
@@ -194,6 +243,9 @@ namespace Navigation
          double angular_vel[3];
          int num_amostras;
          int Cov_multiplier;
+ 
+         /*RPM variables*/
+         double rpms;
 
           //! Send message to Estimated State and Navigation Uncertainty
           IMC::EstimatedState m_est;
@@ -222,6 +274,10 @@ namespace Navigation
           param("Entity Label AHRS", m_args.ahrs_entity_name)
          .defaultValue("AHRS")
          .description("Label of the AHRS message");
+
+          param("Entity Label DVL", m_args.dvl_entity_name)
+          .defaultValue("DVL")
+          .description("Label of the DVL message");
 
           /*Vehicle physical properties*/
           param("Mass", m_args.Mass)
@@ -393,8 +449,11 @@ namespace Navigation
          /*Entity Variables*/
          flag_imu_active = 0;
          flag_ahrs_active = 0;
+         flag_dvl_active = 0;
          imu_entity_id = 0;
          ahrs_entity_id = 0;
+         dvl_entity_id = 0;
+      
 
          /*Task Management Variables*/
          task_management = 0;
@@ -454,6 +513,9 @@ namespace Navigation
          num_amostras = 0;
          Cov_multiplier = 0;
 
+         /*RPM variables*/
+         rpms = 0;
+
          //Register Consumers
          bind<IMC::EntityState>(this);
          bind<IMC::GpsFix>(this);
@@ -463,6 +525,7 @@ namespace Navigation
          bind<IMC::AngularVelocity>(this);
          bind<IMC::SetThrusterActuation>(this);
          bind<IMC::ServoPosition>(this);
+         bind<IMC::Rpm>(this);
         }
 
 
@@ -488,6 +551,16 @@ namespace Navigation
               ahrs_entity_id = -1;
               flag_ahrs_active = -1;
             }
+
+            try
+            {
+              dvl_entity_id = resolveEntity(m_args.dvl_entity_name);
+            }
+            catch (...)
+            {
+              dvl_entity_id = -1;
+              flag_dvl_active = -1;
+            }
           }
 
           void
@@ -507,6 +580,14 @@ namespace Navigation
                 flag_ahrs_active = 1;
               else
                 flag_ahrs_active = 0;
+            }
+
+            if (msg->getSourceEntity() == dvl_entity_id)
+            {
+              if (msg->state == IMC::EntityState::ESTA_NORMAL)
+                flag_dvl_active = 1;
+              else
+                flag_dvl_active = 0;
             }
           }
 
@@ -624,6 +705,16 @@ namespace Navigation
             servo_pos[msg->id] = msg->value;
           }
 
+          void
+          consume(const IMC::Rpm* msg)
+          {
+            if(flag_dvl_active == 0 || flag_dvl_active == -1)
+            { 
+               rpms = msg->value;
+               velocities[0] = rpms * 1.6 / 1500;
+            }
+          }
+
 
           /***********************Task MANAGEMENT**********************/
           void
@@ -655,7 +746,7 @@ namespace Navigation
 
             state_management();
 
-            /********************************************************************/
+            /*******************************************************************/
 
             if(task_management == 1)
             {
@@ -668,12 +759,12 @@ namespace Navigation
             if(nu(4,0)<-1.56 && nu(4,0)>-1.58)
               nu(4,0) = -1.56;
 
-            /********************************************************************/
+            /*******************************************************************/
 
-            /********************Rotation Matrix and Velocities******************/
+            /********************Rotation Matrix and Velocities*****************/
             J = Aux::compute_J(euler_angles);
             vel = Matrix(velocities,6,1);
-            /********************************************************************/
+            /*******************************************************************/
 
             /*******************GPS Signal Acquisition**************************/
             orientation_delta = delta_orientation.getDelta();
@@ -687,9 +778,6 @@ namespace Navigation
 
             if(flag_imu_active == 1)
             {
-           /* J = Aux::compute_J(euler_angles);
-            vel = Matrix(velocities,6,1);*/
-
             if(orientation_delta == -1)
             {
             orientation_delta = 0.05;
@@ -735,6 +823,8 @@ namespace Navigation
             }
             nu_dot = J * vel;
             nu = nu + nu_dot * posfromvel_delta;
+            /*Depth Sensor is always available*/
+            nu(2,0) = depth;
 
             if(flag_imu_active == 0 || flag_imu_active == -1)
             {
@@ -767,16 +857,22 @@ namespace Navigation
             nu_error = Aux::compute_standard_error(nu_error);
 
             //To minimize peaks by GPS Corrections
-            if(nu_error(0,0) >= 2) 
+            if(std::abs(nu_error(0,0)) >= 2) 
             {
-            nu_error(0,0) = 0.01;
+            nu_error(0,0) = 0.0;
             nu_est(0,0) = nu(0,0);
             }
 
-            if(nu_error(1,0) >= 2) 
+            if(std::abs(nu_error(1,0)) >= 2) 
             {
-            nu_error(1,0) = 0.01;
+            nu_error(1,0) = 0.0;
             nu_est(1,0) = nu(1,0);
+            }
+
+            if(std::abs(nu_error(2,0)) >= 1) 
+            {
+            nu_error(2,0) = 0.0;
+            nu_est(2,0) = nu(2,0);
             }
  
             //Calculate Vehicle Model Coefficients and M Matrix one time
@@ -842,10 +938,10 @@ namespace Navigation
             if(vel_est_delta == -1)
             {
             vel_est_delta = 0.05;
-            }
-
+            }std::cout<<acc_est(5)<<std::endl;
+//acc_est(5)=0;
             vel_est = vel_est + acc_est * vel_est_delta;
-
+inf("start");std::cout<<vel_est<<std::endl;std::cout<<nu_error<<std::endl;std::cout<<flag_valid_pos<<std::endl;
             tanghyper = GainMatrices::compute_tanh(nu_error,m_args.nu_bound);
 
             nu_dot_est = -alfa1 * nu_error + J * vel_est - k1 * tanghyper;
