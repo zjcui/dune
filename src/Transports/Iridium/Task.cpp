@@ -51,6 +51,9 @@ namespace Transports
       bool m_update_pool_empty;
       int m_dev_update_req_id;
       Random::Generator* m_rnd;
+      //! Vehicle is underwater.
+      bool m_underwater;
+      //! Task arguments
       Arguments m_args;
 
       Task(const std::string& name, Tasks::Context& ctx):
@@ -65,9 +68,12 @@ namespace Transports
         .defaultValue("600")
         .description("Delay between announce update messages. 0 for no updates being sent.");
 
+	m_underwater = false;
+
         bind<IMC::Announce>(this);
         bind<IMC::IridiumMsgRx>(this);
         bind<IMC::IridiumTxStatus>(this);
+        bind<IMC::VehicleMedium>(this);
       }
 
       void
@@ -202,6 +208,15 @@ namespace Transports
           || msg->status == IridiumTxStatus::TXSTATUS_EXPIRED;
       }
 
+      void
+      consume(const IMC::VehicleMedium* msg)
+      {
+        if (msg->medium == IMC::VehicleMedium::VM_UNDERWATER)
+	  m_underwater = true;
+	else
+	  m_underwater = false;
+      }
+
       bool
       send_device_updates()
       {
@@ -259,7 +274,7 @@ namespace Transports
           {
             double now = Clock::get();
             if ((now - m_last_dev_update_time)
-                > m_args.delay_between_device_updates)
+                > m_args.delay_between_device_updates && !m_underwater)
             {
               if (send_device_updates())
                 m_last_dev_update_time = now;
