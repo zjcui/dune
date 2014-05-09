@@ -70,77 +70,77 @@ namespace Navigation
         }
 
 
-          static Matrix
-          compute_J(double euler_angles[3])
-          {
-            // Pass euler angles to row matrix
-            Math::Matrix ea(3,1);
-            ea(0) = Math::Angles::normalizeRadian(euler_angles[0]);
-            ea(1) = Math::Angles::normalizeRadian(euler_angles[1]);
-            ea(2) = Math::Angles::normalizeRadian(euler_angles[2]);
+        static Matrix
+        compute_J(double euler_angles[3])
+        {
+          // Pass euler angles to row matrix
+          Math::Matrix ea(3,1);
+          ea(0) = Math::Angles::normalizeRadian(euler_angles[0]);
+          ea(1) = Math::Angles::normalizeRadian(euler_angles[1]);
+          ea(2) = Math::Angles::normalizeRadian(euler_angles[2]);
 
-            Math::Matrix J_tmp(6,6,0.0); J_tmp = ea.toDCMSMO();
+          Math::Matrix J_tmp(6,6,0.0); J_tmp = ea.toDCMSMO();
 
-            return J_tmp;
-          }
+          return J_tmp;
+        }
 
-          static Matrix
-          compute_standard_error(Matrix nu_error)
-          {
-            if (nu_error(3,0) <= -3.14)
-              nu_error(3,0) = nu_error(3,0)+360*3.14/180;
-            if (nu_error(3,0) >= 3.14)
-              nu_error(3,0) = nu_error(3,0)-360*3.14/180;
+        static Matrix
+        compute_standard_error(Matrix nu_error)
+        {
+          if (nu_error(3,0) <= -3.14)
+            nu_error(3,0) = nu_error(3,0)+360*3.14/180;
+          if (nu_error(3,0) >= 3.14)
+            nu_error(3,0) = nu_error(3,0)-360*3.14/180;
 
-            if (nu_error(4,0) <= -3.14)
-              nu_error(4,0) = nu_error(4,0)+360*3.14/180;
-            if (nu_error(4,0) >= 3.14)
-              nu_error(4,0) = nu_error(4,0)-360*3.14/180;
+          if (nu_error(4,0) <= -3.14)
+            nu_error(4,0) = nu_error(4,0)+360*3.14/180;
+          if (nu_error(4,0) >= 3.14)
+            nu_error(4,0) = nu_error(4,0)-360*3.14/180;
 
-            if (nu_error(5,0) <= -3.14)
-              nu_error(5,0) = nu_error(5,0)+360*3.14/180;
-            if (nu_error(5,0) >= 3.14)
-              nu_error(5,0) = nu_error(5,0)-360*3.14/180;
+          if (nu_error(5,0) <= -3.14)
+            nu_error(5,0) = nu_error(5,0)+360*3.14/180;
+          if (nu_error(5,0) >= 3.14)
+            nu_error(5,0) = nu_error(5,0)-360*3.14/180;
 
-           return nu_error;
-          }
+          return nu_error;
+        }
 
-          static Matrix
-          compute_Cov(Matrix Cov,Matrix x, Matrix y,int n)
-          {
+        static Matrix
+        compute_Cov(Matrix Cov,Matrix x, Matrix y,int n)
+        {
 
           /*Cov[0] = Cov[0] + x(0);
-          Cov[1] = Cov[1] + y(0);
-          Cov[2] = Cov[2] + x(0) * y(0);
-          Cov[3] = (1.0 / n) * (Cov[2] - (1.0 / n) * Cov[0] * Cov[1]);*/
+            Cov[1] = Cov[1] + y(0);
+            Cov[2] = Cov[2] + x(0) * y(0);
+            Cov[3] = (1.0 / n) * (Cov[2] - (1.0 / n) * Cov[0] * Cov[1]);*/
 
           Cov(0,0) = Cov(0,0) + x(0);
           Cov(0,1) = Cov(0,1) + y(0);
-          Cov(0,2) = 1.0 / (n - 1.0) * ( (x(0) - Cov(0,0) / n) * (y(0) - Cov(0,1) / n) ); 
+          Cov(0,2) = 1.0 / (n - 1.0) * ( (x(0) - Cov(0,0) / n) * (y(0) - Cov(0,1) / n) );
 
           Cov(1,0) = Cov(1,0) + x(1);
           Cov(1,1) = Cov(1,1) + y(1);
-          Cov(1,2) = 1.0 / (n - 1.0) * ( (x(1) - Cov(1,0) / n) * (y(1) - Cov(1,1) / n) ); 
+          Cov(1,2) = 1.0 / (n - 1.0) * ( (x(1) - Cov(1,0) / n) * (y(1) - Cov(1,1) / n) );
 
           Cov(2,0) = Cov(2,0) + x(2);
           Cov(2,1) = Cov(2,1) + y(2);
-          Cov(2,2) = 1.0 / (n - 1.0) * ( (x(2) - Cov(2,0) / n) * (y(2) - Cov(2,1) / n) ); 
+          Cov(2,2) = 1.0 / (n - 1.0) * ( (x(2) - Cov(2,0) / n) * (y(2) - Cov(2,1) / n) );
 
           Cov(3,0) = Cov(3,0) + x(3);
           Cov(3,1) = Cov(3,1) + y(3);
-          Cov(3,2) = 1.0 / (n - 1.0) * ( (x(3) - Cov(3,0) / n) * (y(3) - Cov(3,1) / n) ); 
+          Cov(3,2) = 1.0 / (n - 1.0) * ( (x(3) - Cov(3,0) / n) * (y(3) - Cov(3,1) / n) );
 
           Cov(4,0) = Cov(4,0) + x(4);
           Cov(4,1) = Cov(4,1) + y(4);
-          Cov(4,2) = 1.0 / (n - 1.0) * ( (x(4) - Cov(4,0) / n) * (y(4) - Cov(4,1) / n) ); 
+          Cov(4,2) = 1.0 / (n - 1.0) * ( (x(4) - Cov(4,0) / n) * (y(4) - Cov(4,1) / n) );
 
           Cov(5,0) = Cov(5,0) + x(5);
           Cov(5,1) = Cov(5,1) + y(5);
-          Cov(5,2) = 1.0 / (n - 1.0) * ( (x(5) - Cov(5,0) / n) * (y(5) - Cov(5,1) / n) ); 
+          Cov(5,2) = 1.0 / (n - 1.0) * ( (x(5) - Cov(5,0) / n) * (y(5) - Cov(5,1) / n) );
 
 
-           return Cov;
-          }
+          return Cov;
+        }
 
 
       };

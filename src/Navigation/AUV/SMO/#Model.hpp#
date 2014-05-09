@@ -12,7 +12,7 @@
 // terms, conditions, and further information contact lsts@fe.up.pt.        *
 //                                                                          *
 // European Union Public Licence - EUPL v.1.1 Usage                         *
-// Alternatively, this file may be used under the terms of the EUPL,        *
+// Alternatively, this file may be used under the terms oF the EUPL,        *
 // Version 1.1 only (the "Licence"), appearing in the file LICENCE.md       *
 // included in the packaging of this file. You may not use this work        *
 // except in compliance with the Licence. Unless required by applicable     *
@@ -45,9 +45,9 @@ namespace Navigation
 
         /****************************************Compute AUV Model coefficients*****************************/
 
-        static void
-        compute_Model_Coeff(double Mass, double a, double b, double c,double Volume,double l, double d, double D, double Sfin,double *Model_Coeff)
-        {
+         static void
+         compute_Model_Coeff(double Mass, double a, double b, double c,double Volume,double l, double d, double D, double Sfin,double *Model_Coeff)
+         {
 
 
           /*Inertia*/
@@ -103,10 +103,10 @@ namespace Navigation
           double Nf_ur;
 
           if(l/d>5 && l/d<10)
-            CLB = 1.24;
+          CLB = 1.24;
 
           if(l/d>10 && l/d<15)
-            CLB = 3.3;
+          CLB = 3.3;
 
           Yb = -0.5 * D * 3.14 * pow( d/2.0, 2 ) * CLB;
 
@@ -122,13 +122,13 @@ namespace Navigation
           Yf_ur = D * CLF * Sfin;
 
           Zf_uw = -D * CLF * Sfin;
-
+ 
           Zf_uq = Zf_uw;
 
           Mf_uw = - (-0.35 * l) * Zf_uw;
 
           Mf_uq = - (-0.35 * l)* - (-0.35 * l) * Zf_uq;
-
+ 
           Nf_uv = -0.35 * l * Yf_uv;
 
           Nf_ur = - (-0.35 * l) * (-0.35 * l) * Yf_ur;
@@ -141,7 +141,7 @@ namespace Navigation
           double Nf;
 
           Yf = D * CLF * Sfin;
-
+        
           Zf = -D * CLF * Sfin;
 
           Mf = - ( -0.35 * l ) * Zf;
@@ -149,41 +149,41 @@ namespace Navigation
           Nf = -0.35 * l * Yf;
 
 
-          /*Fill Coefficient Vector*/
+           /*Fill Coefficient Vector*/
 
-          Model_Coeff[0] = Ixx;
-          Model_Coeff[1] = Iyy;
-          Model_Coeff[2] = Izz;
+           Model_Coeff[0] = Ixx;
+           Model_Coeff[1] = Iyy;
+           Model_Coeff[2] = Izz;
 
-          Model_Coeff[3] = X_dudt;
-          Model_Coeff[4] = Y_dvdt;
-          Model_Coeff[5] = Z_dwdt;
-          Model_Coeff[6] = K_dpdt;
-          Model_Coeff[7] = M_dqdt;
-          Model_Coeff[8] = N_drdt;
+           Model_Coeff[3] = X_dudt;
+           Model_Coeff[4] = Y_dvdt;
+           Model_Coeff[5] = Z_dwdt;
+           Model_Coeff[6] = K_dpdt;
+           Model_Coeff[7] = M_dqdt;
+           Model_Coeff[8] = N_drdt;
 
-          Model_Coeff[9] = Mass * 9.8;
-          Model_Coeff[10] = Volume * 9.8 * 1000;
+           Model_Coeff[9] = Mass * 9.8;
+           Model_Coeff[10] = Volume * 9.8 * 1000;
 
-          Model_Coeff[11] = Yb;
-          Model_Coeff[12] = Zb;
-          Model_Coeff[13] = Mb;
-          Model_Coeff[14] = Nb;
-          Model_Coeff[15] = Yf_uv;
-          Model_Coeff[16] = Yf_ur;
-          Model_Coeff[17] = Zf_uw;
-          Model_Coeff[18] = Zf_uq;
-          Model_Coeff[19] = Mf_uw;
-          Model_Coeff[20] = Mf_uq;
-          Model_Coeff[21] = Nf_uv;
-          Model_Coeff[22] = Nf_ur;
+           Model_Coeff[11] = Yb;
+           Model_Coeff[12] = Zb;
+           Model_Coeff[13] = Mb;
+           Model_Coeff[14] = Nb;
+           Model_Coeff[15] = Yf_uv;
+           Model_Coeff[16] = Yf_ur; 
+           Model_Coeff[17] = Zf_uw;
+           Model_Coeff[18] = Zf_uq;
+           Model_Coeff[19] = Mf_uw;
+           Model_Coeff[20] = Mf_uq;
+           Model_Coeff[21] = Nf_uv;
+           Model_Coeff[22] = Nf_ur;
 
-          Model_Coeff[23] = Yf;
-          Model_Coeff[24] = Zf;
-          Model_Coeff[25] = Mf;
-          Model_Coeff[26] = Nf;
+           Model_Coeff[23] = Yf;
+           Model_Coeff[24] = Zf;
+           Model_Coeff[25] = Mf;
+           Model_Coeff[26] = Nf;
 
-        }
+         }
 
         /***************************************************************************************************/
 
@@ -194,7 +194,7 @@ namespace Navigation
         static Matrix
         compute_M(double Mass,double *Model_Coeff, double zG)
         {
-
+          
           Math::Matrix M_tmp(6,6);
           M_tmp.resizeAndFill(6,6,0.0);
           M_tmp(0,0) = Mass - Model_Coeff[3];
@@ -250,7 +250,7 @@ namespace Navigation
 
           return C_tmp;
 
-        }
+         }
 
         static Matrix
         compute_D(Matrix vel_est, float X_u, float Y_v, float Y_r, float Z_w, float Z_q, float K_p, float M_w, float M_q, float N_v, float N_r, float X_uabsu, float Y_vabsv, float Y_rabsr, float Z_wabsw, float Z_qabsq, float K_pabsp, float M_wabsw, float M_qabsq, float N_vabsv, float N_rabsr)
@@ -304,7 +304,7 @@ namespace Navigation
           G_tmp(4,0) = zG * W * std::sin(theta);
 
           return G_tmp;
-
+        
         }
 
 
@@ -318,13 +318,13 @@ namespace Navigation
           double Nb = Model_Coeff[14];
           double Yf_uv = Model_Coeff[15];
           double Yf_ur = Model_Coeff[16];
-          double Zf_uw = Model_Coeff[17];
+          double Zf_uw = Model_Coeff[17];  
           double Zf_uq = Model_Coeff[18];
           double Mf_uw = Model_Coeff[19];
           double Mf_uq = Model_Coeff[20];
           double Nf_uv = Model_Coeff[21];
           double Nf_ur = Model_Coeff[22];
-
+ 
 
           Math::Matrix L_tmp(6,6);
           L_tmp.resizeAndFill(6,6,0.0);
@@ -351,7 +351,7 @@ namespace Navigation
           double Nf;
 
           Yf = Model_Coeff[23];
-
+        
           Zf = Model_Coeff[24];
 
           Mf = Model_Coeff[25];
@@ -368,7 +368,7 @@ namespace Navigation
           tau_tmp(5,0) = (servo_pos[0] + servo_pos[3]) * Nf / 2  * pow(vel(0),2.0);
 
           return tau_tmp;
-        }
+        } 
 
         /***************************************************************************************************/
 
