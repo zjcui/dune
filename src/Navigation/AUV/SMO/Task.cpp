@@ -1062,7 +1062,7 @@ namespace Navigation
             }
             if(flag_valid_pos == 0 && (flag_dvl_active == 0 || flag_dvl_active == -1))
             {
-              Cov_multiplier = 20;
+              Cov_multiplier = 30;
             }
 
             m_uncertainty.x = Cov_nu(0,2) * Cov_multiplier;
