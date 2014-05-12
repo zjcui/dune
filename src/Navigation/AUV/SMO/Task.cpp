@@ -1054,7 +1054,10 @@ namespace Navigation
             /*If no GPS and/or no DVL is available, Cov increases more for X and Y*/
             if(flag_valid_pos == 1)
             {
-              Cov_multiplier = 1;
+              Cov_multiplier = 0;
+              Cov_nu.fill(0);
+              Cov_vel.fill(0);
+              num_amostras = 0;
             }
             if(flag_valid_pos == 0 && flag_dvl_active == 1)
             {
@@ -1062,7 +1065,7 @@ namespace Navigation
             }
             if(flag_valid_pos == 0 && (flag_dvl_active == 0 || flag_dvl_active == -1))
             {
-              Cov_multiplier = 20;
+              Cov_multiplier = 200;
             }
 
             m_uncertainty.x = Cov_nu(0,2) * Cov_multiplier;
