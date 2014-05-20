@@ -5,3 +5,5 @@ private/
 *~
 *.mo
 CMakeLists.txt.user
+
+src/Navigation/AUV/SMO/#Model.hpp#
