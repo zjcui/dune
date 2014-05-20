@@ -108,7 +108,7 @@ namespace Navigation
         static const float N_rabsr = -5.7;*/
 
       //Calculated Damping Matrix Terms from geometry
-      static const float X_u = 2.2;
+      /*static const float X_u = 2.2;
       static const float Y_v = 14.4;
       static const float Y_r = -0.3645;
       static const float Z_w = 14.4;
@@ -128,7 +128,7 @@ namespace Navigation
       static const float M_wabsw = -3.1;
       static const float M_qabsq = 12.3;
       static const float N_vabsv = 3.1;
-      static const float N_rabsr = 12.3;
+      static const float N_rabsr = 12.3;*/
 
 
       struct Arguments
@@ -160,6 +160,30 @@ namespace Navigation
         double d;
         double Density;
         double Sfin;
+
+        //Linear Damping terms
+        float X_u;
+        float Y_v;
+        float Y_r;
+        float Z_w;
+        float Z_q;
+        float K_p;
+        float M_w;
+        float M_q;
+        float N_v;
+        float N_r;
+
+        //Quadratic Damping terms
+        float X_absuu;
+        float Y_absvv;
+        float Y_absrr;
+        float Z_absww;
+        float Z_absqq;
+        float K_abspp;
+        float M_absww;
+        float M_absqq;
+        float N_absvv;
+        float N_absrr;
       };
 
       struct Task: public DUNE::Tasks::Periodic
@@ -175,7 +199,6 @@ namespace Navigation
         double bearing;
         double orientation_delta;
         DUNE::Time::Delta delta_orientation;
-
 
         /*Orientation variables*/
         double euler_angles[3];
@@ -193,8 +216,8 @@ namespace Navigation
         Math::Matrix acc_filter;
         Math::Matrix vel_filter;
         double filter_delta;
+        double tmp_velocities[6];
         DUNE::Time::Delta delta_filter;
-
 
         /*Entity Variables*/
         int flag_imu_active;
@@ -203,7 +226,6 @@ namespace Navigation
         int imu_entity_id;
         int ahrs_entity_id;
         int dvl_entity_id;
-
 
         /*Task management variables*/
         double task_management;
@@ -343,6 +365,87 @@ namespace Navigation
           .defaultValue("0.0064")
           .description("Vehicle CG");
 
+          /*Damping Matrix terms*/
+          param("X_u", m_args.X_u)
+          .defaultValue("2.4")
+          .description("Longitudinal term");         
+
+          param("Y_v", m_args.Y_v)
+          .defaultValue("23")
+          .description("Lateral term");
+    
+          param("Y_r", m_args.Y_r)
+          .defaultValue("-11.5")
+          .description("Lateral term");    
+
+          param("Z_w", m_args.Z_w)
+          .defaultValue("23")
+          .description("Vertical term");    
+
+          param("Z_q", m_args.Z_q)
+          .defaultValue("11.5")
+          .description("Vertical term");   
+
+          param("K_p", m_args.K_p)
+          .defaultValue("0")
+          .description("Roll term");  
+
+          param("M_w", m_args.M_w)
+          .defaultValue("-3.1")
+          .description("Rotational term");  
+
+          param("M_q", m_args.M_q)
+          .defaultValue("9.7")
+          .description("Rotational term");
+
+          param("N_v", m_args.N_v)
+          .defaultValue("3.1")
+          .description("Rotational term");  
+
+          param("N_r", m_args.N_r)
+          .defaultValue("9.7")
+          .description("Longitudinal term");    
+
+          param("X_absuu", m_args.X_absuu)
+          .defaultValue("2.4")
+          .description("Longitudinal term");         
+
+          param("Y_absvv", m_args.Y_absvv)
+          .defaultValue("80")
+          .description("Lateral term");
+    
+          param("Y_absrr", m_args.Y_absrr)
+          .defaultValue("-0.3")
+          .description("Lateral term");    
+
+          param("Z_absww", m_args.Z_absww)
+          .defaultValue("80")
+          .description("Vertical term");    
+
+          param("Z_absqq", m_args.Z_absqq)
+          .defaultValue("0.3")
+          .description("Vertical term");   
+
+          param("K_abspp", m_args.K_abspp)
+          .defaultValue("0")
+          .description("Roll term");  
+
+          param("M_absww", m_args.M_absww)
+          .defaultValue("-1.5")
+          .description("Rotational term");  
+
+          param("M_absqq", m_args.M_absqq)
+          .defaultValue("9.1")
+          .description("Rotational term");
+
+          param("N_absvv", m_args.N_absvv)
+          .defaultValue("1.5")
+          .description("Rotational term");  
+
+          param("N_absrr", m_args.N_absrr)
+          .defaultValue("9.1")
+          .description("Longitudinal term");             
+
           /*Sliding Mode Observer Gains*/
           param("k1 gain one", m_args.k1[0])
           .defaultValue("0.7")
@@ -440,7 +543,6 @@ namespace Navigation
           .defaultValue("0.2")
           .description("Luenberger term");
 
-
           /*GPS variables*/
           memset (gps_initial_point,0,sizeof(gps_initial_point));
           memset (gps_fix,0,sizeof(gps_fix));
@@ -468,6 +570,7 @@ namespace Navigation
           acc_filter.resizeAndFill(6,1,0.0);
           vel_filter.resizeAndFill(6,1,0.0);
           filter_delta = 0;
+          memset(tmp_velocities,0,sizeof(tmp_velocities));
 
           /*Entity Variables*/
           flag_imu_active = 0;
@@ -476,7 +579,6 @@ namespace Navigation
           imu_entity_id = 0;
           ahrs_entity_id = 0;
           dvl_entity_id = 0;
-
 
           /*Task Management Variables*/
           task_management = 0;
@@ -607,7 +709,7 @@ namespace Navigation
 
           if (msg->getSourceEntity() == dvl_entity_id)
           {
-            if (msg->state == IMC::EntityState::ESTA_NORMAL)
+            if (msg->state == IMC::EntityState::ESTA_NORMAL && msg->description == "active")
               flag_dvl_active = 1;
             else
               flag_dvl_active = 0;
@@ -776,20 +878,23 @@ namespace Navigation
 
             /**************Avoid Singularaties in Rotation Matrix***************/
 
-            if(nu(4,0)>1.56 && nu(4,0)<1.58)
+            if(nu(4,0)>1.56 || nu(4,0)<1.58)
               nu(4,0) = 1.56;
 
-            if(nu(4,0)<-1.56 && nu(4,0)>-1.58)
+            if(nu(4,0)<-1.56 || nu(4,0)>-1.58)
               nu(4,0) = -1.56;
 
             /*******************************************************************/
 
             /********************Rotation Matrix and Velocities*****************/
+
             J = Aux::compute_J(euler_angles);
             vel = Matrix(velocities,6,1);
+
             /*******************************************************************/
 
             /*******************GPS Signal Acquisition**************************/
+
             orientation_delta = delta_orientation.getDelta();
             if (flag_valid_pos == 1)
             {
@@ -879,8 +984,8 @@ namespace Navigation
               //Normalize orientation error
               nu_error = Aux::compute_standard_error(nu_error);
 
-              //To minimize peaks by GPS Corrections
-              if(std::abs(nu_error(0,0)) >= 2)
+              //To minimize peaks by GPS Corrections - to be used after code tested at sea
+              /*if(std::abs(nu_error(0,0)) >= 2)
               {
                 nu_error(0,0) = 0.0;
                 nu_est(0,0) = nu(0,0);
@@ -896,7 +1001,7 @@ namespace Navigation
               {
                 nu_error(2,0) = 0.0;
                 nu_est(2,0) = nu(2,0);
-              }
+              }*/
 
               //Calculate Vehicle Model Coefficients and M Matrix one time
               if( model_coef_init == 0)
@@ -911,7 +1016,9 @@ namespace Navigation
 
               C = Model::compute_C(m_args.Mass,Model_Coeff,m_args.zG,vel_est);
 
-              D = Model::compute_D(vel_est, X_u, Y_v, Y_r, Z_w, Z_q, K_p, M_w,  M_q, N_v,  N_r,  X_uabsu,  Y_vabsv,  Y_rabsr,  Z_wabsw,  Z_qabsq,  K_pabsp,  M_wabsw,  M_qabsq, N_vabsv,  N_rabsr);
+              //D = Model::compute_D(vel_est, X_u, Y_v, Y_r, Z_w, Z_q, K_p, M_w,  M_q, N_v,  N_r,  X_uabsu,  Y_vabsv,  Y_rabsr,  Z_wabsw,  Z_qabsq,  K_pabsp,  M_wabsw,  M_qabsq, N_vabsv,  N_rabsr);
+
+              D = Model::compute_D(vel_est, m_args.X_u, m_args.Y_v, m_args.Y_r, m_args.Z_w, m_args.Z_q, m_args.K_p, m_args.M_w,  m_args.M_q, m_args.N_v,  m_args.N_r,  m_args.X_absuu,  m_args.Y_absvv,  m_args.Y_absrr,  m_args.Z_absww,  m_args.Z_absqq,  m_args.K_abspp,  m_args.M_absww,  m_args.M_absqq, m_args.N_absvv,  m_args.N_absrr);
 
               G = Model::compute_G(Model_Coeff,m_args.zG,nu_est);
 
@@ -922,7 +1029,7 @@ namespace Navigation
               J_delta = delta_J.getDelta();
               if(J_delta == -1)
               {
-                J_delta=0.05;
+                J_delta = 0.05;
               }
               J_diff = (J - J_ant) / J_delta;
               J_ant = J;
@@ -955,22 +1062,20 @@ namespace Navigation
               nu_dot_est = J * vel_est;
 
               //Estimation Caculation
-              acc_est = inverse(J) * (-alfa2 * nu_error + inverse( Mn ) * ( Taun - Cn * nu_dot_est - Dn * nu_dot_est - Ln * nu_dot_est - Gn ) - J_diff * vel_est - k2 * tanghyper);
+              acc_est = inverse(J) * (-alfa2 * nu_error + inverse( Mn ) * ( Taun - Cn * nu_dot_est - Dn * nu_dot_est - Ln * nu_dot_est - Gn ) - J_diff * vel_est - k2 * tanghyper);//acc_est(3,0) = 0;
 
               vel_est_delta = delta_vel_est.getDelta();
               if(vel_est_delta == -1)
               {
                 vel_est_delta = 0.05;
-              }//std::cout<<acc_est(5)<<std::endl;
-
-              vel_est = vel_est + acc_est * vel_est_delta;
-              inf("start");std::cout<<vel_est<<std::endl;std::cout<<nu_error<<std::endl;std::cout<<flag_valid_pos<<std::endl;
-
-              if(std::abs(vel_est(0) - vel(0)) > 0.3)
-              {
-                vel_est(0) = vel(0);
               }
 
+              vel_est = vel_est + acc_est * vel_est_delta;
+
+              /*if(std::abs(vel_est(0) - vel(0)) > 0.3) - to be used after code tested at sea
+              {
+                vel_est(0) = vel(0);
+              }*/
 
               tanghyper = GainMatrices::compute_tanh(nu_error,m_args.nu_bound);
 
@@ -984,6 +1089,10 @@ namespace Navigation
 
               nu_est = nu_est + nu_dot_est * nu_est_delta;
 
+              //Grant that vehicle doesn't come out of the water
+              if( nu_est(2,0) < 0)
+                nu_est(2,0) = 0;
+
               nu_est(3,0) = Math::Angles::normalizeRadian( nu_est(3,0) );
               nu_est(4,0) = Math::Angles::normalizeRadian( nu_est(4,0) );
               nu_est(5,0) = Math::Angles::normalizeRadian( nu_est(5,0) );
@@ -991,14 +1100,20 @@ namespace Navigation
             }
             /********************************************************************/
 
-            //Filters velocities and position before send to estimated state
-            /*filter_delta = delta_filter.getDelta();
-              if(filter_delta == -1)
-              {
+            //Filters velocities before send to estimated state
+            filter_delta = delta_filter.getDelta();
+            if(filter_delta == -1)
+            {
               filter_delta = 0.05;
-              }
-              acc_filter = Aux::compute_acc(velocities,vel_filter, filter_delta);
-              vel_filter = vel_filter + acc_filter * filter_delta;*/
+            }
+            tmp_velocities[0]=vel_est(0);
+            tmp_velocities[1]=vel_est(1);
+            tmp_velocities[2]=vel_est(2);
+            tmp_velocities[3]=vel_est(3);
+            tmp_velocities[4]=vel_est(4);
+            tmp_velocities[5]=vel_est(5);
+            acc_filter = Aux::compute_acc(tmp_velocities,vel_filter, filter_delta);
+            vel_filter = vel_filter + acc_filter * filter_delta;
 
             //std::cout<<vel_filter<<std::endl;
 
@@ -1008,20 +1123,20 @@ namespace Navigation
             m_est.phi = nu_est(3,0);
             m_est.theta = nu_est(4,0);
             m_est.psi = nu_est(5,0);
-            m_est.u = vel_est(0,0);
-            m_est.v = vel_est(1,0);
-            m_est.w = vel_est(2,0);
+            m_est.u = vel_filter(0,0);
+            m_est.v = vel_filter(1,0);
+            m_est.w = vel_filter(2,0);
             m_est.p = vel_est(3,0);
-            m_est.q = vel_est(4,0);
-            m_est.r = vel_est(5,0);
+            m_est.q = vel_filter(4,0);
+            m_est.r = vel_filter(5,0);
             // 1st Method - Velocity in the navigation frame.
-            /*Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
-              m_est.u,   m_est.v,     m_est.w,
-              &m_est.vx, &m_est.vy,   &m_est.vz);*/
+            Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
+                                                         m_est.u,   m_est.v,     m_est.w,
+                                                         &m_est.vx, &m_est.vy,   &m_est.vz);
             // 2nd Method
-            m_est.vx=nu_dot_est(0,0);
+            /*m_est.vx=nu_dot_est(0,0);
             m_est.vy=nu_dot_est(1,0);
-            m_est.vz=nu_dot_est(2,0);
+            m_est.vz=nu_dot_est(2,0);*/
             m_est.lat = gps_initial_point[0];
             m_est.lon = gps_initial_point[1];
             m_est.height = gps_initial_point[2];

@@ -367,6 +367,7 @@ namespace Navigation
           tau_tmp(4,0) = (servo_pos[1] + servo_pos[2]) * Mf / 2  * pow(vel(0),2.0);
           tau_tmp(5,0) = (servo_pos[0] + servo_pos[3]) * Nf / 2  * pow(vel(0),2.0);
 
+
           return tau_tmp;
         }
 
