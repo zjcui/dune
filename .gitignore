@@ -5,5 +5,5 @@ private/
 *~
 *.mo
 CMakeLists.txt.user
-
+SUNRISE_EXPERIMENT
 src/Navigation/AUV/SMO/#Model.hpp#
