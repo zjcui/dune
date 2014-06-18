@@ -985,7 +985,7 @@ namespace Navigation
               nu_error = Aux::compute_standard_error(nu_error);
 
               //To minimize peaks by GPS Corrections - to be used after code tested at sea
-              /*if(std::abs(nu_error(0,0)) >= 2)
+              if(std::abs(nu_error(0,0)) >= 2)
               {
                 nu_error(0,0) = 0.0;
                 nu_est(0,0) = nu(0,0);
@@ -1001,7 +1001,7 @@ namespace Navigation
               {
                 nu_error(2,0) = 0.0;
                 nu_est(2,0) = nu(2,0);
-              }*/
+              }
 
               //Calculate Vehicle Model Coefficients and M Matrix one time
               if( model_coef_init == 0)
@@ -1062,7 +1062,7 @@ namespace Navigation
               nu_dot_est = J * vel_est;
 
               //Estimation Caculation
-              acc_est = inverse(J) * (-alfa2 * nu_error + inverse( Mn ) * ( Taun - Cn * nu_dot_est - Dn * nu_dot_est - Ln * nu_dot_est - Gn ) - J_diff * vel_est - k2 * tanghyper);//acc_est(3,0) = 0;
+              acc_est = inverse(J) * (-alfa2 * nu_error + inverse( Mn ) * ( Taun - Cn * nu_dot_est - Dn * nu_dot_est - Ln * nu_dot_est - Gn ) - J_diff * vel_est - k2 * tanghyper);
 
               vel_est_delta = delta_vel_est.getDelta();
               if(vel_est_delta == -1)
