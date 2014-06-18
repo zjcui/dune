@@ -266,63 +266,63 @@ namespace Identification
          Y.resizeAndFill(6,1,0.0); 
          e_x.resizeAndFill(1,1,0.0);
          dP_dt_x.resizeAndFill(2,2,0.0);
-         P_x.resizeAndFill(2,2,5e3);
+         P_x.resizeAndFill(2,2,5);
          /*P_x(0,0) = 5;
          P_x(1,1) = 5;*/
          dtheta_dt_x.resizeAndFill(2,1,0.0);
          theta_x.resizeAndFill(2,1,0);
-         theta_x(0,0) = 2;
-         theta_x(1,0) = 2;
+         theta_x(0,0) = 3.52+0*2;
+         theta_x(1,0) = 1.76+0*2;
          phi_x.resizeAndFill(2,1,0.0);   
          CLS_P_delta_x = 0;
          CLS_theta_delta_x = 0;
          e_k.resizeAndFill(1,1,0.0);
          dP_dt_k.resizeAndFill(4,4,0.0);
          P_k.resizeAndFill(4,4,0.5);
-         P_k(0,0) = 0.5;
-         /*P_k(1,1) = 5;
+         /*P_k(0,0) = 0.5;
+         P_k(1,1) = 5;
          P_k(2,2) = 5;
          P_k(3,3) = 5;*/
          dtheta_dt_k.resizeAndFill(4,1,0.0);
          theta_k.resizeAndFill(4,1,0.0);
-         theta_k(0,0) = 0.06;
-         theta_k(1,0) = -0.4;
-         theta_k(2,0) = 0.8;
-         theta_k(3,0) = 0.9; 
+         theta_k(0,0) = 0.006;
+         theta_k(1,0) = -0.25;
+         theta_k(2,0) = 0.75;
+         theta_k(3,0) = 0.85; 
          phi_k.resizeAndFill(4,1,0.0);
          CLS_P_delta_k = 0;
          CLS_theta_delta_k = 0;
 
          e_y.resizeAndFill(1,1,0.0);
          dP_dt_y.resizeAndFill(4,4,0.0);
-         P_y.resizeAndFill(4,4,5e3);
+         P_y.resizeAndFill(4,4,1);
          /*P_y(0,0) = 5;
          P_y(1,1) = 5;
          P_y(2,2) = 5;
          P_y(3,3) = 5;*/
          dtheta_dt_y.resizeAndFill(4,1,0.0);
          theta_y.resizeAndFill(4,1,0.0);
-         theta_y(0,0) = 23;
-         theta_y(1,0) = -11.5;
-         theta_y(2,0) = 80;
-         theta_y(3,0) = -0.3; 
+         theta_y(0,0) = 14.4;
+         theta_y(1,0) = -0.3645;
+         theta_y(2,0) = 120.3;
+         theta_y(3,0) = -2.43; 
          phi_y.resizeAndFill(4,1,0.0);
          CLS_P_delta_y = 0;
          CLS_theta_delta_y = 0;
 
          e_r.resizeAndFill(1,1,0.0);
          dP_dt_r.resizeAndFill(4,4,0.0);
-         P_r.resizeAndFill(4,4,5e3);
+         P_r.resizeAndFill(4,4,1);
          /*P_r(0,0) = 5;
          P_r(1,1) = 5;
          P_r(2,2) = 5;
          P_r(3,3) = 5;*/
          dtheta_dt_r.resizeAndFill(4,1,0.0);
          theta_r.resizeAndFill(4,1,0.0);
-         theta_r(0,0) = 3.1;
-         theta_r(1,0) = 9.7;
-         theta_r(2,0) = 1.5;
-         theta_r(3,0) = 9.1; 
+         theta_r(0,0) = 0.372;
+         theta_r(1,0) = 1.8;
+         theta_r(2,0) = 3.1;
+         theta_r(3,0) = 12.3; 
          phi_r.resizeAndFill(4,1,0.0);
          CLS_P_delta_r = 0;
          CLS_theta_delta_r = 0;
@@ -537,7 +537,7 @@ namespace Identification
             /*Longitudinal Linear Velocity Damping*/
 
             try{
-
+            inf("theta_x");
             phi_x(0,0) = -vel_filter(0);
             phi_x(1,0) = -std::abs(vel_filter(0)) * vel_filter(0);
 
@@ -568,7 +568,7 @@ namespace Identification
             }
 
             theta_x = theta_x + dtheta_dt_x * CLS_theta_delta_x;
-            inf("theta_x");
+            //inf("theta_x");
             std::cout<<theta_x<<std::endl;
 
             }
@@ -578,7 +578,7 @@ namespace Identification
 
             /*Roll Angular velocity Damping*/
             try{
-
+            inf("theta_k");
             phi_k(0,0) = thruster * 10/0.84;
             phi_k(1,0) = ( servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * pow(vel_filter(0),2.0);
             phi_k(2,0) = -vel_filter(3);
@@ -609,7 +609,7 @@ namespace Identification
             }
 
             theta_k = theta_k + dtheta_dt_k * CLS_theta_delta_k;
-            inf("theta_k");
+            //inf("theta_k");
             std::cout<<theta_k<<std::endl;
 
             }
@@ -619,7 +619,7 @@ namespace Identification
 
             /*Lateral linear velocity Damping*/
             try{
-
+            inf("theta_y");
             phi_y(0,0) = vel_filter(1);
             phi_y(1,0) = vel_filter(5);
             phi_y(2,0) = std::abs(vel_filter(1)) * vel_filter(1);
@@ -650,7 +650,7 @@ namespace Identification
             }
 
             theta_y = theta_y + dtheta_dt_y * CLS_theta_delta_y;
-            inf("theta_y");
+            //inf("theta_y");
             std::cout<<theta_y<<std::endl;
 
             }
@@ -659,7 +659,7 @@ namespace Identification
 
             /*Vertical angular velocity Damping*/
             try{
-
+            inf("theta_r");
             phi_r(0,0) = vel_filter(1);
             phi_r(1,0) = vel_filter(5);
             phi_r(2,0) = std::abs(vel_filter(1)) * vel_filter(1);
@@ -690,7 +690,7 @@ namespace Identification
             }
 
             theta_r = theta_r + dtheta_dt_r * CLS_theta_delta_y;
-            inf("theta_r");
+            //inf("theta_r");
             std::cout<<theta_r<<std::endl;
 
             }
@@ -698,7 +698,7 @@ namespace Identification
             /***********************/
 
 
-std::cout<<vel_filter<<std::endl;
+//std::cout<<vel_filter<<std::endl;
 
 
       }
