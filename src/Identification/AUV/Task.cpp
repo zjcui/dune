@@ -278,17 +278,17 @@ namespace Identification
          CLS_theta_delta_x = 0;
          e_k.resizeAndFill(1,1,0.0);
          dP_dt_k.resizeAndFill(4,4,0.0);
-         P_k.resizeAndFill(4,4,0.5);
-         /*P_k(0,0) = 0.5;
+         P_k.resizeAndFill(4,4,0);
+         P_k(0,0) = 0.5;
          P_k(1,1) = 5;
          P_k(2,2) = 5;
-         P_k(3,3) = 5;*/
+         P_k(3,3) = 5;
          dtheta_dt_k.resizeAndFill(4,1,0.0);
          theta_k.resizeAndFill(4,1,0.0);
-         theta_k(0,0) = 0.006;
-         theta_k(1,0) = -0.25;
-         theta_k(2,0) = 0.75;
-         theta_k(3,0) = 0.85; 
+         theta_k(0,0) = 0.05;//0.006;
+         theta_k(1,0) = 0.63;//-0.25;
+         theta_k(2,0) = 0.07;//0.75;
+         theta_k(3,0) = 0.81;//0.85; 
          phi_k.resizeAndFill(4,1,0.0);
          CLS_P_delta_k = 0;
          CLS_theta_delta_k = 0;
