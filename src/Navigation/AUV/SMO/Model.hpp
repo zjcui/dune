@@ -363,7 +363,7 @@ namespace Navigation
           tau_tmp(0,0) = thruster * 10 / 0.84;
           tau_tmp(1,0) = (servo_pos[0] + servo_pos[3]) * Yf / 2 * pow(vel(0),2.0);
           tau_tmp(2,0) = (servo_pos[1] + servo_pos[2]) * Zf / 2 * pow(vel(0),2.0);
-          tau_tmp(3,0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * -0.45 * pow(vel(0),2.0) + 0.0054 * tau_tmp(0,0);
+          tau_tmp(3,0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * 0.63/*-0.45*/ * pow(vel(0),2.0) + /*0.0054*/0.07 * tau_tmp(0,0);
           tau_tmp(4,0) = (servo_pos[1] + servo_pos[2]) * Mf / 2  * pow(vel(0),2.0);
           tau_tmp(5,0) = (servo_pos[0] + servo_pos[3]) * Nf / 2  * pow(vel(0),2.0);
 

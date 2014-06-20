@@ -1072,10 +1072,10 @@ namespace Navigation
 
               vel_est = vel_est + acc_est * vel_est_delta;
 
-              /*if(std::abs(vel_est(0) - vel(0)) > 0.3) - to be used after code tested at sea
+              if(std::abs(vel_est(0) - vel(0)) > 0.3) - to be used after code tested at sea
               {
                 vel_est(0) = vel(0);
-              }*/
+              }
 
               tanghyper = GainMatrices::compute_tanh(nu_error,m_args.nu_bound);
 
