@@ -134,6 +134,14 @@ namespace Navigation
       struct Arguments
       {
 
+        //GPS variables
+        double gps_absolute_treshold;
+        double gps_average_treshold;
+
+        //Timeout variables
+        double timeout_altitude;
+        double timeout_dvl;
+
         //Sliding Matrix Gains
         float k1[6];
         float k2[6];
@@ -148,6 +156,7 @@ namespace Navigation
         std::string imu_entity_name;
         std::string ahrs_entity_name;
         std::string dvl_entity_name;
+        std::string altitude_entity_name;
 
         //AUV caracteristic
         double Mass;
@@ -191,14 +200,17 @@ namespace Navigation
         /*GPS variables*/
         double gps_initial_point[3];
         double gps_fix[3];
-        double gps_treshold;
         double flag_initial_point;
         double flag_valid_pos;
         double depth;
         double range;
         double bearing;
-        double orientation_delta;
+        double orientation_delta;        
+        double hacc_average;
+        double hacc_sum;
+        int counter;
         DUNE::Time::Delta delta_orientation;
+
 
         /*Orientation variables*/
         double euler_angles[3];
@@ -223,9 +235,11 @@ namespace Navigation
         int flag_imu_active;
         int flag_ahrs_active;
         int flag_dvl_active;
+        int flag_altitude_active;
         int imu_entity_id;
         int ahrs_entity_id;
         int dvl_entity_id;
+        int altitude_entity_id;
 
         /*Task management variables*/
         double task_management;
@@ -287,10 +301,23 @@ namespace Navigation
         Math::Matrix vel_cov;
         double angular_vel[3];
         int num_amostras;
-        int Cov_multiplier;
+        float Cov_multiplier;
 
         /*RPM variables*/
         double rpms;
+
+        /*Altitude variables*/
+        double altitude;
+        double altitude_filter[20];
+        int altitude_filter_counter;
+        int altitude_filter_ini;
+
+        /*Timers variables*/
+        int timers_init;
+        //! Time without altitude readings deadline.
+        Time::Counter<double> altitude_timeout;
+        //! Time without altitude readings deadline.
+        Time::Counter<double> dvl_timeout;
 
         //! Send message to Estimated State and Navigation Uncertainty
         IMC::EstimatedState m_est;
@@ -302,13 +329,22 @@ namespace Navigation
           Periodic(name, ctx)
         {
 
+          /*GPS variables*/
+          param("GPS absolute treshold", m_args.gps_absolute_treshold)
+          .defaultValue("10")
+          .description("GPSfix absolute hacc treshold");
+
+          param("GPS average treshold", m_args.gps_average_treshold)
+          .defaultValue("4")
+          .description("GPSfix average hacc treshold");
+
           /*Sliding Mode Observer Boundary Layers*/
           param("Velocity Boundary Layer", m_args.vel_bound)
-          .defaultValue("0.05")
+          .defaultValue("0.01")
           .description("Boundary Layer Size");
 
           param("Position Boundary Layer", m_args.nu_bound)
-          .defaultValue("0.5")
+          .defaultValue("0.1")
           .description("Boundary Layer Size");
 
           /*Sliding Mode Observer Entities*/
@@ -323,6 +359,10 @@ namespace Navigation
           param("Entity Label DVL", m_args.dvl_entity_name)
           .defaultValue("DVL")
           .description("Label of the DVL message");
+
+          param("Entity Label Altitude", m_args.altitude_entity_name)
+          .defaultValue("DVL")
+          .description("Label of the Altitude message");
 
           /*Vehicle physical properties*/
           param("Mass", m_args.Mass)
@@ -543,16 +583,27 @@ namespace Navigation
           .defaultValue("0.2")
           .description("Luenberger term");
 
+          /*Timeout Variables*/
+          param("Timeout Altitude", m_args.timeout_altitude)
+          .defaultValue("3")
+          .description("Altitude timeout definition");
+
+          param("Timeout DVL", m_args.timeout_dvl)
+          .defaultValue("3")
+          .description("DVL timeout definition");
+
           /*GPS variables*/
           memset (gps_initial_point,0,sizeof(gps_initial_point));
           memset (gps_fix,0,sizeof(gps_fix));
-          gps_treshold = 0;
           flag_initial_point = 0;
           flag_valid_pos = 0;
           depth = 0;
           range = 0;
           bearing = 0;
           orientation_delta = 0;
+          hacc_average = 0;
+          hacc_sum = 0;
+          counter = 0;
 
           /*Orientation variables*/
           memset(euler_angles,0,sizeof(euler_angles));
@@ -576,9 +627,11 @@ namespace Navigation
           flag_imu_active = 0;
           flag_ahrs_active = 0;
           flag_dvl_active = 0;
+          flag_altitude_active = 0;
           imu_entity_id = 0;
           ahrs_entity_id = 0;
           dvl_entity_id = 0;
+          altitude_entity_id = 0;
 
           /*Task Management Variables*/
           task_management = 0;
@@ -631,8 +684,8 @@ namespace Navigation
           model_coef_init = 0;
 
           /*Covariance Variables*/
-          Cov_nu.resizeAndFill(6,3,0.0);
-          Cov_vel.resizeAndFill(6,3,0.0);
+          Cov_nu.resizeAndFill(6,4,0.0);
+          Cov_vel.resizeAndFill(6,4,0.0);
           vel_cov.resizeAndFill(6,1,0.0);
           memset(angular_vel,0,sizeof(angular_vel));
           num_amostras = 0;
@@ -640,6 +693,15 @@ namespace Navigation
 
           /*RPM variables*/
           rpms = 0;
+
+          /*Altitude variables*/
+          altitude = 0;
+          memset(altitude_filter,0,sizeof(altitude_filter));
+          altitude_filter_counter = 0;
+          altitude_filter_ini = 0;
+
+          /*Timers variables*/
+          timers_init = 0;
 
           //Register Consumers
           bind<IMC::EntityState>(this);
@@ -651,6 +713,7 @@ namespace Navigation
           bind<IMC::SetThrusterActuation>(this);
           bind<IMC::ServoPosition>(this);
           bind<IMC::Rpm>(this);
+          bind<IMC::Distance>(this);
         }
 
 
@@ -686,6 +749,16 @@ namespace Navigation
             dvl_entity_id = -1;
             flag_dvl_active = -1;
           }
+
+          try
+          {
+            altitude_entity_id = resolveEntity(m_args.altitude_entity_name);
+          }
+          catch (...)
+          {
+            altitude_entity_id = -1;
+            flag_altitude_active = -1;
+          }
         }
 
         void
@@ -709,45 +782,55 @@ namespace Navigation
 
           if (msg->getSourceEntity() == dvl_entity_id)
           {
-            if (msg->state == IMC::EntityState::ESTA_NORMAL && msg->description == "active")
+            if (msg->state == IMC::EntityState::ESTA_NORMAL && (msg->description == "active" || msg->description == "active but without bottom lock" || msg->description == "active (no medium data: need user input)") && dvl_timeout.overflow() == 0)
               flag_dvl_active = 1;
+            else if(msg->state == IMC::EntityState::ESTA_NORMAL && (msg->description == "idle" || msg->description == "initializing" || msg->description == "communication error" || msg->description == "idle (no medium data: need user input)") && dvl_timeout.overflow() == 1)
+              flag_dvl_active = 0;
             else
               flag_dvl_active = 0;
+          }
+
+          if (msg->getSourceEntity() == altitude_entity_id)
+          {
+            if (msg->state == IMC::EntityState::ESTA_NORMAL && altitude_timeout.overflow() == 0)
+              flag_altitude_active = 1;
+            else
+              flag_altitude_active = 0;
           }
         }
 
         void
         consume(const IMC::GpsFix* msg)
         {
-          if (flag_initial_point == 0 && gps_treshold < 50)
-            gps_treshold = msg->hacc + 1;
-
-          if (flag_initial_point != 0)
-            gps_treshold = 10;
-
-          if(msg->validity & IMC::GpsFix::GFV_VALID_POS)
+          if (msg->validity & IMC::GpsFix::GFV_VALID_POS)
           {
-            if (msg->hacc < gps_treshold)
-            {
+            hacc_sum = hacc_sum + msg->hacc;
+            counter++;
+            hacc_average = hacc_sum / counter;
+
+            if ( std::abs(hacc_average - msg->hacc) < m_args.gps_average_treshold && msg->hacc < m_args.gps_absolute_treshold  && (msg->lat > -1.571 && msg->lat < 1.571) && (msg->lon > -3.142 && msg->lon < 3.142))
+            {  
               gps_fix[0] = msg->lat;
               gps_fix[1] = msg->lon;
               gps_fix[2] = msg->height;
               flag_valid_pos = 1;
             }
 
-            if (flag_initial_point == 0)
+            if ( std::abs(hacc_average - msg->hacc) < m_args.gps_average_treshold && msg->hacc < m_args.gps_absolute_treshold && flag_initial_point == 0 && (msg->lat > -1.571 && msg->lat < 1.571) && (msg->lon > -3.142 && msg->lon < 3.142))
             {
               gps_initial_point[0] = msg->lat;
               gps_initial_point[1] = msg->lon;
               gps_initial_point[2] = msg->height;
               flag_initial_point = 1;
             }
-          }
-          if (msg->hacc >= gps_treshold)
-            flag_valid_pos = 0;
+
+            if ( std::abs(hacc_average - msg->hacc) > m_args.gps_average_treshold || msg->hacc > m_args.gps_absolute_treshold || (msg->lat < -1.571 || msg->lat > 1.571) || (msg->lon < -3.142 || msg->lon > 3.142))
+              flag_valid_pos = 0;
+
+          }     
 
           if ((msg->validity & IMC::GpsFix::GFV_VALID_POS)==0)
-            flag_valid_pos = 0;
+            flag_valid_pos = 0;      
         }
 
         void
@@ -777,7 +860,7 @@ namespace Navigation
         consume(const IMC::GroundVelocity* msg)
         {
           if (msg->validity & IMC::GroundVelocity::VAL_VEL_X)
-          {
+          { 
             velocities[0] = msg->x;
             velocities_ant[0] = velocities[0];
           }
@@ -799,6 +882,9 @@ namespace Navigation
           }
           if (!(msg->validity & IMC::GroundVelocity::VAL_VEL_Z))
             velocities[2] = velocities_ant[2];
+
+          if((msg->validity & IMC::GroundVelocity::VAL_VEL_X) || (msg->validity & IMC::GroundVelocity::VAL_VEL_Y) || (msg->validity & IMC::GroundVelocity::VAL_VEL_Z))
+             dvl_timeout.reset();
         }
 
         void
@@ -840,6 +926,42 @@ namespace Navigation
           }
         }
 
+        void
+        consume(const IMC::Distance* msg)
+        {
+          if(flag_altitude_active == 1 && msg->getSourceEntity() == altitude_entity_id && msg->validity == IMC::Distance::DV_VALID)
+          {            
+            if(altitude_filter_counter == 20)
+              altitude_filter_counter = 0;
+
+            if(altitude_filter_counter < 20 && altitude_filter_ini == 0)
+            {
+              altitude_filter[altitude_filter_counter] = msg->value;
+              altitude_filter_counter++;
+            } 
+
+            if(altitude_filter_counter == 20)
+            {
+              altitude_filter_ini = 1;
+            }
+   
+            if(altitude_filter_ini == 1 && altitude_filter_counter < 20)
+            {
+              altitude_filter[altitude_filter_counter] = msg->value;
+              altitude_filter_counter++;
+            }
+
+             altitude = Aux::compute_average_filter(altitude_filter_ini, NELEMS(altitude_filter), altitude_filter);
+
+             altitude_timeout.reset();
+          }
+
+          if(flag_altitude_active == -1 || flag_altitude_active == 0)
+          {
+            altitude = -1; // Default value for invalid altitude measurement
+          }
+        }
+
 
         /***********************Task MANAGEMENT**********************/
         void
@@ -876,6 +998,24 @@ namespace Navigation
           if(task_management == 1)
           {
 
+            /************************Timers Init*******************************/
+
+            if(timers_init == 0)
+            {
+              altitude_timeout.setTop(m_args.timeout_altitude);
+              dvl_timeout.setTop(m_args.timeout_dvl);
+              timers_init = 1;
+            }
+
+            /******************************************************************/
+
+            /*********************Sensors Fault Detection**********************/
+
+            if(altitude_timeout.overflow() == 1)
+              altitude = -1;
+
+            /******************************************************************/
+
             /**************Avoid Singularaties in Rotation Matrix***************/
 
             if(nu(4,0)>1.56 || nu(4,0)<1.58)
@@ -907,9 +1047,8 @@ namespace Navigation
               if(flag_imu_active == 1)
               {
                 if(orientation_delta == -1)
-                {
                   orientation_delta = 0.05;
-                }
+
                 nu_dot = J * vel;
                 nu(3,0) = nu(3,0) + nu_dot(3,0) * orientation_delta;
                 nu(4,0) = nu(4,0) + nu_dot(4,0) * orientation_delta;
@@ -946,9 +1085,8 @@ namespace Navigation
             if(flag_valid_pos == 0)
             {
               if(posfromvel_delta == -1)
-              {
                 posfromvel_delta = 0.05;
-              }
+
               nu_dot = J * vel;
               nu = nu + nu_dot * posfromvel_delta;
               /*Depth Sensor is always available*/
@@ -1016,8 +1154,6 @@ namespace Navigation
 
               C = Model::compute_C(m_args.Mass,Model_Coeff,m_args.zG,vel_est);
 
-              //D = Model::compute_D(vel_est, X_u, Y_v, Y_r, Z_w, Z_q, K_p, M_w,  M_q, N_v,  N_r,  X_uabsu,  Y_vabsv,  Y_rabsr,  Z_wabsw,  Z_qabsq,  K_pabsp,  M_wabsw,  M_qabsq, N_vabsv,  N_rabsr);
-
               D = Model::compute_D(vel_est, m_args.X_u, m_args.Y_v, m_args.Y_r, m_args.Z_w, m_args.Z_q, m_args.K_p, m_args.M_w,  m_args.M_q, m_args.N_v,  m_args.N_r,  m_args.X_absuu,  m_args.Y_absvv,  m_args.Y_absrr,  m_args.Z_absww,  m_args.Z_absqq,  m_args.K_abspp,  m_args.M_absww,  m_args.M_absqq, m_args.N_absvv,  m_args.N_absrr);
 
               G = Model::compute_G(Model_Coeff,m_args.zG,nu_est);
@@ -1028,9 +1164,8 @@ namespace Navigation
 
               J_delta = delta_J.getDelta();
               if(J_delta == -1)
-              {
                 J_delta = 0.05;
-              }
+
               J_diff = (J - J_ant) / J_delta;
               J_ant = J;
 
@@ -1066,26 +1201,23 @@ namespace Navigation
 
               vel_est_delta = delta_vel_est.getDelta();
               if(vel_est_delta == -1)
-              {
                 vel_est_delta = 0.05;
-              }
 
               vel_est = vel_est + acc_est * vel_est_delta;
 
-              if(std::abs(vel_est(0) - vel(0)) > 0.3) - to be used after code tested at sea
-              {
+              // To avoid velocity jumps and diminish position error in dead-reckonning
+              if(std::abs(vel_est(0) - vel(0)) > 0.3)
                 vel_est(0) = vel(0);
-              }
+
 
               tanghyper = GainMatrices::compute_tanh(nu_error,m_args.nu_bound);
 
               nu_dot_est = -alfa1 * nu_error + J * vel_est - k1 * tanghyper;
 
               nu_est_delta = delta_nu_est.getDelta();
+
               if(nu_est_delta == -1)
-              {
                 nu_est_delta = 0.05;
-              }
 
               nu_est = nu_est + nu_dot_est * nu_est_delta;
 
@@ -1101,7 +1233,7 @@ namespace Navigation
             /********************************************************************/
 
             //Filters velocities before send to estimated state
-            filter_delta = delta_filter.getDelta();
+            /*filter_delta = delta_filter.getDelta();
             if(filter_delta == -1)
             {
               filter_delta = 0.05;
@@ -1113,7 +1245,7 @@ namespace Navigation
             tmp_velocities[4]=vel_est(4);
             tmp_velocities[5]=vel_est(5);
             acc_filter = Aux::compute_acc(tmp_velocities,vel_filter, filter_delta);
-            vel_filter = vel_filter + acc_filter * filter_delta;
+            vel_filter = vel_filter + acc_filter * filter_delta;*/
 
             //std::cout<<vel_filter<<std::endl;
 
@@ -1123,12 +1255,12 @@ namespace Navigation
             m_est.phi = nu_est(3,0);
             m_est.theta = nu_est(4,0);
             m_est.psi = nu_est(5,0);
-            m_est.u = vel_filter(0,0);
-            m_est.v = vel_filter(1,0);
-            m_est.w = vel_filter(2,0);
+            m_est.u = vel_est(0,0);
+            m_est.v = vel_est(1,0);
+            m_est.w = vel_est(2,0);
             m_est.p = vel_est(3,0);
-            m_est.q = vel_filter(4,0);
-            m_est.r = vel_filter(5,0);
+            m_est.q = vel_est(4,0);
+            m_est.r = vel_est(5,0);
             // 1st Method - Velocity in the navigation frame.
             Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
                                                          m_est.u,   m_est.v,     m_est.w,
@@ -1141,7 +1273,7 @@ namespace Navigation
             m_est.lon = gps_initial_point[1];
             m_est.height = gps_initial_point[2];
             m_est.depth = nu_est(2,0);
-            m_est.alt = -1;
+            m_est.alt = altitude;
             dispatch( m_est );
 
 
@@ -1151,9 +1283,8 @@ namespace Navigation
 
             /*Verify what angular velocities to use IMU/AHRS*/
             if(flag_imu_active == 1)
-            {
               vel_cov = vel;
-            }
+
             if((flag_imu_active == 0 || flag_imu_active == -1) && flag_ahrs_active == 1)
             {
               vel_cov(0) = vel(0);
@@ -1174,18 +1305,17 @@ namespace Navigation
               Cov_vel.fill(0);
               num_amostras = 0;
             }
+
             if(flag_valid_pos == 0 && flag_dvl_active == 1)
-            {
-              Cov_multiplier = 2;
-            }
+              Cov_multiplier = 0.01;
+
             if(flag_valid_pos == 0 && (flag_dvl_active == 0 || flag_dvl_active == -1))
-            {
-              Cov_multiplier = 200;
-            }
+              Cov_multiplier = 0.1;
+
 
             m_uncertainty.x = Cov_nu(0,2) * Cov_multiplier;
             m_uncertainty.y = Cov_nu(1,2) * Cov_multiplier;
-            m_uncertainty.z = Cov_nu(2,2);
+            m_uncertainty.z = Cov_nu(2,2) * Cov_multiplier;
             m_uncertainty.phi = Cov_nu(3,2);
             m_uncertainty.theta = Cov_nu(4,2);
             m_uncertainty.psi = Cov_nu(5,2);

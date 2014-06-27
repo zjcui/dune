@@ -30,6 +30,8 @@
 
 #include <DUNE/DUNE.hpp>
 
+#define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
+
 namespace Navigation
 {
   namespace AUV
@@ -42,6 +44,47 @@ namespace Navigation
       {
       public:
 
+
+        static double
+        compute_average_filter(int flag_ini, int window, double data[])
+        {
+
+        int i;
+        double sum;
+        int counter;
+        double average;
+
+        i = 0;
+        sum = 0;
+        counter = 0;
+        average = 0;
+
+        if(flag_ini == 0)
+        {
+          for(i=0; i<window; i++)
+          {
+            if(data[i] != 0)
+            {
+              sum = sum + data[i];
+              counter++;
+            }
+          }
+          average = sum / counter;
+        }
+
+        if(flag_ini ==1)
+        {
+          for(i=0; i<window; i++)
+          {
+            sum = sum + data[i];
+            counter++;
+          }
+          average = sum / counter;
+        }
+
+        return average;
+
+        }
 
         static Matrix
         compute_acc(double velocities[6], Matrix v_bar, double delta_t)
@@ -115,28 +158,28 @@ namespace Navigation
             Cov[3] = (1.0 / n) * (Cov[2] - (1.0 / n) * Cov[0] * Cov[1]);*/
 
           Cov(0,0) = Cov(0,0) + x(0);
-          Cov(0,1) = Cov(0,1) + y(0);
-          Cov(0,2) = 1.0 / (n - 1.0) * ( (x(0) - Cov(0,0) / n) * (y(0) - Cov(0,1) / n) );
+          Cov(0,1) = Cov(0,1) + y(0);Cov(0,3) = Cov(0,3) + x(0)*y(0);
+          Cov(0,2) = Cov(0,2) + 1.0 / n * ( (x(0) - Cov(0,0) / n) * (y(0) - Cov(0,1) / n) );
 
           Cov(1,0) = Cov(1,0) + x(1);
           Cov(1,1) = Cov(1,1) + y(1);
-          Cov(1,2) = 1.0 / (n - 1.0) * ( (x(1) - Cov(1,0) / n) * (y(1) - Cov(1,1) / n) );
+          Cov(1,2) = Cov(1,2) + 1.0 / n * ( (x(1) - Cov(1,0) / n) * (y(1) - Cov(1,1) / n) );
 
           Cov(2,0) = Cov(2,0) + x(2);
           Cov(2,1) = Cov(2,1) + y(2);
-          Cov(2,2) = 1.0 / (n - 1.0) * ( (x(2) - Cov(2,0) / n) * (y(2) - Cov(2,1) / n) );
+          Cov(2,2) = Cov(2,2) + 1.0 / n * ( (x(2) - Cov(2,0) / n) * (y(2) - Cov(2,1) / n) );
 
           Cov(3,0) = Cov(3,0) + x(3);
           Cov(3,1) = Cov(3,1) + y(3);
-          Cov(3,2) = 1.0 / (n - 1.0) * ( (x(3) - Cov(3,0) / n) * (y(3) - Cov(3,1) / n) );
+          Cov(3,2) = 1.0 / n * ( (x(3) - Cov(3,0) / n) * (y(3) - Cov(3,1) / n) );
 
           Cov(4,0) = Cov(4,0) + x(4);
           Cov(4,1) = Cov(4,1) + y(4);
-          Cov(4,2) = 1.0 / (n - 1.0) * ( (x(4) - Cov(4,0) / n) * (y(4) - Cov(4,1) / n) );
+          Cov(4,2) = 1.0 / n * ( (x(4) - Cov(4,0) / n) * (y(4) - Cov(4,1) / n) );
 
           Cov(5,0) = Cov(5,0) + x(5);
           Cov(5,1) = Cov(5,1) + y(5);
-          Cov(5,2) = 1.0 / (n - 1.0) * ( (x(5) - Cov(5,0) / n) * (y(5) - Cov(5,1) / n) );
+          Cov(5,2) = 1.0 / n * ( (x(5) - Cov(5,0) / n) * (y(5) - Cov(5,1) / n) );
 
 
           return Cov;

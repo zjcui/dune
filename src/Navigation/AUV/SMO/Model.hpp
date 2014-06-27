@@ -264,19 +264,19 @@ namespace Navigation
           double qr = vel_est(4);
           double rr = vel_est(5);
 
-          double D1_vector[36]={X_u, 0,   0,    0,   0,   0,
-                                0,   Y_v, 0,    0,   0,   Y_r,
-                                0,   0,   Z_w,  0,   Z_q, 0,
-                                0,   0,   0,    K_p, 0,   0,
-                                0,   0,   M_w,  0,   M_q, 0,
-                                0,   N_v, 0,    0,   0,   N_r};
+          double D1_vector[36] = { X_u, 0,   0,    0,   0,   0,
+                                   0,   Y_v, 0,    0,   0,   Y_r,
+                                   0,   0,   Z_w,  0,   Z_q, 0,
+                                   0,   0,   0,    K_p, 0,   0,
+                                   0,   0,   M_w,  0,   M_q, 0,
+                                   0,   N_v, 0,    0,   0,   N_r };
 
-          double D2_vector[36]={X_uabsu *std::abs(ur), 0,                    0,                    0,                    0,                    0,
-                                0,                     Y_vabsv*std::abs(vr), 0,                    0,                    0,                    Y_rabsr*std::abs(rr),
-                                0,                     0,                    Z_wabsw*std::abs(wr), 0,                    Z_qabsq*std::abs(qr), 0,
-                                0,                     0,                    0,                    K_pabsp*std::abs(pr), 0,                    0,
-                                0,                     0,                    M_wabsw*std::abs(wr), 0,                    M_qabsq*std::abs(qr), 0,
-                                0,                     N_vabsv*std::abs(vr), 0,                    0,                    0,                    N_rabsr*std::abs(rr)};
+          double D2_vector[36] = { X_uabsu *std::abs(ur), 0,                    0,                    0,                    0,                    0,
+                                   0,                     Y_vabsv*std::abs(vr), 0,                    0,                    0,                    Y_rabsr*std::abs(rr),
+                                   0,                     0,                    Z_wabsw*std::abs(wr), 0,                    Z_qabsq*std::abs(qr), 0,
+                                   0,                     0,                    0,                    K_pabsp*std::abs(pr), 0,                    0,
+                                   0,                     0,                    M_wabsw*std::abs(wr), 0,                    M_qabsq*std::abs(qr), 0,
+                                   0,                     N_vabsv*std::abs(vr), 0,                    0,                    0,                    N_rabsr*std::abs(rr) };
 
 
           return (Matrix(D1_vector, 6, 6) + Matrix(D2_vector, 6, 6) );
@@ -363,7 +363,7 @@ namespace Navigation
           tau_tmp(0,0) = thruster * 10 / 0.84;
           tau_tmp(1,0) = (servo_pos[0] + servo_pos[3]) * Yf / 2 * pow(vel(0),2.0);
           tau_tmp(2,0) = (servo_pos[1] + servo_pos[2]) * Zf / 2 * pow(vel(0),2.0);
-          tau_tmp(3,0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * 0.63/*-0.45*/ * pow(vel(0),2.0) + /*0.0054*/0.07 * tau_tmp(0,0);
+          tau_tmp(3,0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * 0.25/*-0.45*/ * pow(vel(0),2.0) + /*0.0054*/0.06 * tau_tmp(0,0);
           tau_tmp(4,0) = (servo_pos[1] + servo_pos[2]) * Mf / 2  * pow(vel(0),2.0);
           tau_tmp(5,0) = (servo_pos[0] + servo_pos[3]) * Nf / 2  * pow(vel(0),2.0);
 
