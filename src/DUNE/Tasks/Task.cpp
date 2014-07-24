@@ -572,7 +572,7 @@ namespace DUNE
         params.params.push_back(p);
       }
 
-      dispatchReply(*msg, params);
+      dispatchReply(*msg, params, DF_LOOP_BACK);
     }
 
     void
