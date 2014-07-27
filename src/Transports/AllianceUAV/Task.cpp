@@ -106,7 +106,7 @@ namespace Transports
         .defaultValue("300.0")
         .description("Plan send timeout");
 
-        param("Abort Timeout", m_args.abort_tout)
+        param("Abort Send Timeout", m_args.abort_tout)
         .defaultValue("10.0")
         .description("Abort send timeout");
 
