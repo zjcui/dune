@@ -43,6 +43,10 @@ namespace Transports
       std::string p_elabel;
       //! Proxied system name.
       std::string p_system;
+      //! Proxied system heartbeat timeout in seconds.
+      float p_hb_timeout;
+      //! Proxied system query reply timeout in seconds.
+      float p_reply_timeout;
     };
 
     struct Task: public DUNE::Tasks::Task
@@ -57,6 +61,10 @@ namespace Transports
       std::vector<std::string*> m_pvalues;
       //! True if the proxy parameters are different from those of the proxied task.
       bool m_dirty;
+      //! Heartbeat timer.
+      Time::Counter<float> m_hb_timer;
+      //! Reply timer.
+      Time::Counter<float> m_reply_timer;
 
       Task(const std::string& name, Tasks::Context& ctx):
         DUNE::Tasks::Task(name, ctx),
@@ -74,6 +82,18 @@ namespace Transports
         param("Proxied System Name", m_args.p_system)
         .defaultValue("")
         .description("Name of the proxied system");
+
+        param("Proxied System Heartbeat Timeout", m_args.p_hb_timeout)
+        .units(Units::Second)
+        .defaultValue("10.0")
+        .minimumValue("2.0")
+        .description("Timeout after which the system is considered out of sync");
+
+        param("Proxied System Query Reply Timeout", m_args.p_reply_timeout)
+        .units(Units::Second)
+        .defaultValue("2.0")
+        .minimumValue("0.0")
+        .description("Timeout before retrying a query");
 
         // Register handler routines.
         bind<IMC::Heartbeat>(this);
@@ -108,6 +128,8 @@ namespace Transports
       onUpdateParameters(void)
       {
         m_proxied_id = resolveSystemName(m_args.p_system);
+        m_hb_timer.setTop(m_args.p_hb_timeout);
+        m_reply_timer.setTop(m_args.p_reply_timeout);
 
         // Testing
         initTestParamTable();
@@ -140,7 +162,8 @@ namespace Transports
         if (msg->name != m_args.p_elabel)
           return;
 
-        // Check whether parameters match, and correct+warn if they dont
+        m_hb_timer.reset();
+
         IMC::MessageList<IMC::EntityParameter>::const_iterator itr = msg->params.begin();
         for (; itr != msg->params.end(); ++itr)
         {
@@ -172,7 +195,8 @@ namespace Transports
         {
           try
           {
-            m_ptable.set((*itr)->name, (*itr)->value);
+            if (m_ptable.set((*itr)->name, (*itr)->value).changed())
+              m_dirty = true;
           }
           catch (std::runtime_error& e)
           {
@@ -180,8 +204,6 @@ namespace Transports
                 (*itr)->name.c_str());
           }
         }
-
-        m_dirty = true;
       }
 
       void
@@ -220,17 +242,21 @@ namespace Transports
         if (msg->getSource() != m_proxied_id)
           return;
 
-        // System is alive.
-
-        if (m_dirty)
+        if (m_dirty && m_reply_timer.overflow())
         {
           setProxiedParameters();
           queryProxiedParameters();
+          m_reply_timer.reset();
         }
 
-        // if (system was rebooted or whatever)
-        //    queryProxiedParameters();
-
+         if (m_hb_timer.overflow())
+         {
+           queryProxiedParameters();
+         }
+         else
+         {
+           m_hb_timer.reset();
+         }
       }
 
       void
