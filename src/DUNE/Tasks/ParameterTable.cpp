@@ -32,7 +32,7 @@ namespace DUNE
 {
   namespace Tasks
   {
-    void
+    Parameter&
     ParameterTable::set(const std::string& name, const std::string& value)
     {
       std::map<std::string, Parameter*>::const_iterator itr = m_names.find(name);
@@ -48,6 +48,8 @@ namespace DUNE
 
       if (parameter->commit())
         parameter->setChanged();
+
+      return *parameter;
     }
 
     ParameterTable::~ParameterTable(void)

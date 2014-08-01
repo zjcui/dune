@@ -62,7 +62,7 @@ namespace DUNE
         return *p;
       }
 
-      void
+      Parameter&
       set(const std::string& name, const std::string& value);
 
       void
