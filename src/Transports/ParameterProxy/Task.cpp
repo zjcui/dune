@@ -72,9 +72,6 @@ namespace Transports
         m_dirty(true)
       {
         // Define configuration parameters.
-        paramActive(Tasks::Parameter::SCOPE_MANEUVER,
-                    Tasks::Parameter::VISIBILITY_USER);
-
         param("Proxied Entity Label", m_args.p_elabel)
         .defaultValue("")
         .description("Label for the proxied entity");
@@ -262,14 +259,11 @@ namespace Transports
       void
       onMain(void)
       {
+        setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
+
         while (!stopping())
         {
           waitForMessages(1.0);
-
-          if (isActive())
-            setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
-          else
-            setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_IDLE);
         }
       }
 
