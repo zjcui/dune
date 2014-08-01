@@ -97,6 +97,7 @@ namespace Transports
         bind<IMC::QueryEntityParameters>(this);
         bind<IMC::EntityParameters>(this);
         bind<IMC::SetEntityParameters>(this);
+        bind<IMC::SaveEntityParameters>(this);
       }
 
       void
@@ -128,7 +129,14 @@ namespace Transports
         m_hb_timer.setTop(m_args.p_hb_timeout);
         m_reply_timer.setTop(m_args.p_reply_timeout);
 
-        // Testing
+        inf(DTR("configured parameter proxy for: '%s':'%s'"), m_args.p_system.c_str(), m_args.p_elabel.c_str());
+      }
+
+      void
+      onResourceAcquisition(void)
+      {
+        // FIXME: Load proxied task parameters from file.
+        // FIXME: Load saved proxied task parameters from file (if they exist).
         initTestParamTable();
       }
 
@@ -201,6 +209,16 @@ namespace Transports
                 (*itr)->name.c_str());
           }
         }
+      }
+
+      void
+      consume(const IMC::SaveEntityParameters* msg)
+      {
+        if (msg->name != m_args.p_elabel)
+          return;
+
+        // FIXME: Save proxied task parameters to file.
+        err("saving parameters not implemented yet");
       }
 
       void
