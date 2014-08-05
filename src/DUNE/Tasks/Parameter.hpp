@@ -95,6 +95,9 @@ namespace DUNE
       //! Constructor.
       Parameter(const std::string& param_name, const std::string& type_name);
 
+      //! Constructor.
+      Parameter(const Parameter& parameter);
+
       //! Destructor.
       ~Parameter(void);
 

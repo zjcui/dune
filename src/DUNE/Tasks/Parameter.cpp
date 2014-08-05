@@ -107,6 +107,30 @@ namespace DUNE
       m_scope(SCOPE_GLOBAL)
     { }
 
+    Parameter::Parameter(const Parameter& parameter):
+      m_name(parameter.m_name),
+      m_type_name(parameter.m_type_name),
+      m_desc(parameter.m_desc),
+      m_units(parameter.m_units),
+      m_value(parameter.m_value),
+      m_values(parameter.m_values),
+      m_min_size(parameter.m_min_size),
+      m_max_size(parameter.m_min_size),
+      m_min_value(parameter.m_min_value),
+      m_max_value(parameter.m_min_value),
+      m_reader(NULL),
+      m_changed(true),
+      m_visibility(parameter.m_visibility),
+      m_scope(parameter.m_scope)
+    {
+      ValuesIf* vif;
+      for (unsigned i = 0; i < parameter.m_values_if.size(); ++i)
+      {
+        vif = parameter.m_values_if[i];
+        valuesIf(vif->name, vif->equals, vif->values);
+      }
+    }
+
     Parameter::~Parameter(void)
     {
       if (m_reader != NULL)
