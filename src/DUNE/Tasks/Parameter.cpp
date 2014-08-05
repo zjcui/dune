@@ -111,6 +111,7 @@ namespace DUNE
       m_name(parameter.m_name),
       m_type_name(parameter.m_type_name),
       m_desc(parameter.m_desc),
+      m_default(parameter.m_default),
       m_units(parameter.m_units),
       m_value(parameter.m_value),
       m_values(parameter.m_values),
