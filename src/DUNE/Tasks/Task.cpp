@@ -636,6 +636,14 @@ namespace DUNE
     }
 
     void
+    Task::writeParams(std::vector<Parameter>& params) const
+    {
+      std::map<std::string, Parameter*>::const_iterator itr = m_params.begin();
+      for (; itr != m_params.end(); ++itr)
+        params.push_back(Parameter( (*(itr->second)) ));
+    }
+
+    void
     Task::inf(const char* format, ...)
     {
       std::va_list ap;

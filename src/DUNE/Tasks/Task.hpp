@@ -352,6 +352,11 @@ namespace DUNE
       void
       writeParamsXML(std::ostream& os) const;
 
+      //! Write task parameters into a Parameter vector.
+      //! @param[in] params destination parameter vector.
+      void
+      writeParams(std::vector<Parameter>& params) const;
+
     protected:
       //! Context.
       Context& m_ctx;
