@@ -27,6 +27,7 @@
 
 // Std C++ headers.
 #include <string>
+#include <sstream>
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
@@ -101,25 +102,46 @@ namespace Transports
       }
 
       void
-      initTestParamTable(void)
+      loadTaskParamTable(void)
       {
+        DUNE::Tasks::Factory f;
+        DUNE::Tasks::Factory::Table tab = f.getTable();
+
+        DUNE::Tasks::Task* t = f.produce("Vision.Lumenera", "Vision.Lumenera", m_ctx);
+        if (t == NULL)
+        {
+          err("Invalid task name");
+        }
+
         Tasks::BasicParameterParser<std::string>* parser;
         std::string* str;
 
-        // Load parameters
-        // (test code)
-        str = new std::string;
-        m_pvalues.push_back(str);
-        parser = new Tasks::BasicParameterParser<std::string>(*str);
-        m_ptable.add("Frames Per Second", str, parser)
-        .visibility(Tasks::Parameter::VISIBILITY_USER)
-        .scope(Tasks::Parameter::SCOPE_GLOBAL)
-        .defaultValue("7")
-        .description("Proxied test fps value");
+        std::vector<Tasks::Parameter> params;
+        t->writeParams(params);
+        std::vector<Tasks::Parameter>::const_iterator itr = params.begin();
+        for (; itr != params.end(); ++itr)
+        {
+          // Only mess with user parameters
+          if (itr->getVisibility() != Tasks::Parameter::VISIBILITY_USER)
+            continue;
 
-        // Load values
-        // (test code)
-        m_ptable.set("Frames Per Second", "123");
+          str = new std::string;
+          m_pvalues.push_back(str);
+
+          parser = new Tasks::BasicParameterParser<std::string>(*str);
+          m_ptable.add(itr->name(), str, parser)
+          .visibility(itr->getVisibility())
+          .scope(itr->getScope())
+          .defaultValue(itr->defaultValue())
+          .description(itr->description());
+
+          inf("Added parameter: %s", itr->name().c_str());
+
+          // FIXME: setting value to default, for now
+          m_ptable.set(itr->name(), itr->defaultValue());
+        }
+
+        delete t;
       }
 
       void
@@ -135,9 +157,8 @@ namespace Transports
       void
       onResourceAcquisition(void)
       {
-        // FIXME: Load proxied task parameters from file.
         // FIXME: Load saved proxied task parameters from file (if they exist).
-        initTestParamTable();
+        loadTaskParamTable();
       }
 
       void
