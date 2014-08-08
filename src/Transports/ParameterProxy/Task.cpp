@@ -162,6 +162,16 @@ namespace Transports
       }
 
       void
+      onResourceRelease(void)
+      {
+        while (!m_pvalues.empty())
+        {
+          delete m_pvalues.back();
+          m_pvalues.pop_back();
+        }
+      }
+
+      void
       consume(const IMC::QueryEntityParameters* msg)
       {
         if (msg->name != m_args.p_elabel)
