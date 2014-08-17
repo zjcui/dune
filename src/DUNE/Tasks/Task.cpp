@@ -143,7 +143,7 @@ namespace DUNE
     Task::setEntityState(IMC::EntityState::StateEnum state,
                          const std::string& message)
     {
-      bool new_state = (state != m_entity_state.state);
+      bool new_state = (state != m_entity_state.state) || (message != m_entity_state.description);
 
       m_entity_state.state = state;
       m_entity_state.description = message;
