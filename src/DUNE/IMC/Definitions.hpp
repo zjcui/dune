@@ -18018,7 +18018,15 @@ namespace DUNE
         //! Input Available.
         IOV_TYPE_INPUT = 1,
         //! Input Error.
-        IOV_TYPE_INPUT_ERROR = 2
+        IOV_TYPE_INPUT_ERROR = 2,
+        //! Open Failed.
+        IOV_TYPE_OPEN_FAILED = 3,
+        //! Open Succeeded.
+        IOV_TYPE_OPEN_OK = 4,
+        //! Closed Failed.
+        IOV_TYPE_CLOSE_FAILED = 5,
+        //! Close Succeeded.
+        IOV_TYPE_CLOSE_OK = 6
       };
 
       //! Type.

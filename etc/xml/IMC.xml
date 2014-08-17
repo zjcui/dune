@@ -7557,6 +7557,10 @@
       </description>
       <value abbrev="INPUT" name="Input Available" id="1"/>
       <value abbrev="INPUT_ERROR" name="Input Error" id="2"/>
+      <value abbrev="OPEN_FAILED" name="Open Failed" id="3"/>
+      <value abbrev="OPEN_OK" name="Open Succeeded" id="4"/>
+      <value abbrev="CLOSE_FAILED" name="Closed Failed" id="5"/>
+      <value abbrev="CLOSE_OK" name="Close Succeeded" id="6"/>
     </field>
     <field name="Error Message" abbrev="error" type="plaintext">
       <description>
