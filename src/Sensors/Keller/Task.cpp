@@ -22,14 +22,17 @@
 // language governing permissions and limitations at                        *
 // https://www.lsts.pt/dune/licence.                                        *
 //***************************************************************************
-// Author: Renato Caldas                                                    *
+// Author: Ricardo Martins                                                  *
 //***************************************************************************
 
 // ISO C++ 98 headers.
-#include <cstddef>
+#include <vector>
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
+
+// Local headers.
+#include "Parser.hpp"
 
 namespace Sensors
 {
@@ -38,106 +41,92 @@ namespace Sensors
   {
     using DUNE_NAMESPACES;
 
-    enum Commands
+    enum DriverState
     {
-      CMD_CONFIRMATION_FOR_INITIALIZATION = 48,
-      CMD_READ_SERIAL_NUMBER = 69,
-      CMD_READ_CHANNEL = 73,
-      CMD_ZERO_CHANNEL = 95
+      DS_IDLE,
+      DS_ACTIVATE_BEGIN,
+      DS_POWER_ON,
+      DS_POWER_ON_WAIT,
+      DS_OPEN,
+      DS_INIT,
+      DS_ACTIVE_BEGIN,
+      DS_ACTIVE
     };
 
-    enum CommandDataSizes
-    {
-      CMD_CONFIRMATION_FOR_INITIALIZATION_SIZE = 6,
-      CMD_READ_SERIAL_NUMBER_SIZE = 4,
-      CMD_READ_CHANNEL_SIZE = 5,
-      CMD_ZERO_CHANNEL_SIZE = 1
-    };
-
-    enum ParserStates
-    {
-      STA_ADDR,
-      STA_CMD,
-      STA_DATA,
-      STA_CRC_MSB,
-      STA_CRC_LSB
-    };
-
-    enum ParserResults
-    {
-      RES_IN_PROGRESS = 0,
-      RES_DONE,
-      RES_CRC,
-      RES_EXCEPTION
-    };
-
+    //! Task arguments.
     struct Arguments
     {
-      // UART device.
+      //! UART device.
       std::string uart_dev;
-      // UART baud rate.
+      //! UART baud rate.
       unsigned uart_baud;
-      // True if UART has local echo enabled.
+      //! True if UART has local echo enabled.
       bool uart_echo;
-      // Depth conversion factor.
-      float depth_conv;
-      // Device address.
-      int address;
+      //! Water density.
+      float water_density;
+      //! Device address.
+      unsigned address;
+      //! Device power channel.
+      std::string power_channel;
     };
 
-    // Number of seconds to wait before setting an entity error.
-    static const float c_expire_wdog = 2.0f;
-
-    struct Task: public Tasks::Periodic
+    struct Task: public Tasks::Task
     {
-      static const unsigned c_parser_data_size = 6;
-      // Maximum number of consecutive CRC errors before bailing out.
-      static const unsigned c_max_crc_err = 10;
+      //! IMC pressure message.
+      IMC::Pressure m_pressure;
+      //! IMC depth message.
+      IMC::Depth m_depth;
+      //! IMC temperature message.
+      IMC::Temperature m_temperature;
+      //! Initialize and release command.
+      std::vector<uint8_t> m_cmd_init;
+      //! Set pressure sensor 1 zero point command.
+      std::vector<uint8_t> m_cmd_zero;
+      //! Serial number request comannd.
+      std::vector<uint8_t> m_cmd_serial;
+      //! Pressure measurement request.
+      std::vector<uint8_t> m_cmd_press;
+      //! Temperature measurement request.
+      std::vector<uint8_t> m_cmd_temp;
+      //! Command parser.
+      Parser m_parser;
+      //! Read buffer.
+      uint8_t m_buffer[64];
+      //! Vendor.
+      std::string m_vendor;
+      //! Model.
+      std::string m_model;
+      //! Firmware version.
+      std::string m_version;
+      //! Serial number.
+      std::string m_serial;
+      //! Driver state.
+      DriverState m_driver_state;
+      //! True if power channel is on, false otherwise.
+      bool m_power;
+      //! Depth conversion factor (bar to meter of fluid).
+      double m_depth_conv;
       //! Serial port handle.
       IO::Handle* m_handle;
-      // True if serial port echoes sent commands.
-      bool m_echo;
-      // Read Pressure message;
-      uint8_t m_msg_read_pressure[5];
-      // Read Temperature message;
-      uint8_t m_msg_read_temperature[5];
-      // Pressure.
-      IMC::Pressure m_pressure;
-      // Depth.
-      IMC::Depth m_depth;
-      // Measured temperature.
-      IMC::Temperature m_temperature;
-      // Sensor is calibrated.
-      bool m_calibrated;
-      // Entity ID.
-      int m_entity_id;
-      // Current parser state.
-      ParserStates m_parser_state;
-      // Current parser command.
-      uint8_t m_parser_cmd;
-      // Parser data buffer.
-      uint8_t m_parser_data[c_parser_data_size];
-      // Parser data buffer length.
-      uint8_t m_parser_data_len;
-      // Parser data CRC.
-      uint16_t m_parser_data_crc;
-      // Parser packet CRC.
-      uint16_t m_parser_packet_crc;
-      // Active channel value.
-      float m_channel_readout;
-      // Entity error reporting expire time checker
-      Time::Counter<float> m_error_wdog;
-      // Task arguments.
+      //! Task arguments.
       Arguments m_args;
-      // Unsigned CRC error counter.
-      unsigned m_crc_err_count;
 
       Task(const std::string& name, Tasks::Context& ctx):
-        Tasks::Periodic(name, ctx),
-        m_handle(NULL),
-        m_crc_err_count(0)
+        Tasks::Task(name, ctx),
+        m_vendor("Keller"),
+        m_driver_state(DS_IDLE),
+        m_power(false),
+        m_depth_conv(0),
+        m_handle(NULL)
       {
-        // Define configuration parameters.
+        paramActive(Tasks::Parameter::SCOPE_GLOBAL,
+                    Tasks::Parameter::VISIBILITY_DEVELOPER,
+                    true);
+
+        param("Power Channel", m_args.power_channel)
+        .defaultValue("")
+        .description("Name of the device's power channel");
+
         param("Serial Port - Device", m_args.uart_dev)
         .defaultValue("")
         .description("Serial port device used to communicate with the sensor");
@@ -154,363 +143,348 @@ namespace Sensors
         .minimumValue("0")
         .maximumValue("250");
 
-        param("Water Density", m_args.depth_conv)
+        param("Water Density", m_args.water_density)
         .units(Units::KilogramPerCubicMeter)
-        .defaultValue("1025.0");
+        .defaultValue("1025.0")
+        .description("Water density");
 
-        m_calibrated = false;
+        m_cmd_init.resize(4);
+        m_cmd_init[IDX_FUNC_CODE] = FUNC_INITIALIZE_AND_RELEASE;
 
-        // Register consumers.
-        bind<IMC::VehicleMedium>(this);
+        m_cmd_zero.resize(5);
+        m_cmd_zero[IDX_FUNC_CODE] = FUNC_SET_ZERO_POINT;
+        m_cmd_zero[IDX_DATA0] = ZPA_SET_ZERO_P1;
+
+        m_cmd_serial.resize(4);
+        m_cmd_serial[IDX_FUNC_CODE] = FUNC_READ_SERIAL_NUMBER;
+
+        m_cmd_press.resize(5);
+        m_cmd_press[IDX_FUNC_CODE] = FUNC_READ_CHANNEL;
+        m_cmd_press[IDX_DATA0] = CHANNEL_P1;
+
+        m_cmd_temp.resize(5);
+        m_cmd_temp[IDX_FUNC_CODE] = FUNC_READ_CHANNEL;
+        m_cmd_temp[IDX_DATA0] = CHANNEL_TOB1;
+
+        bind<IMC::PowerChannelState>(this);
       }
 
+      //! Called on task parameters are updated.
       void
       onUpdateParameters(void)
       {
-        // Depth conversion (bar to meters of fluid).
-        if (paramChanged(m_args.depth_conv))
-          m_args.depth_conv = Math::c_pascal_per_bar / (Math::c_gravity * m_args.depth_conv);
+        // Update power channel.
+        if (paramChanged(m_args.power_channel))
+        {
+          if (m_args.power_channel.empty())
+            m_power = true;
+        }
 
-        // Initialize serial messages.
-        m_msg_read_pressure[0] = m_args.address;
-        m_msg_read_pressure[1] = CMD_READ_CHANNEL;
-        m_msg_read_pressure[2] = 1;
-        uint16_t crc = Algorithms::CRC16::compute(m_msg_read_pressure, 3, 0xFFFF);
-        ByteCopy::toBE(crc, &m_msg_read_pressure[3]);
+        // Update device address.
+        if (paramChanged(m_args.address))
+        {
+          m_parser.setAddress(m_args.address);
+          updateCommands();
+        }
 
-        m_msg_read_temperature[0] = m_args.address;
-        m_msg_read_temperature[1] = CMD_READ_CHANNEL;
-        m_msg_read_temperature[2] = 4;
-        crc = Algorithms::CRC16::compute(m_msg_read_temperature, 3, 0xFFFF);
-        ByteCopy::toBE(crc, &m_msg_read_temperature[3]);
-
-        m_error_wdog.setTop(c_expire_wdog);
+        // Update depth conversion factor .
+        if (paramChanged(m_args.water_density))
+        {
+          m_depth_conv = Math::c_pascal_per_bar / (Math::c_gravity * m_args.water_density);
+        }
       }
 
       void
-      onResourceAcquisition(void)
+      onRequestActivation(void)
       {
-        onResourceRelease();
-
-        try
-        {
-          if (openSocket())
-            return;
-
-          m_handle = new SerialPort(m_args.uart_dev, m_args.uart_baud);
-          m_handle->flush();
-        }
-        catch (...)
-        {
-          throw RestartNeeded(DTR(Status::getString(CODE_COM_ERROR)), 5);
-        }
+        m_driver_state = DS_ACTIVATE_BEGIN;
       }
 
+      //! Update prepared commands with new address and CRC16.
+      void
+      updateCommands(void)
+      {
+        // Prepare initialize and release command.
+        m_cmd_init[IDX_DEV_ADDR] = m_args.address;
+        updateCommandCRC16(m_cmd_init);
+
+        // Prepare set pressure sensor 1 zero point command.
+        m_cmd_zero[IDX_DEV_ADDR] = m_args.address;
+        updateCommandCRC16(m_cmd_zero);
+
+        // Prepare firmware version request.
+        m_cmd_serial[IDX_DEV_ADDR] = m_args.address;
+        updateCommandCRC16(m_cmd_serial);
+
+        // Prepare pressure measurement request.
+        m_cmd_press[IDX_DEV_ADDR] = m_args.address;
+        updateCommandCRC16(m_cmd_press);
+
+        // Prepare temperature measurement request.
+        m_cmd_temp[IDX_DEV_ADDR] = m_args.address;
+        updateCommandCRC16(m_cmd_temp);
+      }
+
+      //! Update CRC16 of a command.
+      //! @param[in] cmd bytes of a command.
+      static void
+      updateCommandCRC16(std::vector<uint8_t>& cmd)
+      {
+        uint16_t crc = Algorithms::CRC16::compute(&cmd[0], cmd.size() - 2, 0xFFFF);
+        cmd[cmd.size() - 2] = crc >> 8;
+        cmd[cmd.size() - 1] = crc;
+      }
+
+      // void
+      // onResourceAcquisition(void)
+      // {
+      //   try
+      //   {
+      //     // if (openSocket())
+      //     //   return;
+
+      //     m_handle = new SerialPort(m_args.uart_dev, m_args.uart_baud);
+      //   }
+      //   catch (std::runtime_error& e)
+      //   {
+      //     err("%s", e.what());
+      //     throw RestartNeeded(DTR(Status::getString(CODE_COM_ERROR)), 5);
+      //   }
+      // }
+
+      //! Send IMC message to turn on power channel.
+      void
+      turnOnPower(void)
+      {
+        IMC::PowerChannelControl pcc;
+        pcc.name = m_args.power_channel;
+        pcc.op = IMC::PowerChannelControl::PCC_OP_TURN_ON;
+        dispatch(pcc);
+      }
+
+      //! Consume state of power channel matching task's power_channel
+      //! parameter.
+      //! @param[in] msg Power Channel State message.
+      void
+      consume(const IMC::PowerChannelState* msg)
+      {
+        if (msg->getSource() != getSystemId())
+          return;
+
+        if (msg->name != m_args.power_channel)
+          return;
+
+        m_power = msg->state == IMC::PowerChannelState::PCS_ON;
+      }
+
+      //! Send a command to the device and wait for response.
+      //! @param[in] cmd command bytes.
+      //! @param[in] timeout amount of time to wait for response.
+      //! @return true if command was sent and response was received,
+      //! false otherwise.
       bool
-      openSocket(void)
+      sendCommand(const std::vector<uint8_t>& cmd, double timeout = 1.0)
       {
-        char addr[128] = {0};
-        unsigned port = 0;
+        // Write command to handle.
+        m_handle->write(&cmd[0], cmd.size());
 
-        if (std::sscanf(m_args.uart_dev.c_str(), "tcp://%[^:]:%u", addr, &port) != 2)
-          return false;
+        // Setup number of echoed bytes if needed.
+        size_t cmd_echo_remain = 0;
+        if (m_args.uart_echo)
+          cmd_echo_remain = cmd.size();
 
-        TCPSocket* sock = new TCPSocket;
-        sock->connect(addr, port);
-        m_handle = sock;
-        return true;
-      }
-
-      void
-      onResourceRelease(void)
-      {
-        Memory::clear(m_handle);
-      }
-
-      void
-      onResourceInitialization(void)
-      {
-        m_crc_err_count = 0;
-        initialize();
-      }
-
-      void
-      consume(const IMC::VehicleMedium* msg)
-      {
-        if ((msg->medium != IMC::VehicleMedium::VM_UNDERWATER) && !m_calibrated)
+        // Wait for response to arrive.
+        Counter<double> timer(timeout);
+        while (!timer.overflow())
         {
-          zero();
-          m_calibrated = true;
-        }
-      }
-
-      bool
-      write(uint8_t* bfr, int len)
-      {
-        uint8_t rxbfr[10];
-        int i = len;
-        bool aborted = true;
-
-        m_handle->write(bfr, len);
-        // If no echo is expected, do nothing here.
-        if (!m_args.uart_echo)
-          return true;
-
-        Time::Counter<double> tout(1.0);
-
-        while (!tout.overflow())
-        {
-          if (!Poll::poll(*m_handle, tout.getRemaining()))
+          if (!Poll::poll(*m_handle, timer.getRemaining()))
             continue;
 
-          i -= m_handle->read(rxbfr + (len - i), i);
-          if (i == 0)
+          size_t rv = m_handle->read(m_buffer, sizeof(m_buffer));
+          for (size_t i = 0; i < rv; ++i)
           {
-            aborted = false;
-            break;
+            if (cmd_echo_remain > 0)
+            {
+              uint8_t byte = cmd[cmd.size() - cmd_echo_remain];
+              if (byte != m_buffer[i])
+                std::fprintf(stderr, "echo mismatch %02X != %02X\n", byte, m_buffer[i]);
+              --cmd_echo_remain;
+            }
+            else if (m_parser.parse(m_buffer[i]))
+            {
+              if (m_parser.getFrame()[IDX_FUNC_CODE] == cmd[IDX_FUNC_CODE])
+              {
+                //inf("got response in %0.2f", Clock::get() - time_start);
+                return true;
+              }
+            }
           }
         }
 
-        if (aborted)
-        {
-          setEntityState(IMC::EntityState::ESTA_ERROR, Status::CODE_COM_ERROR);
-
-          // No echo received, so something is seriously broken
-          throw RestartNeeded(DTR("echo handling enabled, but got no RS-485 echo"), 5);
-        }
-
-        // Check for collisions here.
-        for (i = 0; i < len; i++)
-        {
-          if (rxbfr[i] != bfr[i])
-          {
-            m_handle->flush();
-            war(DTR("received RS-485 echo doesn't match"));
-            return false;
-          }
-        }
-
-        return true;
-      }
-
-      bool
-      read(void)
-      {
-        uint8_t bfr[10];
-
-        // Reset the parser whenever a read is asked for.
-        m_parser_state = STA_ADDR;
-
-        while (Poll::poll(*m_handle, 0.1))
-        {
-          int len = m_handle->read(bfr, sizeof(bfr));
-          ParserResults result = parse(bfr, len);
-
-          if (result == RES_DONE)
-          {
-            m_error_wdog.reset();
-            setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
-            m_crc_err_count = 0;
-            return true;
-          }
-          else if (result == RES_EXCEPTION)
-          {
-            m_crc_err_count = 0;
-            return false;
-          }
-          else if (result == RES_CRC)
-          {
-            err(DTR("invalid CRC"));
-            if (++m_crc_err_count > c_max_crc_err)
-              throw RestartNeeded(DTR("exceeded maximum consecutive CRC error count"), 5);
-            return false;
-          }
-        }
-
-        // hasNewData timed out, so got nothing useful:
         return false;
       }
 
-      ParserResults
-      parse(uint8_t* bfr, uint8_t len)
-      {
-        ParserResults result = RES_IN_PROGRESS;
-
-        while (len > 0)
-        {
-          switch (m_parser_state)
-          {
-            case STA_ADDR:
-              if (*bfr == m_args.address)
-              {
-                m_parser_data_crc = Algorithms::CRC16::compute(bfr, 1, 0xFFFF);
-                m_parser_state = STA_CMD;
-              }
-              break;
-            case STA_CMD:
-              m_parser_cmd = *bfr;
-              m_parser_data_crc = Algorithms::CRC16::compute(bfr, 1, m_parser_data_crc);
-              m_parser_state = STA_DATA;
-              m_parser_data_len = 0;
-              break;
-            case STA_DATA:
-              m_parser_data[m_parser_data_len++] = *bfr;
-              if ((m_parser_data_len >= c_parser_data_size) ||
-                  // This means we got an exception, so only one data byte to read:
-                  (m_parser_cmd & (1 << 7)) ||
-                  ((m_parser_cmd == CMD_CONFIRMATION_FOR_INITIALIZATION) && (m_parser_data_len >= CMD_CONFIRMATION_FOR_INITIALIZATION_SIZE)) ||
-                  ((m_parser_cmd == CMD_READ_SERIAL_NUMBER) && (m_parser_data_len >= CMD_READ_SERIAL_NUMBER_SIZE)) ||
-                  ((m_parser_cmd == CMD_READ_CHANNEL) && (m_parser_data_len >= CMD_READ_CHANNEL_SIZE)) ||
-                  ((m_parser_cmd == CMD_ZERO_CHANNEL) && (m_parser_data_len >= CMD_ZERO_CHANNEL_SIZE)))
-                m_parser_state = STA_CRC_MSB;
-              break;
-            case STA_CRC_MSB:
-              m_parser_data_crc = Algorithms::CRC16::compute(m_parser_data, m_parser_data_len, m_parser_data_crc);
-
-              m_parser_packet_crc = (*bfr << 8);
-              m_parser_state = STA_CRC_LSB;
-              break;
-            case STA_CRC_LSB:
-              m_parser_packet_crc |= *bfr;
-              // Handle crc errors properly:
-              if (m_parser_packet_crc != m_parser_data_crc)
-                result = RES_CRC;
-              else if (!interpret())
-                result = RES_EXCEPTION;
-              else
-                result = RES_DONE;
-            default:
-              m_parser_state = STA_ADDR;
-              break;
-          }
-
-          bfr++;
-          len--;
-        }
-
-        return result;
-      }
-
+      //! Each time the device is switched on by applying the supply
+      //! voltage or after a break in the power supply, the device
+      //! must be initialised via this function.
+      //! @return true if command was successfully delivered, false
+      //! otherwise.
       bool
-      interpret(void)
+      initializeAndRelease(void)
       {
-        uint32_t tmp = 0;
-
-        if (m_parser_cmd & (1 << 7))
-        {
-          if (m_parser_data[0] == 32)
-          {
-            err(DTR("device not initialized, initializing"));
-            setEntityState(IMC::EntityState::ESTA_BOOT, Status::CODE_INIT);
-            initialize();
-          }
-          else
-          {
-            err(DTR("got exception %d for command %d"),
-                (int)m_parser_data[0], (int)m_parser_cmd);
-          }
-
-          // Got an exception don't bother interpreting anything else.
+        if (!sendCommand(m_cmd_init))
           return false;
-        }
 
-        switch (m_parser_cmd)
-        {
-          case CMD_CONFIRMATION_FOR_INITIALIZATION:
-            inf(DTR("initialized device: class=%d.%d firmware=%d"),
-                (int)m_parser_data[0], (int)m_parser_data[2], (int)m_parser_data[3]);
-            setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
-            break;
-          case CMD_READ_SERIAL_NUMBER:
-            ByteCopy::fromBE(tmp, m_parser_data);
-            inf(DTR("device serial number=%u"), tmp);
-            break;
-          case CMD_READ_CHANNEL:
-            ByteCopy::fromBE(m_channel_readout, m_parser_data);
-            break;
-          case CMD_ZERO_CHANNEL:
-            inf("%s", DTR(Status::getString(Status::CODE_CALIBRATED)));
-        }
+        if (m_parser.getFrame()[2] == 5)
+          m_model = "Series 30";
+        else
+          m_model = "Unknown";
 
-        // Everything correctly interpreted, so return true
+        if (m_parser.getFrame()[3] == 1)
+          m_model += " (1999)";
+        else if (m_parser.getFrame()[3] == 20)
+          m_model += " (2002)";
+
+        m_version = String::str("%u.%u", m_parser.getFrame()[4], m_parser.getFrame()[5]);
+
+        debug("vendor: %s", m_vendor.c_str());
+        debug("model: %s", m_model.c_str());
+        debug("firmware version: %s", m_version.c_str());
         return true;
       }
 
+      //! Set zero point of pressure sensor
       void
-      initialize(void)
+      setPressureZeroPoint(void)
       {
-        m_handle->flush();
-
-        uint16_t crc = 0;
-        uint8_t bfr[10] =
+        if (sendCommand(m_cmd_zero))
         {
-          (uint8_t)m_args.address,
-          (uint8_t)CMD_CONFIRMATION_FOR_INITIALIZATION
-        };
+          inf("zero point set");
+        }
+      }
 
-        crc = Algorithms::CRC16::compute(bfr, 2, 0xFFFF);
-        ByteCopy::toBE(crc, &bfr[2]);
-        write(bfr, 4);
-        if (!read())
-          throw RestartNeeded(DTR("unable to initialize the device"), 5.0, false);
+      //! Read device's serial number.
+      //! @return true if serial number was read, false otherwise.
+      bool
+      readSerialNumber(void)
+      {
+        if (!sendCommand(m_cmd_serial))
+          return false;
 
-        bfr[0] = m_args.address;
-        bfr[1] = CMD_READ_SERIAL_NUMBER;
-        crc = Algorithms::CRC16::compute(bfr, 2, 0xFFFF);
-        ByteCopy::toBE(crc, &bfr[2]);
-        write(bfr, 4);
-        if (!read())
-          throw RestartNeeded(DTR("unable to retrieve the serial number"), 5.0, false);
+        uint32_t value = 0;
+        ByteCopy::fromBE(value, &m_parser.getFrame()[2]);
+        m_serial = String::str("%u", value);
+        return true;
+      }
+
+      //! Read pressure value.
+      void
+      readPressure(void)
+      {
+        if (sendCommand(m_cmd_press))
+        {
+          float value = 0;
+          ByteCopy::fromBE(value, &m_parser.getFrame()[2]);
+
+          m_pressure.setTimeStamp();
+          m_pressure.value = value * Math::c_pascal_per_bar;
+
+          m_depth.setTimeStamp(m_pressure.getTimeStamp());
+          m_depth.value = value * m_depth_conv;
+
+          dispatch(m_pressure, DF_KEEP_TIME);
+          dispatch(m_depth, DF_KEEP_TIME);
+          m_pressure.toText(std::cerr);
+        }
+      }
+
+      //! Read temperature value.
+      void
+      readTemperature(void)
+      {
+        if (sendCommand(m_cmd_temp))
+        {
+          float value = 0;
+          ByteCopy::fromBE(value, &m_parser.getFrame()[2]);
+          m_temperature.value = value;
+          dispatch(m_temperature);
+        }
+      }
+
+      // bool
+      // openSocket(void)
+      // {
+      //   char addr[128] = {0};
+      //   unsigned port = 0;
+
+      //   if (std::sscanf(m_args.uart_dev.c_str(), "tcp://%[^:]:%u", addr, &port) != 2)
+      //     return false;
+
+      //   TCPSocket* sock = new TCPSocket;
+      //   sock->connect(addr, port);
+      //   m_handle = sock;
+      //   return true;
+      // }
+
+      void
+      updateState(void)
+      {
+        switch (m_driver_state)
+        {
+          case DS_IDLE:
+            break;
+
+          case DS_ACTIVATE_BEGIN:
+            debug("beginning activation");
+            m_driver_state = DS_POWER_ON;
+            break;
+
+          case DS_POWER_ON:
+            debug("sending power on request");
+            m_driver_state = DS_POWER_ON_WAIT;
+            break;
+
+          case DS_POWER_ON_WAIT:
+            if (m_power)
+            {
+              debug("device is powered on");
+              m_driver_state = DS_OPEN;
+            }
+            break;
+
+          case DS_OPEN:
+            debug("opening device");
+            m_handle = new SerialPort(m_args.uart_dev, m_args.uart_baud);
+            m_driver_state = DS_INIT;
+            break;
+
+          case DS_INIT:
+            debug("beginning initialization");
+            if (initializeAndRelease())
+            {
+              debug("initialization completed");
+              m_driver_state = DS_ACTIVE_BEGIN;
+            }
+            break;
+
+          case DS_ACTIVE_BEGIN:
+            activate();
+            m_driver_state = DS_ACTIVE;
+
+          case DS_ACTIVE:
+            readPressure();
+            readTemperature();
+            break;
+        }
       }
 
       void
-      zero(void)
+      onMain(void)
       {
-        uint16_t crc = 0;
-        uint8_t bfr[10] =
+        while (!stopping())
         {
-          (uint8_t)m_args.address,
-          (uint8_t)CMD_ZERO_CHANNEL,
-          0
-        };
-
-        crc = Algorithms::CRC16::compute(bfr, 3, 0xFFFF);
-        ByteCopy::toBE(crc, &bfr[3]);
-        write(bfr, 5);
-        if (!read())
-          throw RestartNeeded(DTR("unable to zero the device"), 5);
-      }
-
-      void
-      task(void)
-      {
-        // Query pressure.
-        if (write(m_msg_read_pressure, sizeof(m_msg_read_pressure)))
-        {
-          if (read())
-          {
-            m_pressure.value = m_channel_readout * c_pascal_per_bar;
-            dispatch(m_pressure);
-            m_depth.value = m_channel_readout * m_args.depth_conv;
-            dispatch(m_depth);
-          }
-        }
-
-        // Query temperature.
-        if (write(m_msg_read_temperature, sizeof(m_msg_read_temperature)))
-        {
-          if (read())
-          {
-            m_temperature.value = m_channel_readout;
-            dispatch(m_temperature);
-          }
-        }
-
-        // If we had no good answer from device in x seconds, show entity error.
-        if (m_error_wdog.overflow())
-        {
-          setEntityState(IMC::EntityState::ESTA_ERROR, Status::CODE_COM_ERROR);
-          throw RestartNeeded(DTR(Status::getString(Status::CODE_COM_ERROR)), 5);
+          waitForMessages(1.0);
+          updateState();
         }
       }
     };
