@@ -30,6 +30,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <cerrno>
 
 // DUNE headers.
 #include <DUNE/Config.hpp>
@@ -59,6 +60,10 @@
 
 #if defined(DUNE_SYS_HAS_NETDB_H)
 #  include <netdb.h>
+#endif
+
+#if defined(DUNE_SYS_HAS_POLL_H)
+#  include <poll.h>
 #endif
 
 #if defined(DUNE_SYS_HAS_NETINET_IN_H)
@@ -107,9 +112,7 @@ static inline std::string
 getLastErrorMessage(void)
 {
 #if defined(DUNE_OS_WINDOWS)
-  std::stringstream s;
-  s << WSAGetLastError();
-  return s.str();
+  return DUNE::System::Error::getMessage(WSAGetLastError());
 #else
   return DUNE::System::Error::getLastMessage();
 #endif
@@ -131,6 +134,17 @@ namespace DUNE
 
         disableSIGPIPE();
         createEventHandle();
+
+        // Microsoft Windows implementation.
+#if defined(DUNE_OS_WINDOWS)
+        u_long imode = 1;
+	ioctlsocket(m_handle, FIONBIO, &imode);
+
+        // Unix implementation.
+#else
+        int flags = fcntl(m_handle, F_GETFL, 0);
+        fcntl(m_handle, F_SETFL, flags | O_NONBLOCK);
+#endif
       }
     }
 
@@ -170,15 +184,58 @@ namespace DUNE
     }
 
     void
-    TCPSocket::connect(const Address& addr, uint16_t port)
+    TCPSocket::connect(const Address& addr, uint16_t port, double timeout)
     {
       sockaddr_in ad;
       ad.sin_family = AF_INET;
       ad.sin_port = Utils::ByteCopy::toBE(port);
       ad.sin_addr.s_addr = addr.toInteger();
 
-      if (::connect(m_handle, (struct sockaddr*)&ad, sizeof(ad)) < 0)
-        throw NetworkError(DTR("unable to connect"), getLastErrorMessage());
+      // Microsoft Windows implementation.
+#if defined(DUNE_OS_WINDOWS)
+      if (::connect(m_handle, (const struct sockaddr*)&ad, sizeof(ad)) == SOCKET_ERROR)
+      {
+        int rv = WSAGetLastError();
+
+        if (rv == WSAEWOULDBLOCK)
+        {
+          if (timeout == 0)
+            throw ConnectionError(System::Error::getMessage(WSAEINPROGRESS));
+
+          waitForConnection(timeout);
+        }
+        else if (rv != WSAEISCONN)
+          throw ConnectionError(System::Error::getMessage(WSAEINPROGRESS));
+      }
+
+      // Unix implementation.
+#else
+      int rv = 0;
+
+      do
+      {
+        rv = ::connect(m_handle, (const struct sockaddr*)&ad, sizeof(ad));
+      }
+      while (rv == -1 && errno == EINTR);
+
+      if ((rv == -1) && (errno == EINPROGRESS || errno == EALREADY) && (timeout > 0))
+      {
+        waitForConnection(timeout);
+
+#if defined(SO_ERROR)
+        int error = 0;
+        socklen_t len = sizeof(error);
+        if ((rv = getsockopt(m_handle, SOL_SOCKET, SO_ERROR, (char *)&error, &len)) < 0)
+          throw ConnectionError(System::Error::getLastMessage());
+
+        if (error)
+          throw ConnectionError(System::Error::getMessage(error));
+#endif
+      }
+
+      if (rv == -1 && errno != EISCONN)
+        throw ConnectionError(System::Error::getLastMessage());
+#endif
     }
 
     void
@@ -401,6 +458,58 @@ namespace DUNE
 #if defined(DUNE_OS_WINDOWS)
       m_event_handle = CreateEvent(NULL, FALSE, FALSE, NULL);
       WSAEventSelect(m_handle, m_event_handle, FD_ACCEPT | FD_READ);
+#endif
+    }
+
+    void
+    TCPSocket::waitForConnection(double timeout)
+    {
+      // Microsoft Windows implementation.
+#if defined(DUNE_OS_WINDOWS)
+      fd_set wfdset;
+      FD_ZERO(&wfdset);
+      FD_SET(m_handle, &wfdset);
+
+      fd_set efdset;
+      FD_ZERO(&efdset);
+      FD_SET(m_handle, &efdset);
+
+      timeval tv = DUNE_TIMEVAL_INIT_SEC_FP(timeout);
+      timeval* tv_ptr = &tv;
+
+      if (timeout < 0)
+        tv_ptr = NULL;
+
+      int rv = select(FD_SETSIZE + 1, NULL, &wfdset, &efdset, tv_ptr);
+      if (rv == SOCKET_ERROR)
+        throw ConnectionError(getLastErrorMessage());
+      else if (rv == 0)
+        throw ConnectionTimeout();
+
+      if (FD_ISSET(m_handle, &efdset))
+      {
+        int rv_len = sizeof(rv);
+        if (getsockopt(m_handle, SOL_SOCKET, SO_ERROR, (char*)&rv, &rv_len) == SOCKET_ERROR)
+          throw ConnectionError(getLastErrorMessage());
+        throw ConnectionError(System::Error::getMessage(rv));
+      }
+
+      // Unix Implementation.
+#else
+      struct pollfd pfd = {m_handle, POLLOUT, 0};
+
+      int rv = 0;
+      do
+      {
+        rv = poll(&pfd, 1, timeout * 1000);
+      }
+      while (rv == -1 && errno == EINTR);
+
+      if (rv == 0)
+        throw ConnectionTimeout();
+
+      if (rv < 0)
+        throw ConnectionError(System::Error::getLastMessage());
 #endif
     }
   }

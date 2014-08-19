@@ -64,7 +64,7 @@ namespace DUNE
       bind(uint16_t port = 0, Address add = Address::Any, bool reuse = true);
 
       void
-      connect(const Address& add, uint16_t port);
+      connect(const Address& add, uint16_t port, double timeout = 5.0);
 
       void
       listen(int backlog);
@@ -141,6 +141,9 @@ namespace DUNE
 
       void
       createEventHandle(void);
+
+      void
+      waitForConnection(double timeout);
     };
   }
 }
