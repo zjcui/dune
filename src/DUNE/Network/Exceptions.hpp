@@ -90,7 +90,7 @@ namespace DUNE
     {
     public:
       ConnectionError(const std::string& error):
-        Exception(std::string(DTR("connection error")) + ": " + error)
+        Exception(error)
       { }
     };
 
