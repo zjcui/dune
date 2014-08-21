@@ -45,7 +45,7 @@ readArgs(char* file, Assist::Arguments& args)
 
   cfg.get(sec, "Dislodging RPMs", "1600.0", args.dislodge_rpm);
   cfg.get(sec, "Depth Threshold", "0.2", args.depth_threshold);
-  cfg.get(sec, "Minimum Ascent Rate", "0.2", args.min_ascent_rate);
+  cfg.get(sec, "Minimum Ascent Rate", "0.1", args.min_ascent_rate);
   cfg.get(sec, "Ascent Rate Window Size", "5", args.ascent_wsize);
   cfg.get(sec, "Stuck Trigger Time", "30.0", args.trigger_time);
 }
@@ -140,7 +140,7 @@ main(int32_t argc, char** argv)
 
   ByteBuffer buffer;
 
-  std::ofstream lsf("NewFuel.lsf", std::ios::binary);
+  std::ofstream lsf("Assist.lsf", std::ios::binary);
 
   std::istream* is = 0;
   DUNE::Compression::Methods method = DUNE::Compression::Factory::detect(argv[2]);
@@ -172,9 +172,21 @@ main(int32_t argc, char** argv)
 
       if (!got_first)
       {
-        got_first = true;
+        if (msg->getId() == DUNE_IMC_ESTIMATEDSTATE)
+        {
+          got_first = true;
+          std::cerr << "date " << Time::Format::getTimeDate(msg->getTimeStamp())
+                    << std::endl
+                    << "time: " << std::fixed << std::setprecision(2)
+                    << msg->getTimeStamp() << std::endl;
 
-        m_assist = new Assist(&m_args, msg->getTimeStamp());
+          m_assist = new Assist(&m_args, msg->getTimeStamp());
+        }
+        else
+        {
+          delete msg;
+          continue;
+        }
       }
 
       if (msg->getId() == DUNE_IMC_VEHICLEMEDIUM)
