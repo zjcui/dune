@@ -135,7 +135,7 @@ main(int32_t argc, char** argv)
   PseudoTimer timer;
   PeriodicRun pr(1.0);
 
-  Assist* m_assist;
+  Assist* m_assist = NULL;
   bool got_first = false;
 
   ByteBuffer buffer;
