@@ -55,7 +55,7 @@ public:
 
   Assist(Arguments* args, double start_time):
     m_astate(ST_IDLE),
-    m_dtimer(-1.0, true, start_time),
+    m_dtimer(c_stab_time, true, start_time),
     m_args(args)
   {
     m_ar = new AscentRate(m_args->ascent_wsize, c_depth_period, start_time);
@@ -84,6 +84,14 @@ public:
     m_dtimer.update(msg->getTimeStamp());
 
     m_ar->update(msg->depth, msg->getTimeStamp());
+
+    // std::cerr << "v: " << std::fixed << std::setprecision(2)
+    //           << m_ar->update(msg->depth, msg->getTimeStamp())
+    //           << std::endl;
+    // std::cerr << "d: " << std::fixed << std::setprecision(2)
+    //           << msg->depth << std::endl;
+    // std::cerr << "t: " << std::fixed << std::setprecision(2)
+    //           << msg->getTimeStamp() << std::endl;
     m_depth = msg->depth;
   }
 
@@ -148,7 +156,6 @@ private:
   bool
   ascentCondition(void)
   {
-    std::cerr << "mean is " << m_ar->mean() << std::endl;
     return (m_ar->mean() < m_args->min_ascent_rate);
   }
 
@@ -159,10 +166,13 @@ private:
     {
       case ST_CHECK_STUCK:
         m_dtimer.setTop(m_args->trigger_time);
+        break;
       case ST_START_DISLODGE:
         std::cerr << "STARTING DISLODGE HERE "
                   << Time::Format::getTimeDate(m_dtimer.getReal())
                   << std::endl;
+        std::cerr << std::fixed << std::setprecision(2)
+                  << "mean is " << m_ar->mean() << std::endl;
         setState(ST_IDLE);
         break;
       default:
@@ -199,7 +209,6 @@ private:
 
     if (ascentCondition() && m_dtimer.overflow())
     {
-      std::cerr << "mean is " << m_ar->mean() << std::endl;
       setState(ST_START_DISLODGE);
       m_dtimer.reset();
     }
