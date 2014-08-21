@@ -39,7 +39,7 @@ using DUNE_NAMESPACES;
 class AscentRate
 {
 public:
-  AscentRate(unsigned window_size, float period, float start_time):
+  AscentRate(unsigned window_size, float period, double start_time):
     m_timer(period, true, start_time)
   {
     m_avg = new Math::MovingAverage<float>(window_size);
@@ -51,17 +51,15 @@ public:
   }
 
   float
-  update(float depth, float time = 0.0)
+  update(float depth, double time = 0.0)
   {
     m_timer.update(time);
 
     if (!m_timer.overflow())
       return mean();
 
-    float value;
-    value = m_avg->update(-m_deriv.update(depth, time));
-
-    return value;
+    float der = -m_deriv.update(depth, time);
+    return m_avg->update(der);
   }
 
   float
