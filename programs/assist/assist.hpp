@@ -90,8 +90,6 @@ public:
   void
   onPeriodic(void)
   {
-    std::cerr << "here" << std::endl;
-
     switch (m_astate)
     {
       case ST_IDLE:
