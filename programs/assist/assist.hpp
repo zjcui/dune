@@ -112,6 +112,8 @@ public:
 private:
   //! Time between depth updates
   static const float c_depth_period = 5.0;
+  //! Stabilization time after finishing plan
+  static const float c_stab_time = 20.0;
 
   enum AssistState
   {
@@ -140,10 +142,14 @@ private:
     if (m_depth < m_args->depth_threshold)
       return false;
 
-    if (m_ar->mean() >= m_args->min_ascent_rate)
-      return false;
-
     return true;
+  }
+
+  bool
+  ascentCondition(void)
+  {
+    std::cerr << "mean is " << m_ar->mean() << std::endl;
+    return (m_ar->mean() < m_args->min_ascent_rate);
   }
 
   void
@@ -154,7 +160,9 @@ private:
       case ST_CHECK_STUCK:
         m_dtimer.setTop(m_args->trigger_time);
       case ST_START_DISLODGE:
-        std::cerr << "STARTING DISLODGE HERE" << std::endl;
+        std::cerr << "STARTING DISLODGE HERE "
+                  << Time::Format::getTimeDate(m_dtimer.getReal())
+                  << std::endl;
         setState(ST_IDLE);
         break;
       default:
@@ -167,8 +175,17 @@ private:
   void
   onIdle(void)
   {
-    if (mainConditions())
+    if (!mainConditions())
+    {
+      m_dtimer.setTop(c_stab_time);
+      return;
+    }
+
+    if (m_dtimer.overflow())
+    {
       setState(ST_CHECK_STUCK);
+      m_dtimer.reset();
+    }
   }
 
   void
@@ -180,8 +197,12 @@ private:
       return;
     }
 
-    if (m_dtimer.overflow())
+    if (ascentCondition() && m_dtimer.overflow())
+    {
+      std::cerr << "mean is " << m_ar->mean() << std::endl;
       setState(ST_START_DISLODGE);
+      m_dtimer.reset();
+    }
   }
 
   void
@@ -253,6 +274,12 @@ private:
         return;
 
       real = time;
+    }
+
+    inline double
+    getReal(void)
+    {
+      return real;
     }
   };
 
