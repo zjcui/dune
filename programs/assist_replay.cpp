@@ -204,6 +204,11 @@ main(int32_t argc, char** argv)
         m_assist->onVehicleState(static_cast<IMC::VehicleState*>(msg));
         log_it = true;
       }
+      else if (msg->getId() == DUNE_IMC_PLANCONTROL)
+      {
+        m_assist->onPlanControl(static_cast<IMC::PlanControl*>(msg));
+        log_it = true;
+      }
 
       if (timer.isValid() && pr.doRun(timer.getTime()))
       {
