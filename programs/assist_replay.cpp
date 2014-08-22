@@ -47,7 +47,7 @@ readArgs(char* file, Assist::Arguments& args)
   cfg.get(sec, "Depth Threshold", "0.2", args.depth_threshold);
   cfg.get(sec, "Minimum Ascent Rate", "0.1", args.min_ascent_rate);
   cfg.get(sec, "Ascent Rate Window Size", "5", args.ascent_wsize);
-  cfg.get(sec, "Stuck Trigger Time", "30.0", args.trigger_time);
+  cfg.get(sec, "Stuck Trigger Time", "60.0", args.trigger_time);
 }
 
 struct PseudoTimer
