@@ -56,6 +56,7 @@ public:
   Assist(Arguments* args, double start_time):
     m_astate(ST_IDLE),
     m_dtimer(c_stab_time, true, start_time),
+    m_finish_depth(-1.0),
     m_args(args)
   {
     m_ar = new AscentRate(m_args->ascent_wsize, c_depth_period, start_time);
@@ -93,6 +94,17 @@ public:
     // std::cerr << "t: " << std::fixed << std::setprecision(2)
     //           << msg->getTimeStamp() << std::endl;
     m_depth = msg->depth;
+
+    // reset finish depth if the vehicle comes to the surface
+    if (m_depth < m_args->depth_threshold)
+      m_finish_depth = -1.0;
+  }
+
+  void
+  onPlanControl(const IMC::PlanControl* msg)
+  {
+    if ((m_astate == ST_IDLE) || (m_astate == ST_CHECK_STUCK))
+      getFinishDepth(msg);
   }
 
   void
@@ -137,6 +149,16 @@ private:
     ST_WAIT_DISLODGE
   };
 
+  void
+  getFinishDepth(const IMC::PlanControl* msg)
+  {
+    if ((msg->type != IMC::PlanControl::PC_SUCCESS) &&
+        (msg->type != IMC::PlanControl::PC_FAILURE))
+      return;
+
+    m_finish_depth = m_depth;
+  }
+
   bool
   mainConditions(void)
   {
@@ -148,6 +170,9 @@ private:
       return false;
 
     if (m_depth < m_args->depth_threshold)
+      return false;
+
+    if (m_finish_depth < m_args->depth_threshold)
       return false;
 
     return true;
@@ -304,6 +329,8 @@ private:
   AssistState m_astate;
   //! Timer for triggering the dislodge
   DualClock m_dtimer;
+  //! Finish depth of the running plan
+  float m_finish_depth;
   //! Task arguments.
   const Arguments* m_args;
 };
