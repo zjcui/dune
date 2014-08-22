@@ -84,7 +84,7 @@ public:
   {
     m_dtimer.update(msg->getTimeStamp());
 
-    m_ar->update(msg->depth, msg->getTimeStamp());
+    m_ar->update(-msg->vz, msg->getTimeStamp());
 
     // std::cerr << "v: " << std::fixed << std::setprecision(2)
     //           << m_ar->update(msg->depth, msg->getTimeStamp())
@@ -131,7 +131,7 @@ public:
 
 private:
   //! Time between depth updates
-  static const float c_depth_period = 5.0;
+  static const float c_depth_period = 1.0;
   //! Stabilization time after finishing plan
   static const float c_stab_time = 20.0;
 

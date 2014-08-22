@@ -32,8 +32,6 @@
 #include <DUNE/Math.hpp>
 #include <DUNE/Time.hpp>
 
-#include "fakederivative.hpp"
-
 using DUNE_NAMESPACES;
 
 class AscentRate
@@ -51,15 +49,14 @@ public:
   }
 
   float
-  update(float depth, double time = 0.0)
+  update(float vz, double time = 0.0)
   {
     m_timer.update(time);
 
     if (!m_timer.overflow())
       return mean();
 
-    float der = -m_deriv.update(depth, time);
-    return m_avg->update(der);
+    return m_avg->update(vz);
   }
 
   float
@@ -131,8 +128,6 @@ private:
 
   //! Moving average for the ascent rate
   Math::MovingAverage<float>* m_avg;
-  //! Derivative of the depth
-  FakeDerivative<float> m_deriv;
   //! Counter for the time between updates
   DualClock m_timer;
 };
