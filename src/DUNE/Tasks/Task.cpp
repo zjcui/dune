@@ -106,18 +106,6 @@ namespace DUNE
       return m_ctx.entities.reserve(label, getName(), m_args.act_time, m_args.deact_time);
     }
 
-    unsigned int
-    Task::resolveEntity(const std::string& label) const
-    {
-      return m_ctx.entities.resolve(label);
-    }
-
-    std::string
-    Task::resolveEntity(unsigned int id) const
-    {
-      return m_ctx.entities.resolve(id);
-    }
-
     void
     Task::reserveEntities(void)
     {
@@ -465,12 +453,19 @@ namespace DUNE
         }
         catch (RestartNeeded& e)
         {
-          setEntityState(IMC::EntityState::ESTA_FAILURE, DTR("restarting"));
-          err(DTR("restarting in %u seconds due to error: %s"),
-              e.getDelay(), e.getError());
+          if (e.isError())
+          {
+            setEntityState(IMC::EntityState::ESTA_FAILURE, DTR("restarting"));
+            err(DTR("restarting in %u seconds due to error: %s"),
+                e.getDelay(), e.getError());
+          }
           Time::Counter<unsigned int> counter(e.getDelay());
           while (!stopping() && !counter.overflow())
-            Time::Delay::wait(1.0);
+          {
+            double remaining = counter.getRemaining();
+            Time::Delay::wait((remaining < 1.0) ? remaining : 1.0);
+            reportEntityState();
+          }
 
           try
           {
@@ -515,6 +510,9 @@ namespace DUNE
     void
     Task::consume(const IMC::QueryEntityInfo* msg)
     {
+      if (msg->getDestinationEntity() != getEntityId() || msg->getDestinationEntity() != DUNE_IMC_CONST_UNK_EID)
+        return;
+
       dispatchReply(*msg, m_ent_info);
     }
 
@@ -587,7 +585,10 @@ namespace DUNE
       std::map<std::string, std::string> map;
       std::map<std::string, Parameter*>::const_iterator itr = m_params.begin();
       for (; itr != m_params.end(); ++itr)
-        map[itr->second->name()] = itr->second->value();
+      {
+        if (itr->second->getScope() != Parameter::SCOPE_GLOBAL)
+          map[itr->second->name()] = itr->second->value();
+      }
 
       m_params_stack.push(map);
     }
@@ -742,7 +743,7 @@ namespace DUNE
           break;
 
         case IMC::LogBookEntry::LBET_DEBUG:
-          DUNE_MSG(getName(), bfr);
+          DUNE_DEV(getName(), bfr);
           break;
       }
     }

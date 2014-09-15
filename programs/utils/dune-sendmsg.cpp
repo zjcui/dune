@@ -47,16 +47,17 @@ main(int argc, char** argv)
     if (argc == 2 && (!strcmp(argv[1], "-l") || !strcmp(argv[1], "--list")))
     {
       fprintf(stdout, "List:\n");
-      fprintf(stdout, "  Abort, AcousticMessage, AcousticPing, AcousticRange, AcousticSystemsQuery\n");
+      fprintf(stdout, "  Abort, AcousticMessage, AcousticSystemsQuery\n");
       fprintf(stdout, "  Brake, ButtonEvent\n");
       fprintf(stdout, "  CacheControl, Calibration, ClockControl, ControlLoops\n");
-      fprintf(stdout, "  DataSanity, DesiredControl, DesiredHeading, DesiredHeadingRate\n");
-      fprintf(stdout, "  DesiredPitch, DesiredSpeed, DesiredRoll, DesiredZ, DevCalibrationControl\n");
+      fprintf(stdout, "  DataSanity, DesiredControl, DesiredHeading, DesiredHeadingRate, DesiredPitch\n");
+      fprintf(stdout, "  DesiredSpeed, DesiredRoll, DesiredZ, DevCalibrationControl, DevDataText\n");
       fprintf(stdout, "  EmergencyControl, EntityList, EntityState, EntityActivationState, EstimatedState\n");
+      fprintf(stdout, "  FuelLevel\n");
       fprintf(stdout, "  GpsFix, Heartbeat, IridiumMsgTx, LblConfig, LblRange\n");
       fprintf(stdout, "  LeakSimulation, LogBookControl, LogBookEntry, LoggingControl\n");
       fprintf(stdout, "  MagneticField, MonitorEntityState, OperationalLimits\n");
-      fprintf(stdout, "  Parameter, PlanControl, PlanGeneration, PopEntityParameters, PowerChannelControl\n");
+      fprintf(stdout, "  PlanControl, PlanGeneration, PopEntityParameters, PowerChannelControl\n");
       fprintf(stdout, "  PushEntityParameters, QueryEntityInfo, QueryEntityParameters\n");
       fprintf(stdout, "  RegisterManeuver, RemoteActions, RemoteActionsRequest, ReplayControl, RestartSystem\n");
       fprintf(stdout, "  SaveEntityParameters, SetEntityParameters, SetLedBrightness, SetServoPosition\n");
@@ -102,18 +103,6 @@ main(int argc, char** argv)
     IMC::Message* imsg = IMC::Factory::produce(atoi(argv[4]));
     tmsg->message.set(*imsg);
     delete imsg;
-  }
-
-  if (strcmp(argv[3], "AcousticPing") == 0)
-  {
-    msg = new IMC::AcousticPing;
-  }
-
-  if (strcmp(argv[3], "AcousticRange") == 0)
-  {
-    IMC::AcousticRange* tmsg = new IMC::AcousticRange;
-    msg = tmsg;
-    tmsg->address = atoi(argv[4]);
   }
 
   if (strcmp(argv[3], "AcousticSystemsQuery") == 0)
@@ -246,6 +235,13 @@ main(int argc, char** argv)
     tmsg->op = atoi(argv[5]);
   }
 
+  if (strcmp(argv[3], "DevDataText") == 0)
+  {
+    IMC::DevDataText * tmsg = new IMC::DevDataText;
+    msg = tmsg;
+    tmsg->value = argv[4];
+  }
+
   if (strcmp(argv[3], "EmergencyControl") == 0)
   {
     IMC::EmergencyControl* tmsg = new IMC::EmergencyControl;
@@ -304,10 +300,20 @@ main(int argc, char** argv)
     tmsg->depth = 0.0;
   }
 
+  if (strcmp(argv[3], "FuelLevel") == 0)
+  {
+    IMC::FuelLevel* tmsg = new IMC::FuelLevel;
+    msg = tmsg;
+    tmsg->setSource(atof(argv[4]));
+    tmsg->value = atof(argv[5]);
+    tmsg->confidence = atof(argv[6]);
+  }
+
   if (strcmp(argv[3], "GpsFix") == 0)
   {
     IMC::GpsFix* tmsg = new IMC::GpsFix;
     msg = tmsg;
+    tmsg->type = IMC::GpsFix::GFT_MANUAL_INPUT;
     tmsg->lat = Angles::radians(atof(argv[4]));
     tmsg->lon = Angles::radians(atof(argv[5]));
     tmsg->height = atof(argv[6]);
@@ -438,15 +444,6 @@ main(int argc, char** argv)
     tmsg->width = atof(argv[7]);
     tmsg->length = atof(argv[8]);
     msg = tmsg;
-  }
-
-  if (strcmp(argv[3], "Parameter") == 0)
-  {
-    IMC::Parameter* tmsg = new IMC::Parameter;
-    msg = tmsg;
-    tmsg->section = argv[4];
-    tmsg->param = argv[5];
-    tmsg->value = argv[6];
   }
 
   if (strcmp(argv[3], "PlanControl") == 0)

@@ -57,6 +57,30 @@ namespace Control
         VEHICLE_COPTER
       };
 
+      //! List of arducopter modes
+      enum APM_copterModes {
+        CP_MODE_STABILIZE=0,                     // hold level position
+        CP_MODE_ACRO=1,                          // rate control
+        CP_MODE_ALT_HOLD=2,                      // AUTO control
+        CP_MODE_AUTO=3,                          // AUTO control
+        CP_MODE_GUIDED=4,                        // AUTO control
+        CP_MODE_LOITER=5,                        // Hold a single location
+        CP_MODE_RTL=6,                           // AUTO control
+        CP_MODE_CIRCLE=7,                        // AUTO control
+        CP_MODE_POSITION=8,                      // AUTO control
+        CP_MODE_LAND=9,                          // AUTO control
+        CP_MODE_OF_LOITER=10,                    // Hold a single location using optical flow sensor
+        CP_MODE_DRIFT=11,                        // DRIFT mode (Note: 12 is no longer used)
+        CP_MODE_DUNE=12,
+        CP_MODE_SPORT=13                       // earth frame rate control
+      };
+
+      //! List of ArduPlane modes
+      enum APM_planeModes {
+        PL_MODE_AUTO=10,
+        PL_MODE_GUIDED=15
+      };
+
       struct RadioChannel
       {
         //! PWM range
@@ -65,6 +89,8 @@ namespace Control
         //! Value range
         float val_max;
         float val_min;
+        //! Channel reverse
+        bool reverse;
       };
 
       //! %Task arguments.
@@ -100,6 +126,9 @@ namespace Control
         RadioChannel rc3;
         //! HITL
         bool hitl;
+        //! Formation Flight
+        bool form_fl;
+        std::string form_fl_ent;
       };
 
       struct Task: public DUNE::Tasks::Task
@@ -186,6 +215,7 @@ namespace Control
           ref_lon(0.0),
           ref_hei(0.0),
           m_TCP_sock(NULL),
+          m_TCP_port(0),
           m_sysid(1),
           m_lat(0.0),
           m_lon(0.0),
@@ -206,7 +236,8 @@ namespace Control
           m_dclimb(0),
           m_dspeed(20),
           m_vehicle_type(VEHICLE_UNKNOWN),
-          m_service(false)
+          m_service(false),
+          m_last_wp(0)
         {
           param("Communications Timeout", m_args.comm_timeout)
           .minimumValue("1")
@@ -282,6 +313,10 @@ namespace Control
           .units(Units::Degree)
           .description("Max Roll");
 
+          param("RC 1 REV", m_args.rc1.reverse)
+          .defaultValue("False")
+          .description("Reverse Roll Channel");
+
           param("RC 2 PWM MIN", m_args.rc2.pwm_min)
           .defaultValue("1000")
           .units(Units::Microsecond)
@@ -296,6 +331,10 @@ namespace Control
           .defaultValue("2.0")
           .units(Units::MeterPerSecond)
           .description("Max Climb Rate");
+
+          param("RC 2 REV", m_args.rc2.reverse)
+          .defaultValue("False")
+          .description("Reverse Pitch Channel");
 
           param("RC 3 PWM MIN", m_args.rc3.pwm_min)
           .defaultValue("1000")
@@ -317,9 +356,23 @@ namespace Control
           .units(Units::MeterPerSecond)
           .description("Max Air Speed");
 
+          param("RC 3 REV", m_args.rc3.reverse)
+          .defaultValue("False")
+          .description("Reverse Speed Channel");
+
           param("HITL", m_args.hitl)
           .defaultValue("false")
           .description("Hardware in the loop");
+
+          param("Formation Flight", m_args.form_fl)
+          .visibility(Tasks::Parameter::VISIBILITY_USER)
+          .scope(Tasks::Parameter::SCOPE_MANEUVER)
+          .defaultValue("false")
+          .description("Receive control references from Formation Flight controller");
+
+          param("Formation Flight Entity", m_args.form_fl_ent)
+          .defaultValue("Formation Control")
+          .description("Entity that sends Formation Flight control references");
 
           // Setup packet handlers
           // IMPORTANT: set up function to handle each type of MAVLINK packet here
@@ -589,7 +642,7 @@ namespace Control
         {
           //! If in Manual mode, Taking-off, Landing or on Ground do not send
           //! control references to ArduPilot
-          if(m_external || m_critical || m_ground)
+          if (m_external || m_critical || m_ground)
           {
             debug("external: %d, critical: %d, ground: %d", (int)m_external, (int)m_critical, (int)m_ground);
             return;
@@ -601,21 +654,25 @@ namespace Control
             return;
           }
 
+          //! If in formation flight only keep bank references coming from Formation Control entity
+          if (m_args.form_fl && resolveEntity(m_args.form_fl_ent) != d_roll->getSourceEntity())
+            return;
+
           m_droll = Angles::degrees(d_roll->value);
 
           //! Convert references to PWM and send all
 
           int pwm_roll = map2PWM(m_args.rc1.pwm_min, m_args.rc1.pwm_max,
                                  m_args.rc1.val_min, m_args.rc1.val_max,
-                                 m_droll);
+                                 m_droll, m_args.rc1.reverse);
 
           int pwm_climb = map2PWM(m_args.rc2.pwm_min, m_args.rc2.pwm_max,
                                   m_args.rc2.val_min, m_args.rc2.val_max,
-                                  -m_dclimb);
+                                  m_dclimb, m_args.rc2.reverse);
 
           int pwm_speed = map2PWM(m_args.rc3.pwm_min, m_args.rc3.pwm_max,
                                   m_args.rc3.val_min, m_args.rc3.val_max,
-                                  m_dspeed);
+                                  m_dspeed, m_args.rc3.reverse);
 
           debug("V1: %f, V2: %f, V3: %f", m_droll, m_dclimb, m_dspeed);
           debug("RC1: %d, RC2: %d, RC3: %d", pwm_roll, pwm_climb, pwm_speed);
@@ -678,9 +735,15 @@ namespace Control
 
         //! Converts value in range min_value:max_value to a value_pwm in range min_pwm:max_pwm
         int
-        map2PWM(int min_pwm, int max_pwm, float min_value, float max_value, float value)
+        map2PWM(int min_pwm, int max_pwm, float min_value, float max_value, float value, bool reverse)
         {
-          int value_pwm = (int) ((max_pwm - min_pwm) * (value - min_value) / (max_value - min_value)) + min_pwm;
+          int value_pwm;
+
+          if (reverse)
+            value_pwm = (int) max_pwm - ((max_pwm - min_pwm) * (value - min_value) / (max_value - min_value));
+          else
+            value_pwm = (int) ((max_pwm - min_pwm) * (value - min_value) / (max_value - min_value)) + min_pwm;
+
           return trimValue(value_pwm, min_pwm, max_pwm);
         }
 
@@ -774,6 +837,7 @@ namespace Control
           m_pcs.flags = PathControlState::FL_3DTRACK | PathControlState::FL_CCLOCKW;
           m_pcs.flags &= path->flags;
           m_pcs.lradius = path->lradius;
+          m_pcs.path_ref = path->path_ref;
 
           dispatch(m_pcs);
           m_dpath = *path;
@@ -898,6 +962,7 @@ namespace Control
           m_pcs.flags = PathControlState::FL_3DTRACK | PathControlState::FL_CCLOCKW;
           m_pcs.flags &= dpath->flags;
           m_pcs.lradius = dpath->lradius;
+          m_pcs.path_ref = dpath->path_ref;
 
           dispatch(m_pcs);
 
@@ -978,6 +1043,9 @@ namespace Control
         void
         consume(const IMC::SimulatedState* sim_state)
         {
+          if (!m_ctx.profiles.isSelected("HITL"))
+            return;
+
           mavlink_message_t msg;
           uint8_t buf[512];
 
@@ -1333,11 +1401,10 @@ namespace Control
 
           double lat = Angles::radians((double)gp.lat * 1e-07);
           double lon = Angles::radians((double)gp.lon * 1e-07);
-          float hei = (float)gp.alt * 1e-03;
+          float hei = m_alt;
 
           m_lat = (double)gp.lat * 1e-07;
           m_lon = (double)gp.lon * 1e-07;
-          m_alt = (float)gp.alt * 1e-03;
 
           double distance_to_ref = WGS84::distance(ref_lat,ref_lon,ref_hei,
                                                    lat,lon,hei);
@@ -1530,7 +1597,7 @@ namespace Control
         void
         handleHeartbeatPacket(const mavlink_message_t* msg)
         {
-          if(!m_has_setup_rate)
+          if (!m_has_setup_rate)
           {
             m_has_setup_rate = true;
             setupRate(m_args.trate);
@@ -1540,14 +1607,7 @@ namespace Control
           mavlink_heartbeat_t hbt;
           mavlink_msg_heartbeat_decode(msg, &hbt);
 
-          IMC::Parameter mode;
-          mode.param = "APM Mode";
-
-          std::stringstream ss;
-          ss << m_mode;
-          mode.value = ss.str();
-
-          dispatch(mode);
+          IMC::AutopilotMode mode;
 
           // Update vehicle type if applicable
           if (m_vehicle_type == VEHICLE_UNKNOWN)
@@ -1572,28 +1632,37 @@ namespace Control
             }
           }
 
-
           m_mode = hbt.custom_mode;
           if (m_vehicle_type == VEHICLE_COPTER)
           {
             switch(m_mode)
             {
               default:
+                mode.autonomy = IMC::AutopilotMode::AL_MANUAL;
+                mode.mode = "MANUAL";
                 m_external = true;
                 break;
               case 3:
+                mode.autonomy = IMC::AutopilotMode::AL_AUTO;
+                mode.mode = "AUTO";
                 trace("AUTO");
                 m_external = false;
                 break;
               case 5:
+                mode.autonomy = IMC::AutopilotMode::AL_AUTO;
+                mode.mode = "LOITER";
                 trace("LOITER");
                 m_external = false;
                 break;
               case 14:
+                mode.autonomy = IMC::AutopilotMode::AL_AUTO;
+                mode.mode = "DUNE";
                 trace("DUNE");
                 m_external = false;
                 break;
               case 4:
+                mode.autonomy = IMC::AutopilotMode::AL_AUTO;
+                mode.mode = "GUIDED";
                 trace("GUIDED");
                 m_external = false;
                 break;
@@ -1605,6 +1674,14 @@ namespace Control
             {
               default:
                 m_external = true;
+                mode.autonomy = IMC::AutopilotMode::AL_MANUAL;
+                mode.mode = "MANUAL";
+                m_critical = false;
+                if (m_mode == 2)
+                {
+                  mode.autonomy = IMC::AutopilotMode::AL_ASSISTED;
+                  mode.mode = "STABILIZE";
+                }
                 {
                   IMC::ControlLoops cl;
                   cl.enable = IMC::ControlLoops::CL_DISABLE;
@@ -1613,6 +1690,8 @@ namespace Control
                 }
                 break;
               case 10:
+                mode.autonomy = IMC::AutopilotMode::AL_AUTO;
+                mode.mode = "AUTO";
                 trace("AUTO");
                 if (m_external)
                 {
@@ -1627,19 +1706,30 @@ namespace Control
                   loiterHere();
                 break;
               case 12:
+                mode.autonomy = IMC::AutopilotMode::AL_AUTO;
+                mode.mode = "LOITER";
                 trace("LOITER");
                 m_external = false;
+                m_critical = false;
                 break;
               case 6:
+                mode.autonomy = IMC::AutopilotMode::AL_AUTO;
+                mode.mode = "FBWB";
                 trace("FBWB");
                 m_external = false;
+                m_critical = false;
                 break;
               case 15:
+                mode.autonomy = IMC::AutopilotMode::AL_AUTO;
+                mode.mode = "GUIDED";
                 trace("GUIDED");
                 m_external = false;
+                m_critical = false;
                 break;
             }
           }
+
+          dispatch(mode);
         }
 
         void
@@ -1667,22 +1757,31 @@ namespace Control
           if (!m_args.ardu_tracker)
             return;
 
+          //! Check of guided mode
+          bool is_valid_mode = false;
+
+          if (m_vehicle_type == VEHICLE_COPTER)
+            is_valid_mode = (m_mode == CP_MODE_GUIDED || (m_mode == CP_MODE_AUTO && m_current_wp == 3)) ? true : false;
+          else
+            is_valid_mode = (m_mode == 15             || (m_mode == 10           && m_current_wp == 3)) ? true : false;
+
           if ((nav_out.wp_dist <= m_desired_radius + m_args.ltolerance)
              && (nav_out.wp_dist >= m_desired_radius - m_args.ltolerance)
-             && (m_mode == 15 || (m_mode == 10 && m_current_wp == 3)))
+             && is_valid_mode)
           {
             m_pcs.flags |= PathControlState::FL_LOITERING;
           }
 
+          float since_last_wp = Clock::get() - m_last_wp;
+
           if (!m_changing_wp
              && (nav_out.wp_dist <= m_desired_radius + m_args.secs * m_gnd_speed)
              && (nav_out.wp_dist >= m_desired_radius - m_args.secs * m_gnd_speed)
-             && (m_mode == 15 || (m_mode == 10 && m_current_wp == 3)))
+             && is_valid_mode
+             && since_last_wp > 1.0)
           {
             m_pcs.flags |= PathControlState::FL_NEAR;
           }
-
-          float since_last_wp = Clock::get() - m_last_wp;
 
           if (m_last_wp && since_last_wp > 1.5)
             receive(&m_dpath);
@@ -1727,6 +1826,7 @@ namespace Control
           ias.value = (fp64_t)vfr_hud.airspeed;
           gs.value = (fp64_t)vfr_hud.groundspeed;
           m_gnd_speed = (int)vfr_hud.groundspeed;
+          m_alt = vfr_hud.alt;
 
           dispatch(ias);
           dispatch(gs);

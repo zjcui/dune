@@ -54,6 +54,8 @@ namespace DUNE
     static const double c_lkeep_distance = 30.0;
     //! Maximum admissible time for disabling monitors due to navigation jump
     static const float c_max_jump_time = 100.0;
+    //! Depth margin when limiting depth in bottom tracker
+    static const float c_depth_margin = 1.0;
 
     PathController::PathController(std::string name, Tasks::Context& ctx):
       Task(name, ctx),
@@ -62,6 +64,7 @@ namespace DUNE
       m_setup(true),
       m_braking(false),
       m_jump_monitors(false),
+      m_filter_entity(0),
       m_aloops(0),
       m_btrack(NULL),
       m_scope_ref(0)
@@ -172,11 +175,6 @@ namespace DUNE
       .units(Units::Meter)
       .description("Depth tolerance below which altitude is ignored");
 
-      param("Bottom Track -- Depth Limit", m_btd.args.depth_limit)
-      .defaultValue("48.0")
-      .units(Units::Meter)
-      .description("Depth limit for bottom tracking");
-
       param("Bottom Track -- Check Trend", m_btd.args.check_trend)
       .defaultValue("true")
       .description("Check slope angle trend in unsafe state");
@@ -194,6 +192,17 @@ namespace DUNE
       .defaultValue("3.0")
       .units(Units::Meter)
       .description("Admissible altitude when doing depth control");
+
+      param("Filter EstimatedState", m_filter)
+      .defaultValue("false")
+      .description("Enable or disable EstimateState filtering by entity");
+
+      param("Filter Entity", m_filter_entity_name)
+      .defaultValue("Autopilot")
+      .description("Only accepts EstimatedState from this entity");
+
+      m_ctx.config.get("General", "Absolute Maximum Depth", "50.0", m_btd.args.depth_limit);
+      m_btd.args.depth_limit -= c_depth_margin;
 
       bind<IMC::Brake>(this);
       bind<IMC::ControlLoops>(this);
@@ -275,8 +284,22 @@ namespace DUNE
     void
     PathController::onEntityReservation(void)
     {
-      if (m_btd.enabled)
-        m_btd.args.eid = reserveEntity("Bottom Track");
+      m_btd.args.eid = reserveEntity("Bottom Track");
+    }
+
+    void
+    PathController::onEntityResolution(void)
+    {
+      if (!m_filter)
+        return;
+
+      try
+      {
+        m_filter_entity = resolveEntity(m_filter_entity_name);
+      }
+      catch (std::runtime_error& e) {
+        signalError(e.what());
+      }
     }
 
     void
@@ -299,6 +322,7 @@ namespace DUNE
 
       double now = Clock::get();
       m_pcs.flags = 0;
+      m_pcs.path_ref = dpath->path_ref;
       bool no_start = false;
 
       if (dpath->flags & IMC::DesiredPath::FL_START)
@@ -544,6 +568,12 @@ namespace DUNE
     void
     PathController::consume(const IMC::EstimatedState* es)
     {
+      if (es->getSource() != getSystemId())
+        return;
+
+      if (m_filter && m_filter_entity != es->getSourceEntity())
+        return;
+
       if (m_btd.enabled)
       {
         try

@@ -57,6 +57,18 @@ namespace DUNE
 
     UAVSimulation::UAVSimulation(const UAVSimulation& model)
     {
+      //! modelation type
+      m_sim_type = model.m_sim_type;
+
+      //! Environment parameters
+      //! Wind state vector
+      m_wind = model.m_wind;
+      //! - Gravity acceleration
+      m_g = model.m_g;
+
+      //! Time step control
+      m_timestep_lim = 1.0;
+
       //! Vehicle position
       m_position = model.m_position;
       //! Vehicle velocity vector
@@ -74,22 +86,6 @@ namespace DUNE
       //! - Altitude time constant
       m_alt_time_cst = model.m_alt_time_cst;
       m_alt_time_cst_f = model.m_alt_time_cst_f;
-
-      //! modelation type
-      m_sim_type = model.m_sim_type;
-
-      //! Control commands
-      //! - Bank
-      m_bank_cmd = model.m_bank_cmd;
-      //! - Airspeed
-      m_airspeed_cmd = model.m_airspeed_cmd;
-      //! - Altitude
-      m_altitude_cmd = model.m_altitude_cmd;
-      //! Control commands initialization flags
-      //! - Airspeed
-      m_airspeed_cmd_ini = model.m_airspeed_cmd_ini;
-      //! - Altitude
-      m_altitude_cmd_ini = model.m_altitude_cmd_ini;
       //! Vehicle operation limits and respective initialization flags
       //! - Bank rate
       m_bank_rate_lim = model.m_bank_rate_lim;
@@ -101,15 +97,31 @@ namespace DUNE
       m_vert_slope_lim = model.m_vert_slope_lim;
       m_vert_slope_lim_f = model.m_vert_slope_lim_f;
 
-
-      //! Environment parameters
-      //! Wind state vector
-      m_wind = model.m_wind;
-      //! - Gravity acceleration
-      m_g = model.m_g;
+      //! Control commands
+      //! - Bank
+      m_bank_cmd = model.m_bank_cmd;
+      //! - Airspeed
+      m_airspeed_cmd = model.m_airspeed_cmd;
+      //! - Altitude
+      m_altitude_cmd = model.m_altitude_cmd;
+      //! - Flight path angle
+      m_fpa_cmd = model.m_fpa_cmd;
+      //! - Pitch
+      m_pitch_cmd = model.m_pitch_cmd;
+      //! Control commands initialization flags
+      //! - Airspeed
+      m_airspeed_cmd_ini = model.m_airspeed_cmd_ini;
+      //! - Altitude
+      m_altitude_cmd_ini = model.m_altitude_cmd_ini;
+      //! - Flight path angle
+      m_fpa_cmd_ini = model.m_fpa_cmd_ini;
+      //! - Pitch
+      m_pitch_cmd_ini = model.m_pitch_cmd_ini;
 
       //! Simulation variables
       m_airspeed = model.m_airspeed;
+      m_ang_attack = model.m_ang_attack;
+      m_sideslip = model.m_sideslip;
       m_cos_yaw = model.m_cos_yaw;
       m_sin_yaw = model.m_sin_yaw;
       m_cos_pitch = model.m_cos_pitch;
@@ -402,27 +414,106 @@ namespace DUNE
       m_altitude_cmd_ini = true;
     }
 
+    UAVSimulation&
+    UAVSimulation::operator=(const UAVSimulation& model)
+    {
+      //! Motion simulation type
+      m_sim_type = model.m_sim_type;
+
+      //! Environment parameters
+      //! Wind state vector
+      m_wind = model.m_wind;
+      //! - Gravity acceleration
+      m_g = model.m_g;
+
+      //! Time step control
+      m_timestep_lim = 1.0;
+
+      //! Vehicle position
+      m_position = model.m_position;
+      //! Vehicle velocity vector
+      m_velocity = model.m_velocity;
+      //! Vehicle velocity vector relative to the wind, in the ground reference frame
+      m_uav2wind_gnd_frm = model.m_uav2wind_gnd_frm;
+
+      //! Vehicle model parameters
+      //! - Bank time constant
+      m_bank_time_cst = model.m_bank_time_cst;
+      m_bank_time_cst_f = model.m_bank_time_cst_f;
+      //! - Airspeed time constant
+      m_speed_time_cst = model.m_speed_time_cst;
+      m_speed_time_cst_f = model.m_speed_time_cst_f;
+      //! - Altitude time constant
+      m_alt_time_cst = model.m_alt_time_cst;
+      m_alt_time_cst_f = model.m_alt_time_cst_f;
+      //! Vehicle operation limits and respective initialization flags
+      //! - Bank rate
+      m_bank_rate_lim = model.m_bank_rate_lim;
+      m_bank_rate_lim_f = model.m_bank_rate_lim_f;
+      //! - Longitudinal acceleration
+      m_lon_accel_lim = model.m_lon_accel_lim;
+      m_lon_accel_lim_f = model.m_lon_accel_lim_f;
+      //! - Vertical slope
+      m_vert_slope_lim = model.m_vert_slope_lim;
+      m_vert_slope_lim_f = model.m_vert_slope_lim_f;
+
+      //! Control commands
+      //! - Bank
+      m_bank_cmd = model.m_bank_cmd;
+      //! - Airspeed
+      m_airspeed_cmd = model.m_airspeed_cmd;
+      //! - Altitude
+      m_altitude_cmd = model.m_altitude_cmd;
+      //! - Flight path angle
+      m_fpa_cmd = model.m_fpa_cmd;
+      //! - Pitch
+      m_pitch_cmd = model.m_pitch_cmd;
+      //! Control commands initialization flags
+      //! - Airspeed
+      m_airspeed_cmd_ini = model.m_airspeed_cmd_ini;
+      //! - Altitude
+      m_altitude_cmd_ini = model.m_altitude_cmd_ini;
+      //! - Flight path angle
+      m_fpa_cmd_ini = model.m_fpa_cmd_ini;
+      //! - Pitch
+      m_pitch_cmd_ini = model.m_pitch_cmd_ini;
+
+      //! Simulation variables
+      m_airspeed = model.m_airspeed;
+      m_ang_attack = model.m_ang_attack;
+      m_sideslip = model.m_sideslip;
+      m_cos_yaw = model.m_cos_yaw;
+      m_sin_yaw = model.m_sin_yaw;
+      m_cos_pitch = model.m_cos_pitch;
+      m_sin_pitch = model.m_sin_pitch;
+      m_cos_roll = model.m_cos_roll;
+      m_sin_roll = model.m_sin_roll;
+      m_cos_course = model.m_cos_course;
+      m_sin_course = model.m_sin_course;
+      m_cos_fl_path_ang = model.m_cos_fl_path_ang;
+      m_sin_fl_path_ang = model.m_sin_fl_path_ang;
+
+      return *this;
+    }
+
     void
     UAVSimulation::resetModel(void)
     {
-      //! Control commands
-      //! - Bank
-      m_bank_cmd = 0.0;
-      //! - Airspeed
-      m_airspeed_cmd = 0.0;
-      //! - Altitude
-      m_altitude_cmd = 0.0;
       //! Environment parameters
       //! Wind state vector
       m_wind = Math::Matrix(3, 1, 0.0);
       //! - Gravity acceleration
       m_g = 9.8066;
+      //! Time step control
+      m_timestep_lim = 1.0;
+
       //! Vehicle position
       m_position = Math::Matrix(6, 1, 0.0);
       //! Vehicle velocity vector
       m_velocity = Math::Matrix(6, 1, 0.0);
       //! Vehicle velocity vector relative to the wind, in the ground reference frame
       m_uav2wind_gnd_frm = Math::Matrix(3, 1, 0.0);
+
       //! Vehicle model parameters
       //! - Bank time constant
       m_bank_time_cst = 0.0;
@@ -433,11 +524,6 @@ namespace DUNE
       //! - Altitude time constant
       m_alt_time_cst = 0.0;
       m_alt_time_cst_f = false;
-      //! Control commands initialization flags
-      //! - Airspeed
-      m_airspeed_cmd_ini = false;
-      //! - Altitude
-      m_altitude_cmd_ini = false;
       //! Vehicle operation limits and respective initialization flags
       //! - Bank rate
       m_bank_rate_lim = 0.0;
@@ -448,6 +534,28 @@ namespace DUNE
       //! - Vertical slope
       m_vert_slope_lim = 0.0;
       m_vert_slope_lim_f = false;
+
+      //! Control commands
+      //! - Bank
+      m_bank_cmd = 0.0;
+      //! - Airspeed
+      m_airspeed_cmd = 0.0;
+      //! - Altitude
+      m_altitude_cmd = 0.0;
+      //! - Flight path angle
+      m_fpa_cmd = 0.0;
+      //! - Pitch
+      m_pitch_cmd = 0.0;
+      //! Control commands initialization flags
+      //! - Airspeed
+      m_airspeed_cmd_ini = false;
+      //! - Altitude
+      m_altitude_cmd_ini = false;
+      //! - Flight path angle
+      m_fpa_cmd_ini = false;
+      //! - Pitch
+      m_pitch_cmd_ini = false;
+
       //! Simulation variables
       m_airspeed = 0.0;
       m_ang_attack = 0.0;
@@ -476,24 +584,33 @@ namespace DUNE
         return *this;
       }
 
-      if (m_sim_type == "4DOF_bank")
-        update4DOF_Bank(timestep);
-      else if (m_sim_type == "5DOF")
+      //! Time step control
+      double d_timestep;
+      if (m_timestep_lim > 0.0 && timestep > m_timestep_lim)
+        d_timestep = m_timestep_lim;
+      else
+        d_timestep = timestep;
+
+      if (m_sim_type.compare("4DOF_bank") == 0)
+        update4DOF_Bank(d_timestep);
+      else if (m_sim_type.compare("5DOF") == 0)
       {
-        if (m_altitude_cmd_ini)
-          update5DOF(timestep);
+        if (m_altitude_cmd_ini || m_fpa_cmd_ini)
+          update5DOF(d_timestep);
         else
           throw Error("Altitude command missing! The state was not updated.");
       }
-      else if (m_sim_type == "4DOF_alt")
+      else if (m_sim_type.compare("4DOF_alt") == 0)
       {
-        if (m_altitude_cmd_ini)
-          update4DOF_Alt(timestep);
+        if (m_altitude_cmd_ini || m_fpa_cmd_ini)
+          update4DOF_Alt(d_timestep);
         else
           throw Error("Altitude command missing! The state was not updated.");
       }
-      else if (m_sim_type == "3DOF")
-        update3DOF(timestep);
+      else if (m_sim_type.compare("3DOF") == 0)
+        update3DOF(d_timestep);
+      //else if (m_sim_type.compare("6DOF_stab") == 0)
+      //  update6DOF_Stab(d_timestep);
 
       return *this;
     }
@@ -599,16 +716,17 @@ namespace DUNE
       double d_initial_yaw = m_position(5);
       //! Vertical position and Euler angles state update
       m_position.set(2, 5, 0, 0, m_position.get(2, 5, 0, 0) + m_velocity.get(2, 5, 0, 0)*timestep);
+      m_position(3) = DUNE::Math::Angles::normalizeRadian(m_position(3));
       m_position(5) = DUNE::Math::Angles::normalizeRadian(m_position(5));
       // Optimization variables
       m_cos_yaw = std::cos(m_position(5));
       m_sin_yaw = std::sin(m_position(5));
-      if (m_sim_type == "5DOF" || m_sim_type == "4DOF_alt")
+      if (m_sim_type.compare("5DOF") == 0 || m_sim_type.compare("4DOF_alt") == 0)
       {
         m_cos_pitch = std::cos(m_position(4));
         m_sin_pitch = std::sin(m_position(4));
       }
-      else if (m_sim_type == "6DOF_stab")
+      else if (m_sim_type.compare("6DOF_stab") == 0)
       {
         m_cos_roll = std::cos(m_position(3));
         m_sin_roll = std::sin(m_position(3));
@@ -766,7 +884,10 @@ namespace DUNE
       //! - Roll command
       m_position(3) = m_bank_cmd;
       //! - Vertical rate command
-      m_velocity(2) = (-m_altitude_cmd - m_position(2))/m_alt_time_cst;
+      if (m_altitude_cmd_ini)
+    	  m_velocity(2) = (-m_altitude_cmd - m_position(2))/m_alt_time_cst;
+      else
+    	  m_velocity(2) = -std::sin(m_fpa_cmd)*m_airspeed;
       if (m_vert_slope_lim_f)
       {
         double d_vert_rate_lim = m_vert_slope_lim*m_airspeed;
@@ -779,7 +900,7 @@ namespace DUNE
       //! - Computing flight path angle
       m_sin_pitch = -m_velocity(2)/m_airspeed;
       m_cos_pitch = std::sqrt(1 - m_sin_pitch*m_sin_pitch);
-      m_position(4) = std::asin(m_sin_pitch);
+      m_position(4) = Angles::normalizeRadian(std::asin(m_sin_pitch)*2)/2;
 
       //! Turn rate
       m_velocity(5) = m_g * std::tan(m_position(3))/m_airspeed;
@@ -931,7 +1052,10 @@ namespace DUNE
       if (m_bank_rate_lim_f)
         m_velocity(3) = DUNE::Math::trimValue(m_velocity(3), -m_bank_rate_lim, m_bank_rate_lim);
       //! - Vertical rate command
-      m_velocity(2) = (-m_altitude_cmd - m_position(2))/m_alt_time_cst;
+      if (m_altitude_cmd_ini)
+        m_velocity(2) = (-m_altitude_cmd - m_position(2))/m_alt_time_cst;
+      else
+        m_velocity(2) = -std::sin(m_fpa_cmd)*m_airspeed;
       if (m_vert_slope_lim_f)
       {
         double d_vert_rate_lim = m_vert_slope_lim*m_airspeed;
@@ -945,7 +1069,7 @@ namespace DUNE
       //! - Computing flight path angle
       m_sin_pitch = -m_velocity(2)/m_airspeed;
       m_cos_pitch = std::sqrt(1 - m_sin_pitch*m_sin_pitch);
-      m_position(4) = std::asin(m_sin_pitch);
+      m_position(4) = Angles::normalizeRadian(std::asin(m_sin_pitch)*2)/2;
 
       updateVelocity();
 
@@ -960,6 +1084,46 @@ namespace DUNE
         std::cout << "Heading: " << DUNE::Math::Angles::degrees(m_position(5)) << "º" << std::endl;
       }
       */
+    }
+
+    void
+    UAVSimulation::setPosition(const DUNE::Math::Matrix& pos)
+    {
+      int i_pos_size = pos.rows();
+      if (i_pos_size < 2 && i_pos_size > 6)
+        throw Error("Invalid position vector dimension. Vector size must be between 2 and 6.");
+
+      // Vehicle position
+      m_position.set(0, i_pos_size-1, 0, 0, pos);
+      // Reset the pitch angle for the simulations that do not update it
+      if (m_sim_type.compare("3DOF") == 0 || m_sim_type.compare("4DOF_bank") == 0)
+        m_position(4) = 0;
+      // Simulation variables
+      m_cos_course = std::cos(m_position(5));
+      m_sin_course = std::sin(m_position(5));
+      m_cos_pitch = std::cos(m_position(4));
+      m_sin_pitch = std::sin(m_position(4));
+      m_cos_roll = std::cos(m_position(3));
+      m_sin_roll = std::sin(m_position(3));
+    }
+
+    void
+    UAVSimulation::setVelocity(const DUNE::Math::Matrix& vel)
+    {
+      int i_vel_size = vel.rows();
+      if (i_vel_size < 2 && i_vel_size > 6)
+        throw Error("Invalid velocity vector dimension. Vector size must be between 2 and 6.");
+
+      //! Vehicle velocity vector, relative to the ground, in the ground reference frame
+      m_velocity.set(0, i_vel_size-1, 0, 0, vel);
+      // Reset the vertical velocity for the simulations that do not update it
+      if (m_sim_type.compare("3DOF") == 0 || m_sim_type.compare("4DOF_bank") == 0)
+        m_velocity(2) = 0;
+      // Reset the pitch angular rate for the simulations that do not update it
+      if (m_sim_type.compare("6DOF_dyn") != 0)
+        m_velocity(4) = 0;
+
+      calcUAV2AirData();
     }
 
     void
@@ -1034,35 +1198,25 @@ namespace DUNE
       return m_airspeed;
     }
 
-    void
-    UAVSimulation::setPosition(const DUNE::Math::Matrix& pos)
+    double
+    UAVSimulation::getBankCmd(void)
     {
-      int i_pos_size = pos.rows();
-      if (i_pos_size < 2 && i_pos_size > 6)
-        throw Error("Invalid position vector dimension. Vector size must be between 2 and 6.");
-
-      //! Vehicle position
-      m_position.set(0, i_pos_size-1, 0, 0, pos);
-      //! Simulation variables
-      m_cos_course = std::cos(m_position(5));
-      m_sin_course = std::sin(m_position(5));
-      m_cos_pitch = std::cos(m_position(4));
-      m_sin_pitch = std::sin(m_position(4));
-      m_cos_roll = std::cos(m_position(3));
-      m_sin_roll = std::sin(m_position(3));
+      //! Aircraft Bank
+      return m_bank_cmd;
     }
 
-    void
-    UAVSimulation::setVelocity(const DUNE::Math::Matrix& vel)
+    double
+    UAVSimulation::getAirspeedCmd(void)
     {
-      int i_vel_size = vel.rows();
-      if (i_vel_size < 2 && i_vel_size > 6)
-        throw Error("Invalid velocity vector dimension. Vector size must be between 2 and 6.");
+      //! Aircraft airspeed
+      return m_airspeed_cmd;
+    }
 
-      //! Vehicle velocity vector, relative to the ground, in the ground reference frame
-      m_velocity.set(0, i_vel_size-1, 0, 0, vel);
-
-      calcUAV2AirData();
+    double
+    UAVSimulation::getAltCmd(void)
+    {
+      //! Aircraft altitude
+      return m_altitude_cmd;
     }
 
     void
@@ -1097,7 +1251,7 @@ namespace DUNE
       m_airspeed_cmd = airspeed_cmd;
       //! - Altitude
       m_altitude_cmd = altitude_cmd;
-      if (m_sim_type == "3DOF" || m_sim_type == "4DOF_bank")
+      if (m_sim_type.compare("3DOF") == 0 || m_sim_type.compare("4DOF_bank") == 0)
         m_position(2) = -altitude_cmd;
 
       //! Control commands initialization flags
@@ -1105,6 +1259,76 @@ namespace DUNE
       m_airspeed_cmd_ini = 1;
       //! - Altitude
       m_altitude_cmd_ini = 1;
+    }
+
+    void
+    UAVSimulation::commandBank(const double& bank_cmd)
+    {
+      //! Control commands
+      //! - Bank
+      m_bank_cmd = bank_cmd;
+    }
+
+    void
+    UAVSimulation::commandAirspeed(const double& airspeed_cmd)
+    {
+      //! Control commands
+      //! - Airspeed
+      m_airspeed_cmd = airspeed_cmd;
+
+      //! Control commands initialization flags
+      //! - Airspeed
+      m_airspeed_cmd_ini = 1;
+    }
+
+    void
+    UAVSimulation::commandAlt(const double& altitude_cmd)
+    {
+      //! Control commands
+      //! - Altitude
+      m_altitude_cmd = altitude_cmd;
+      if (m_sim_type.compare("3DOF") == 0 || m_sim_type.compare("4DOF_bank") == 0)
+        m_position(2) = -altitude_cmd;
+
+      //! Control commands initialization flags
+      //! - Altitude
+      m_altitude_cmd_ini = 1;
+      //! - Disallow flight path angle reference
+      m_fpa_cmd_ini = 0;
+      //! - Disallow pitch reference
+      m_pitch_cmd_ini = 0;
+    }
+
+    void
+    UAVSimulation::commandFPA(const double& fpa_cmd)
+    {
+      //! Control commands
+      //! - Flight path angle
+    	m_fpa_cmd = fpa_cmd;
+
+      //! Control commands initialization flags
+      //! - Disallow altitude reference
+      m_altitude_cmd_ini = 0;
+      //! - Flight path angle
+      m_fpa_cmd_ini = 1;
+      //! - Disallow pitch reference
+      m_pitch_cmd_ini = 0;
+    }
+
+    void
+    UAVSimulation::commandPitch(const double& pitch_cmd)
+    {
+      //! Control commands
+      //! - Pitch
+      m_pitch_cmd = pitch_cmd;
+
+      //! Control commands initialization flags
+      //! - Disallow altitude reference
+      m_altitude_cmd_ini = 0;
+      //! - Disallow flight path angle reference
+      m_fpa_cmd_ini = 0;
+      //! - Pitch
+      m_pitch_cmd_ini = 1;
     }
   }
 }

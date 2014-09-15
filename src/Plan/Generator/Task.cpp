@@ -58,6 +58,8 @@ namespace Plan
       int dive_time;
       //! The speed (in RPMS) to be commanded when generating maneuvers.
       int speed_rpms;
+      //! Maximum RPMs for urgent maneuvering
+      float max_rpms;
     };
 
     struct Task: public DUNE::Tasks::Task
@@ -97,6 +99,8 @@ namespace Plan
         .description("Speed in RPMs to be used in the generated maneuvers")
         .defaultValue("1000");
 
+        m_ctx.config.get("General", "Maximum Underwater RPMs", "1700.0", m_args.max_rpms);
+
         bind<IMC::Announce>(this);
         bind<IMC::PlanGeneration>(this);
         bind<IMC::EstimatedState>(this);
@@ -122,6 +126,9 @@ namespace Plan
       void
       consume(const IMC::EstimatedState* msg)
       {
+        if (msg->getSource() != getSystemId())
+          return;
+
         if (m_estate == NULL)
         {
           setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
@@ -174,6 +181,9 @@ namespace Plan
       //! <em>sk</em>:
       //!   - This template is similar to 'go' but generates only the maneuver StationKeeping at the desired
       //!     location.
+      //!
+      //! <em>dislodge</em>:
+      //!   - Attempt to unstuck the vehicle from an entangled condition.
       void
       consume(const IMC::PlanGeneration* msg)
       {
@@ -220,6 +230,9 @@ namespace Plan
 
           if (tlist.get("calibrate") != "false")
             pcontrol.flags = IMC::PlanControl::FLG_CALIBRATE;
+
+          if (tlist.get("ignore_errors") == "true")
+            pcontrol.flags |= IMC::PlanControl::FLG_IGNORE_ERRORS;
 
           pcontrol.plan_id = spec.plan_id;
           pcontrol.request_id = 0;
@@ -586,6 +599,21 @@ namespace Plan
             }
             delete yoyo;
           }
+
+          sequentialPlan(plan_id, &maneuvers, result);
+          return true;
+        }
+
+        // This template generates a plan that attempts to dislodge the vehicle (dislodge)
+        if (plan_id == "dislodge")
+        {
+          IMC::MessageList<IMC::Maneuver> maneuvers;
+
+          IMC::Dislodge* dislodge = new IMC::Dislodge();
+          dislodge->rpm = params.get("rpm", m_args.max_rpms);
+          dislodge->direction = IMC::Dislodge::DIR_AUTO;
+          maneuvers.push_back(*dislodge);
+          delete dislodge;
 
           sequentialPlan(plan_id, &maneuvers, result);
           return true;

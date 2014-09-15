@@ -42,6 +42,10 @@ if [ -z "$GSM_MODE" ]; then
     GSM_MODE='AT\^SYSCFG=2,2,3fffffff,0,1'
 fi
 
+if [ -n "$NAT_ENABLE" ]; then
+    NAT_ENABLE='true'
+fi
+
 if [ -z "$GSM_PIN" ]; then
     GSM_PIN='AT'
 fi
@@ -96,9 +100,29 @@ modem_probe()
     fi
 }
 
+# Update DynDNS IPv4 address.
+# @param[in] ip IPv4 address.
+dyndns_update()
+{
+    echo $DYNDNS_USER $DYNDNS_PASS $DYNDNS_HOST
+
+    if [ -z "$DYNDNS_USER" ] || [ -z "$DYNDNS_PASS" ] || [ -z "$DYNDNS_HOST" ]; then
+        return 0
+    fi
+
+    ip="$1"
+    url="http://$DYNDNS_USER:$DYNDNS_PASS@members.dyndns.org/nic/update?hostname=$DYNDNS_HOST&myip=$ip&wildcard=NOCHG&mx=NOCHG&backmx=NOCHG"
+    wget "$url" -O -
+}
+
 ppp_get_ip()
 {
-    ifconfig "$FWL_EXT_ITF" 2> /dev/null | grep inet | cut -f2 -d: | cut -f1 -d' '
+    ip="$(ifconfig "$FWL_EXT_ITF" 2> /dev/null | grep inet | cut -f2 -d: | cut -f1 -d' ')"
+    if [ -z "$ip" ]; then
+        ip="$(echo $(ifconfig "$FWL_EXT_ITF" 2> /dev/null | grep inet) | cut -f2 -d' ')"
+    fi
+
+    echo $ip
 }
 
 ppp_start()
@@ -175,7 +199,10 @@ ppp_stop()
 
 ppp_watch()
 {
-    log info "ppp: external IP is $(ppp_get_ip)"
+    ip="$(ppp_get_ip)"
+    log info "ppp: external IP is $ip"
+
+    dyndns_update "$ip"
 
     while [ 1 ]; do
         ip="$(ppp_get_ip)"
@@ -190,6 +217,10 @@ ppp_watch()
 
 nat_start()
 {
+    if [ -z "$NAT_ENABLE" ]; then
+        return 0
+    fi
+
     log info "nat: enabling IP forwarding"
     echo '1' > /proc/sys/net/ipv4/ip_forward
     echo '1' > /proc/sys/net/ipv4/ip_dynaddr
@@ -215,6 +246,10 @@ nat_start()
 
 nat_stop()
 {
+    if [ -z "$NAT_ENABLE" ]; then
+        return 0
+    fi
+
     log info "nat: disabling IP forwarding"
     echo '0' > /proc/sys/net/ipv4/ip_forward
     echo '0' > /proc/sys/net/ipv4/ip_dynaddr
