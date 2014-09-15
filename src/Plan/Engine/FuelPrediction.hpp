@@ -120,7 +120,7 @@ namespace Plan
       //! Check if prediction error can be computed
       //! @return true if prediction error is valid, false otherwise
       inline bool
-      isFuelValid(void)
+      isFuelValid(void) const
       {
         return (m_starting_fuel >= 0.0);
       }
@@ -129,79 +129,94 @@ namespace Plan
       //! Check if the fuel values are valid first!
       //! @return error in prediction in percentage
       inline float
-      getPredictionError(void)
+      getPredictionError(void) const
       {
-        return getRelativeTotal() - (m_starting_fuel - m_current_fuel);
-      }
-
-      //! Compute error in prediction
-      //! @return get total energy relatively to battery capacity in percentage
-      inline float
-      getRelativeTotal(void) const
-      {
-        if (m_valid)
-          return getTotal() / m_pmodel->getBatteryCapacity() * 100.0;
-        else
-          return -1.0;
+        return getTotal(true) - (m_starting_fuel - m_current_fuel);
       }
 
       //! Get the total estimated fuel consumption
+      //! @param[in] relative output result in percentage of battery
       //! @return estimated fuel consumed in Wh
       float
-      getTotal(void) const
+      getTotal(bool relative = false) const
       {
         if (!m_valid)
-          return -1.0;
+          return -1.0f;
 
         float total = 0.0f;
         for (unsigned i = 0; i < FP_TOTAL; ++i)
           total += getParcel(i);
 
-        return total;
+        if (relative)
+          return getRelative(total);
+        else
+          return total;
       }
 
       //! Get the hotel estimated fuel consumption
+      //! @param[in] relative output result in percentage of battery
       //! @return estimated fuel consumed in Wh
       inline float
-      getHotel(void) const
+      getHotel(bool relative = false) const
       {
-        return getParcel(FP_HOTEL);
+        return getParcel(FP_HOTEL, relative);
       }
 
       //! Get the payload estimated fuel consumption
+      //! @param[in] relative output result in percentage of battery
       //! @return estimated fuel consumed in Wh
       inline float
-      getPayload(void) const
+      getPayload(bool relative = false) const
       {
-        return getParcel(FP_PAYLOAD);
+        return getParcel(FP_PAYLOAD, relative);
       }
 
       //! Get the motion estimated fuel consumption
+      //! @param[in] relative output result in percentage of battery
       //! @return estimated fuel consumed in Wh
       inline float
-      getMotion(void) const
+      getMotion(bool relative = false) const
       {
-        return getParcel(FP_MOTION);
+        return getParcel(FP_MOTION, relative);
       }
 
       //! Get the estimated fuel consumption by the IMU
+      //! @param[in] relative output result in percentage of battery
       //! @return estimated fuel consumed in Wh
       inline float
-      getIMU(void) const
+      getIMU(bool relative = false) const
       {
-        return getParcel(FP_IMU);
+        return getParcel(FP_IMU, relative);
       }
 
     private:
       //! Get a certain parcel
+      //! @param[in] parcel which parcel to output
+      //! @param[in] relative output result in percentage of battery
       //! @return -1.0 if invalid
       inline float
-      getParcel(unsigned parcel) const
+      getParcel(unsigned parcel, bool relative = false) const
       {
         if (m_valid && parcel < FP_TOTAL)
-          return m_fuel_parcels[parcel];
+        {
+          if (!relative)
+            return m_fuel_parcels[parcel];
+          else
+            return getRelative(m_fuel_parcels[parcel]);
+        }
         else
-          return -1.0;
+        {
+          return -1.0f;
+        }
+      }
+
+      //! Get relative value
+      //! @param[in] value to convert
+      //! @return -1.0 if invalid
+      inline float
+      getRelative(float value) const
+      {
+        return value / m_pmodel->getBatteryCapacity() * 100.0f;
       }
 
       //! Compute hotel consumed energy
