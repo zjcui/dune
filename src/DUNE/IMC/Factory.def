@@ -26,7 +26,7 @@
 //***************************************************************************
 // Automatically generated.                                                 *
 //***************************************************************************
-// IMC XML MD5: 5b8a4390bc5e18a3cda0e31fc948ef33                            *
+// IMC XML MD5: 68ddefd434b1f6c6c8136efbd1ebc509                            *
 //***************************************************************************
 
 MESSAGE(1, EntityState)
@@ -42,6 +42,9 @@ MESSAGE(13, DevCalibrationState)
 MESSAGE(14, EntityActivationState)
 MESSAGE(15, QueryEntityActivationState)
 MESSAGE(16, VehicleOperationalLimits)
+MESSAGE(17, EntityActivationLock)
+MESSAGE(18, EntityStatus)
+MESSAGE(19, QueryEntityStatus)
 MESSAGE(20, MsgList)
 MESSAGE(50, SimulatedState)
 MESSAGE(51, LeakSimulation)

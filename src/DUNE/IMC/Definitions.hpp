@@ -26,7 +26,7 @@
 //***************************************************************************
 // Automatically generated.                                                 *
 //***************************************************************************
-// IMC XML MD5: 5b8a4390bc5e18a3cda0e31fc948ef33                            *
+// IMC XML MD5: 68ddefd434b1f6c6c8136efbd1ebc509                            *
 //***************************************************************************
 
 #ifndef DUNE_IMC_DEFINITIONS_HPP_INCLUDED_
@@ -1021,6 +1021,211 @@ namespace DUNE
 
       void
       fieldsToJSON(std::ostream& os__, unsigned nindent__) const;
+    };
+
+    //! Entity Activation Lock.
+    class EntityActivationLock: public Message
+    {
+    public:
+      //! Lock Operation.
+      enum LockOperationEnum
+      {
+        //! Acquire.
+        EAL_ACQUIRE = 0,
+        //! Acquire Ack.
+        EAL_ACQUIRE_ACK = 1,
+        //! Release.
+        EAL_RELEASE = 2,
+        //! Release Ack.
+        EAL_RELEASE_ACK = 3,
+        //! Lock Timed Out.
+        EAL_TIMEOUT = 4
+      };
+
+      //! Lock Operation.
+      uint8_t op;
+      //! Timeout.
+      uint16_t timeout;
+
+      static uint16_t
+      getIdStatic(void)
+      {
+        return 17;
+      }
+
+      EntityActivationLock(void);
+
+      Message*
+      clone(void) const
+      {
+        return new EntityActivationLock(*this);
+      }
+
+      void
+      clear(void);
+
+      bool
+      fieldsEqual(const Message& msg__) const;
+
+      int
+      validate(void) const;
+
+      uint8_t*
+      serializeFields(uint8_t* bfr__) const;
+
+      uint16_t
+      deserializeFields(const uint8_t* bfr__, uint16_t size__);
+
+      uint16_t
+      reverseDeserializeFields(const uint8_t* bfr__, uint16_t size__);
+
+      uint16_t
+      getId(void) const
+      {
+        return EntityActivationLock::getIdStatic();
+      }
+
+      const char*
+      getName(void) const
+      {
+        return "EntityActivationLock";
+      }
+
+      unsigned
+      getFixedSerializationSize(void) const
+      {
+        return 3;
+      }
+
+      void
+      fieldsToJSON(std::ostream& os__, unsigned nindent__) const;
+    };
+
+    //! Entity Status.
+    class EntityStatus: public Message
+    {
+    public:
+      //! State.
+      enum StateEnum
+      {
+        //! Inactive.
+        ESTA_INACTIVE = 0,
+        //! Active.
+        ESTA_ACTIVE = 1,
+        //! Busy.
+        ESTA_BUSY = 2,
+        //! Fault.
+        ESTA_FAULT = 3
+      };
+
+      //! State.
+      uint8_t state;
+
+      static uint16_t
+      getIdStatic(void)
+      {
+        return 18;
+      }
+
+      EntityStatus(void);
+
+      Message*
+      clone(void) const
+      {
+        return new EntityStatus(*this);
+      }
+
+      void
+      clear(void);
+
+      bool
+      fieldsEqual(const Message& msg__) const;
+
+      int
+      validate(void) const;
+
+      uint8_t*
+      serializeFields(uint8_t* bfr__) const;
+
+      uint16_t
+      deserializeFields(const uint8_t* bfr__, uint16_t size__);
+
+      uint16_t
+      reverseDeserializeFields(const uint8_t* bfr__, uint16_t size__);
+
+      uint16_t
+      getId(void) const
+      {
+        return EntityStatus::getIdStatic();
+      }
+
+      const char*
+      getName(void) const
+      {
+        return "EntityStatus";
+      }
+
+      unsigned
+      getFixedSerializationSize(void) const
+      {
+        return 1;
+      }
+
+      void
+      fieldsToJSON(std::ostream& os__, unsigned nindent__) const;
+    };
+
+    //! Query Entity Status.
+    class QueryEntityStatus: public Message
+    {
+    public:
+
+      static uint16_t
+      getIdStatic(void)
+      {
+        return 19;
+      }
+
+      QueryEntityStatus(void);
+
+      Message*
+      clone(void) const
+      {
+        return new QueryEntityStatus(*this);
+      }
+
+      void
+      clear(void);
+
+      int
+      validate(void) const;
+
+      uint8_t*
+      serializeFields(uint8_t* bfr__) const;
+
+      uint16_t
+      deserializeFields(const uint8_t* bfr__, uint16_t size__);
+
+      uint16_t
+      reverseDeserializeFields(const uint8_t* bfr__, uint16_t size__);
+
+      uint16_t
+      getId(void) const
+      {
+        return QueryEntityStatus::getIdStatic();
+      }
+
+      const char*
+      getName(void) const
+      {
+        return "QueryEntityStatus";
+      }
+
+      unsigned
+      getFixedSerializationSize(void) const
+      {
+        return 0;
+      }
     };
 
     //! Message List.
