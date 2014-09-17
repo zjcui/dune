@@ -53,7 +53,7 @@ main(int argc, char** argv)
       fprintf(stdout, "  DataSanity, DesiredControl, DesiredHeading, DesiredHeadingRate, DesiredPitch\n");
       fprintf(stdout, "  DesiredSpeed, DesiredRoll, DesiredZ, DevCalibrationControl, DevDataText\n");
       fprintf(stdout, "  EmergencyControl, EntityList, EntityState, EntityActivationState, EstimatedState\n");
-      fprintf(stdout, "  EntityActivationLock, FuelLevel\n");
+      fprintf(stdout, "  EntityActivationLock, QueryEntityStatus, FuelLevel\n");
       fprintf(stdout, "  GpsFix, Heartbeat, IridiumMsgTx, LblConfig, LblRange\n");
       fprintf(stdout, "  LeakSimulation, LogBookControl, LogBookEntry, LoggingControl\n");
       fprintf(stdout, "  MagneticField, MonitorEntityState, OperationalLimits\n");
@@ -309,6 +309,13 @@ main(int argc, char** argv)
       tmsg->op = atoi(argv[5]);
     if (argc > 6)
       tmsg->timeout = atoi(argv[6]);
+  }
+
+  if (strcmp(argv[3], "QueryEntityStatus") == 0)
+  {
+    IMC::QueryEntityStatus* tmsg = new IMC::QueryEntityStatus;
+    msg = tmsg;
+    tmsg->setDestinationEntity(atoi(argv[4]));
   }
 
   if (strcmp(argv[3], "FuelLevel") == 0)
