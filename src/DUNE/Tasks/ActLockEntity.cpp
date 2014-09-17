@@ -69,7 +69,7 @@ namespace DUNE
     ActLockEntity::acquireLock(unsigned int eid, float timeout)
     {
       m_locks[eid].setTop(timeout);
-      m_owner->spew("entity %d acquired lock for %f seconds", eid, timeout);
+      m_owner->spew("entity %d acquired lock for %g seconds", eid, timeout);
       return timeout;
     }
 
