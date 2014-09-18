@@ -36,6 +36,9 @@
 #include <DUNE/Status/Messages.hpp>
 #include <DUNE/Time/Counter.hpp>
 
+// Activate compatibility with *EntityState messages
+#define DUNE_TASKS_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
+
 namespace DUNE
 {
   namespace Tasks
@@ -57,6 +60,10 @@ namespace DUNE
         BasicEntity::setBindings(recipient);
         bind<IMC::EntityActivationLock>(recipient, this);
         bind<IMC::QueryEntityStatus>(recipient, this);
+
+#if defined DUNE_TASKS_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
+        bind<IMC::QueryEntityState>(recipient, this);
+#endif
       }
 
       //! Check if the entity was requested to be active.
@@ -91,6 +98,13 @@ namespace DUNE
       //! @param[in] msg QueryEntityStatus message.
       void
       consume(const IMC::QueryEntityStatus* msg);
+
+#if defined DUNE_TASKS_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
+      //! Consume QueryEntityState messages and reply accordingly.
+      //! @param[in] msg QueryEntityState message.
+      void
+      consume(const IMC::QueryEntityState* msg);
+#endif
 
     private:
       //! List of active locks

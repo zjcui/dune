@@ -88,6 +88,32 @@ namespace DUNE
       dispatchReply(*msg, es);
     }
 
+#if defined DUNE_TASKS_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
+    void
+    ActLockEntity::consume(const IMC::QueryEntityState* msg)
+    {
+      (void)msg;
+
+      IMC::EntityState es;
+      if (m_error)
+      {
+        es.state = IMC::EntityState::ESTA_FAULT;
+        es.description = DTR(Status::getString(Status::CODE_INTERNAL_ERROR));
+      }
+      else if(m_active)
+      {
+        es.state = IMC::EntityState::ESTA_NORMAL;
+        es.description = DTR(Status::getString(Status::CODE_ACTIVE));
+      }
+      else
+      {
+        es.state = IMC::EntityState::ESTA_NORMAL;
+        es.description = DTR(Status::getString(Status::CODE_IDLE));
+      }
+      dispatchReply(*msg, es);
+    }
+#endif
+
     float
     ActLockEntity::acquireLock(unsigned int eid, float timeout)
     {
