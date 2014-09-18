@@ -39,14 +39,26 @@ namespace Simulators
   //! @author Renato Caldas
   namespace DummyActLock
   {
+    //| Probability of error while running.
+    const double c_run_error_prob = 0.01;
+    //| Probability of error while activating.
+    const double c_act_error_prob = 0.3;
+
     struct Task: public Tasks::Task
     {
       //! Activation lock entity.
       ActLockEntity* m_entity;
+      //! Random error gerenaror
+      Math::Random::Generator* m_rnd;
+      //! True if was in error
+      bool m_was_in_error;
+
 
       Task(const std::string& name, Tasks::Context& ctx):
         Tasks::Task(name, ctx),
-        m_entity(NULL)
+        m_entity(NULL),
+        m_rnd(NULL),
+        m_was_in_error(false)
       {
 
       }
@@ -59,24 +71,98 @@ namespace Simulators
       }
 
       void
+      onResourceAcquisition(void)
+      {
+        m_rnd = Math::Random::Factory::create(Math::Random::Factory::c_default);
+      }
+
+      void
+      onResourceRelease(void)
+      {
+        delete m_rnd;
+      }
+
+      bool
+      generateRandomError(float error_prob)
+      {
+        if (m_rnd->uniform() < error_prob)
+          return true;
+        else
+          return false;
+      }
+
+      void
+      handleActive(void)
+      {
+        // Do active stuff..
+        // check errors
+        bool in_error = generateRandomError(c_run_error_prob);
+        if (in_error)
+        {
+          m_entity->markFault("in dummy error mode");
+          if (!m_was_in_error)
+          {
+            err("Entity is in error");
+            m_was_in_error = true;
+          }
+
+        }
+        else if (m_entity->isActivationChanging())
+        {
+          // Do activation stuff...
+          bool can_mark_active = true;
+          bool activation_error = generateRandomError(c_act_error_prob);
+
+          // Then mark as active if possible
+          if (activation_error)
+          {
+            m_entity->markFault("random stuff missing for activation");
+          }
+          else if (can_mark_active)
+          {
+            m_entity->markActive();
+            inf("Entity was activated");
+          }
+        }
+        else
+        {
+          // Active main loop...
+          m_entity->markActive();
+          if (m_was_in_error)
+          {
+            m_was_in_error = false;
+            inf("Entity recovered from error.");
+          }
+        }
+      }
+
+      void
+      handleInactive(void)
+      {
+        if (m_entity->isActivationChanging())
+        {
+          // Do deactivation stuff...
+          bool can_mark_inactive = true;
+          // Then mark as inactive if possible
+          if (can_mark_inactive)
+          {
+            m_entity->markInactive();
+            inf("Entity was deactivated");
+          }
+        }
+      }
+
+
+      void
       onMain(void)
       {
         while (!stopping())
         {
           waitForMessages(1.0);
-          // Handle activation change
-          if (m_entity->isRequestedActive() && m_entity->isActivationChanging())
-          {
-            inf("Entity was activated");
-            // Do activation stuf, check if can activate, and then mark as activated
-            m_entity->markActive();
-          }
-          else if (m_entity->isActivationChanging())
-          {
-            inf("Entity was deactivated");
-            // Do deactivation stuf, check if can deactivate, and then mark as deactivated
-            m_entity->markInactive();
-          }
+          if (m_entity->isRequestedActive())
+            handleActive();
+          else
+            handleInactive();
         }
       }
     };
