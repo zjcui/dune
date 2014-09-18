@@ -56,7 +56,6 @@ namespace DUNE
       }
 
       pruneLocks();
-      checkTransition();
     }
 
     void
@@ -66,18 +65,27 @@ namespace DUNE
         return;
 
       IMC::EntityStatus es;
-      es.state = m_state;
-      dispatchReply(*msg, es);
-
-      // Debug messages
-      if (m_state == IMC::EntityStatus::ESTA_INACTIVE)
-        m_owner->spew("queried status of entity %d, is inactive", getId());
-      else if (m_state == IMC::EntityStatus::ESTA_ACTIVE)
-        m_owner->spew("queried status of entity %d, is active", getId());
-      else if (m_state == IMC::EntityStatus::ESTA_BUSY)
-        m_owner->spew("queried status of entity %d, is busy", getId());
-      else if (m_state == IMC::EntityStatus::ESTA_FAULT)
+      if (m_error)
+      {
+        es.state = IMC::EntityStatus::ESTA_FAULT;
         m_owner->spew("queried status of entity %d, is in fault", getId());
+      }
+      else if (isBusy())
+      {
+        es.state = IMC::EntityStatus::ESTA_BUSY;
+        m_owner->spew("queried status of entity %d, is busy", getId());
+      }
+      else if(m_active)
+      {
+        es.state = IMC::EntityStatus::ESTA_ACTIVE;
+        m_owner->spew("queried status of entity %d, is active", getId());
+      }
+      else
+      {
+        es.state = IMC::EntityStatus::ESTA_INACTIVE;
+        m_owner->spew("queried status of entity %d, is inactive", getId());
+      }
+      dispatchReply(*msg, es);
     }
 
     float
@@ -99,7 +107,6 @@ namespace DUNE
     ActLockEntity::isRequestedActive(void)
     {
       pruneLocks();
-      checkTransition();
       return !m_locks.empty();
     }
 
@@ -107,22 +114,30 @@ namespace DUNE
     ActLockEntity::isActivationChanging(void)
     {
       pruneLocks();
-      checkTransition();
-      return (m_state == IMC::EntityStatus::ESTA_BUSY);
+      return isBusy();
     }
 
     void
     ActLockEntity::markActive(void)
     {
-      if (isRequestedActive() && m_state == IMC::EntityStatus::ESTA_BUSY)
-        m_state = IMC::EntityStatus::ESTA_ACTIVE;
+      m_active = true;
+      m_error = false;
     }
 
     void
     ActLockEntity::markInactive(void)
     {
-      if (!isRequestedActive() && m_state == IMC::EntityStatus::ESTA_BUSY)
-        m_state = IMC::EntityStatus::ESTA_INACTIVE;
+      m_active = false;
+      m_error = false;
+    }
+
+    void
+    ActLockEntity::markFault(std::string message)
+    {
+      m_error = true;
+
+      if (m_state != IMC::EntityStatus::ESTA_FAULT)
+        m_owner->spew("entity in fault: %s", message.c_str());
     }
 
     void
@@ -140,17 +155,6 @@ namespace DUNE
 
           m_locks.erase(itr);
         }
-    }
-
-    void
-    ActLockEntity::checkTransition(void)
-    {
-      // Check if there was a change in the requested activation state
-      if ((!m_locks.empty() && m_state == IMC::EntityStatus::ESTA_INACTIVE) ||
-          (m_locks.empty() && m_state == IMC::EntityStatus::ESTA_ACTIVE))
-      {
-        m_state = IMC::EntityStatus::ESTA_BUSY;
-      }
     }
   }
 }

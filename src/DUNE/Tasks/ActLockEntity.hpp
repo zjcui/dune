@@ -75,6 +75,11 @@ namespace DUNE
       void
       markInactive(void);
 
+      //! Mark the entity as in fault
+      //! @param[in] message human readable error message
+      void
+      markFault(std::string message);
+
       //! Consume EntityActivationLock messages and reply accordingly.
       //! @param[in] msg EntityActivationLock message.
       void
@@ -89,6 +94,10 @@ namespace DUNE
       //! List of active locks
       typedef std::map<unsigned int, Time::Counter<float> > LocksMap;
       LocksMap m_locks;
+      //! Is active
+      bool m_active;
+      //! Is in error
+      bool m_error;
       //! Current entity activation state.
       IMC::EntityStatus::StateEnum m_state;
 
@@ -104,10 +113,17 @@ namespace DUNE
       void
       pruneLocks(void);
 
+      //! Is transitioning
+      bool
+      isBusy(void)
+      {
+        // m_locks.empty == requested inactive
+        return m_active == m_locks.empty();
+      }
+
       //! Update status on transition
       void
       checkTransition(void);
-
     };
   }
 }
