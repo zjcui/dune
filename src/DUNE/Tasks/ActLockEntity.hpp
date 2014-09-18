@@ -57,8 +57,23 @@ namespace DUNE
         bind<IMC::QueryEntityStatus>(recipient, this);
       }
 
+      //! Check if the entity was requested to be active.
+      //! @return true if requested active, false otherwise.
       bool
       isRequestedActive(void);
+
+      //! Check if the entity was requested to change its activation.
+      //! @return true if an activation change was requested.
+      bool
+      isActivationChanging(void);
+
+      //! Mark the entity as active
+      void
+      markActive(void);
+
+      //! Mark the entity as inactive
+      void
+      markInactive(void);
 
       //! Consume EntityActivationLock messages and reply accordingly.
       //! @param[in] msg EntityActivationLock message.
@@ -88,6 +103,10 @@ namespace DUNE
       //! Prune locks
       void
       pruneLocks(void);
+
+      //! Update status on transition
+      void
+      checkTransition(void);
 
     };
   }

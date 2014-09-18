@@ -54,6 +54,9 @@ namespace DUNE
         rpl.op = IMC::EntityActivationLock::EAL_RELEASE_ACK;
         dispatchReply(*msg, rpl);
       }
+
+      pruneLocks();
+      checkTransition();
     }
 
     void
@@ -96,7 +99,30 @@ namespace DUNE
     ActLockEntity::isRequestedActive(void)
     {
       pruneLocks();
+      checkTransition();
       return !m_locks.empty();
+    }
+
+    bool
+    ActLockEntity::isActivationChanging(void)
+    {
+      pruneLocks();
+      checkTransition();
+      return (m_state == IMC::EntityStatus::ESTA_BUSY);
+    }
+
+    void
+    ActLockEntity::markActive(void)
+    {
+      if (isRequestedActive() && m_state == IMC::EntityStatus::ESTA_BUSY)
+        m_state = IMC::EntityStatus::ESTA_ACTIVE;
+    }
+
+    void
+    ActLockEntity::markInactive(void)
+    {
+      if (!isRequestedActive() && m_state == IMC::EntityStatus::ESTA_BUSY)
+        m_state = IMC::EntityStatus::ESTA_INACTIVE;
     }
 
     void
@@ -116,5 +142,15 @@ namespace DUNE
         }
     }
 
+    void
+    ActLockEntity::checkTransition(void)
+    {
+      // Check if there was a change in the requested activation state
+      if ((!m_locks.empty() && m_state == IMC::EntityStatus::ESTA_INACTIVE) ||
+          (m_locks.empty() && m_state == IMC::EntityStatus::ESTA_ACTIVE))
+      {
+        m_state = IMC::EntityStatus::ESTA_BUSY;
+      }
+    }
   }
 }
