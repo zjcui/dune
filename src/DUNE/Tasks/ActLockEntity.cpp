@@ -136,8 +136,7 @@ namespace DUNE
     {
       m_error = true;
 
-      if (m_state != IMC::EntityStatus::ESTA_FAULT)
-        m_owner->spew("entity in fault: %s", message.c_str());
+      m_owner->spew("entity in fault: %s", message.c_str());
     }
 
     void

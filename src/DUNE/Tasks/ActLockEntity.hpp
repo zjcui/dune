@@ -47,7 +47,8 @@ namespace DUNE
     public:
       ActLockEntity(Task* task):
         BasicEntity(task),
-        m_state(IMC::EntityStatus::ESTA_INACTIVE)
+        m_active(false),
+        m_error(false)
       { }
 
       void
@@ -99,8 +100,6 @@ namespace DUNE
       bool m_active;
       //! Is in error
       bool m_error;
-      //! Current entity activation state.
-      IMC::EntityStatus::StateEnum m_state;
 
       //! Request activation lock
       float
