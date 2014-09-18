@@ -81,7 +81,7 @@ namespace DUNE
     }
 
     bool
-    ActLockEntity::isActive(void)
+    ActLockEntity::isRequestedActive(void)
     {
       pruneLocks();
       return !m_locks.empty();

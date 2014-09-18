@@ -58,7 +58,7 @@ namespace DUNE
       }
 
       bool
-      isActive(void);
+      isRequestedActive(void);
 
       //! Consume EntityActivationLock messages and reply accordingly.
       //! @param[in] msg EntityActivationLock message.

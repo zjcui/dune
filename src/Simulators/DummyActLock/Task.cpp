@@ -67,12 +67,12 @@ namespace Simulators
         while (!stopping())
         {
           waitForMessages(1.0);
-          if (m_entity->isActive() && !m_was_active)
+          if (m_entity->isRequestedActive() && !m_was_active)
           {
             m_was_active = true;
             inf("Entity was activated");
           }
-          else if (!m_entity->isActive() && m_was_active)
+          else if (!m_entity->isRequestedActive() && m_was_active)
           {
             m_was_active = false;
             inf("Entity was deactivated");
