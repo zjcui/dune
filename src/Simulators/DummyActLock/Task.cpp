@@ -43,13 +43,10 @@ namespace Simulators
     {
       //! Activation lock entity.
       ActLockEntity* m_entity;
-      //! True if previously active
-      bool m_was_active;
 
       Task(const std::string& name, Tasks::Context& ctx):
         Tasks::Task(name, ctx),
-        m_entity(NULL),
-        m_was_active(false)
+        m_entity(NULL)
       {
 
       }
@@ -67,15 +64,18 @@ namespace Simulators
         while (!stopping())
         {
           waitForMessages(1.0);
-          if (m_entity->isRequestedActive() && !m_was_active)
+          // Handle activation change
+          if (m_entity->isRequestedActive() && m_entity->isActivationChanging())
           {
-            m_was_active = true;
             inf("Entity was activated");
+            // Do activation stuf, check if can activate, and then mark as activated
+            m_entity->markActive();
           }
-          else if (!m_entity->isRequestedActive() && m_was_active)
+          else if (m_entity->isActivationChanging())
           {
-            m_was_active = false;
             inf("Entity was deactivated");
+            // Do deactivation stuf, check if can deactivate, and then mark as deactivated
+            m_entity->markInactive();
           }
         }
       }
