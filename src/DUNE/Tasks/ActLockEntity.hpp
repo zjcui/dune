@@ -114,6 +114,8 @@ namespace DUNE
       bool m_active;
       //! Is in error
       bool m_error;
+      //! Error message
+      std::string m_error_msg;
 
       //! Request activation lock
       float

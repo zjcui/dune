@@ -68,7 +68,7 @@ namespace DUNE
       if (m_error)
       {
         es.state = IMC::EntityStatus::ESTA_FAULT;
-        m_owner->spew("queried status of entity %d, is in fault", getId());
+        m_owner->spew("queried status of entity %d, is in fault: %s", getId(), m_error_msg.c_str());
       }
       else if (isBusy())
       {
@@ -98,7 +98,7 @@ namespace DUNE
       if (m_error)
       {
         es.state = IMC::EntityState::ESTA_FAULT;
-        es.description = DTR(Status::getString(Status::CODE_INTERNAL_ERROR));
+        es.description = DTR(m_error_msg.c_str());
       }
       else if(m_active)
       {
@@ -161,8 +161,7 @@ namespace DUNE
     ActLockEntity::markFault(std::string message)
     {
       m_error = true;
-
-      m_owner->spew("entity in fault: %s", message.c_str());
+      m_error_msg = message;
     }
 
     void
