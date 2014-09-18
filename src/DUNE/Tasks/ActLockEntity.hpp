@@ -29,8 +29,9 @@
 #define DUNE_TASKS_ACTIVATION_LOCK_ENTITY_HPP_INCLUDED_
 
 // ISO C++ 98 headers.
-#include <stdexcept>
+#include <string>
 
+// DUNE headers.
 #include <DUNE/Tasks/BasicEntity.hpp>
 #include <DUNE/Status/Messages.hpp>
 #include <DUNE/Time/Counter.hpp>
