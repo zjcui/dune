@@ -117,6 +117,11 @@ namespace Simulators
           if (activation_error)
           {
             m_entity->markFault("random stuff missing for activation");
+            if (!m_was_in_error)
+            {
+              err("Entity is in error");
+              m_was_in_error = true;
+            }
           }
           else if (can_mark_active)
           {
