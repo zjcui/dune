@@ -40,7 +40,7 @@ namespace Simulators
   namespace DummyActLock
   {
     //| Probability of error while running.
-    const double c_run_error_prob = 0.01;
+    const double c_run_error_prob = 0.1;
     //| Probability of error while activating.
     const double c_act_error_prob = 0.3;
 
