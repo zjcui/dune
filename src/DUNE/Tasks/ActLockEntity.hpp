@@ -140,6 +140,10 @@ namespace DUNE
       //! Update status on transition
       void
       checkTransition(void);
+
+      //! Emit EntityStatus message
+      void
+      reportStatus(const IMC::QueryEntityStatus* msg = NULL);
     };
   }
 }

@@ -59,11 +59,8 @@ namespace DUNE
     }
 
     void
-    ActLockEntity::consume(const IMC::QueryEntityStatus* msg)
+    ActLockEntity::reportStatus(const IMC::QueryEntityStatus* msg)
     {
-      if (msg->getDestinationEntity() != getId())
-        return;
-
       IMC::EntityStatus es;
       if (m_error)
       {
@@ -85,7 +82,19 @@ namespace DUNE
         es.state = IMC::EntityStatus::ESTA_INACTIVE;
         m_owner->spew("queried status of entity %d, is inactive", getId());
       }
-      dispatchReply(*msg, es);
+      if (msg)
+        dispatchReply(*msg, es);
+      else
+        dispatch(es);
+    }
+
+    void
+    ActLockEntity::consume(const IMC::QueryEntityStatus* msg)
+    {
+      if (msg->getDestinationEntity() != getId())
+        return;
+
+      reportStatus(msg);
     }
 
 #if defined DUNE_TASKS_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
@@ -146,22 +155,37 @@ namespace DUNE
     void
     ActLockEntity::markActive(void)
     {
+      bool changed = (m_active == false);
+
       m_active = true;
       m_error = false;
+
+      if (changed)
+        reportStatus();
     }
 
     void
     ActLockEntity::markInactive(void)
     {
+      bool changed = (m_active == true);
+
       m_active = false;
       m_error = false;
+
+      if (changed)
+        reportStatus();
     }
 
     void
     ActLockEntity::markFault(std::string message)
     {
+      bool changed = (m_error == false);
+
       m_error = true;
       m_error_msg = message;
+
+      if (changed)
+        reportStatus();
     }
 
     void
