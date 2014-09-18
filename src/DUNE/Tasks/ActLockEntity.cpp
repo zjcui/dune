@@ -62,7 +62,19 @@ namespace DUNE
       if (msg->getDestinationEntity() != getId())
         return;
 
-      msg->toText(std::cerr);
+      IMC::EntityStatus es;
+      es.state = m_state;
+      dispatchReply(*msg, es);
+
+      // Debug messages
+      if (m_state == IMC::EntityStatus::ESTA_INACTIVE)
+        m_owner->spew("queried status of entity %d, is inactive", getId());
+      else if (m_state == IMC::EntityStatus::ESTA_ACTIVE)
+        m_owner->spew("queried status of entity %d, is active", getId());
+      else if (m_state == IMC::EntityStatus::ESTA_BUSY)
+        m_owner->spew("queried status of entity %d, is busy", getId());
+      else if (m_state == IMC::EntityStatus::ESTA_FAULT)
+        m_owner->spew("queried status of entity %d, is in fault", getId());
     }
 
     float

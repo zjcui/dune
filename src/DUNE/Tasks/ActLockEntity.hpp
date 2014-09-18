@@ -45,9 +45,9 @@ namespace DUNE
     {
     public:
       ActLockEntity(Task* task):
-        BasicEntity(task)
-      {
-      }
+        BasicEntity(task),
+        m_state(IMC::EntityStatus::ESTA_INACTIVE)
+      { }
 
       void
       setBindings(Recipient* recipient)
@@ -74,6 +74,8 @@ namespace DUNE
       //! List of active locks
       typedef std::map<unsigned int, Time::Counter<float> > LocksMap;
       LocksMap m_locks;
+      //! Current entity activation state.
+      IMC::EntityStatus::StateEnum m_state;
 
       //! Request activation lock
       float
