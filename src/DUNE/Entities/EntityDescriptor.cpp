@@ -25,20 +25,92 @@
 // Author: Renato Caldas                                                    *
 //***************************************************************************
 
-#ifndef DUNE_ENTITIES_HPP_INCLUDED_
-#define DUNE_ENTITIES_HPP_INCLUDED_
+// DUNE Headers
+#include <DUNE/Entities/EntityDescriptor.hpp>
+#include <DUNE/Tasks/Context.hpp>
 
 namespace DUNE
 {
-  //! %Task related routines and classes.
   namespace Entities
-  { }
+  {
+    void
+    EntityDescriptor::setLabel(const std::string& label)
+    {
+      m_label = label;
+    }
+
+    void
+    EntityDescriptor::setSystem(const std::string& system)
+    {
+      m_system = system;
+    }
+
+    void
+    EntityDescriptor::setId(unsigned int id)
+    {
+      m_id = id;
+    }
+
+    void
+    EntityDescriptor::setSystem(unsigned int sysid)
+    {
+      m_sys_id = sysid;
+    }
+
+    const std::string&
+    EntityDescriptor::getLabel(void) const
+    {
+      return m_label;
+    }
+
+    const std::string&
+    EntityDescriptor::getSystem(void) const
+    {
+      return m_system;
+    }
+
+    unsigned int
+    EntityDescriptor::getId(void) const
+    {
+      return m_id;
+    }
+
+    unsigned int
+    EntityDescriptor::getSystemId(void) const
+    {
+      return m_sys_id;
+    }
+
+    const std::string&
+    EntityDescriptor::getLabel(Tasks::Context& ctx)
+    {
+      if (m_label == "")
+        m_label = ctx.entities.resolve(m_id);
+      return m_label;
+    }
+
+    const std::string&
+    EntityDescriptor::getSystem(Tasks::Context& ctx)
+    {
+      if (m_system == "")
+        m_system = ctx.resolver.resolve(m_sys_id);
+      return m_system;
+    }
+
+    unsigned int
+    EntityDescriptor::getId(Tasks::Context& ctx)
+    {
+      if (m_id == DUNE_IMC_CONST_UNK_EID)
+        m_id = ctx.entities.resolve(m_label);
+      return m_id;
+    }
+
+    unsigned int
+    EntityDescriptor::getSystemId(Tasks::Context& ctx)
+    {
+      if (m_sys_id == DUNE_IMC_CONST_NULL_ID)
+        m_sys_id = ctx.resolver.resolve(m_system);
+      return m_sys_id;
+    }
+  }
 }
-
-#include <DUNE/Entities/EntityDescriptor.hpp>
-#include <DUNE/Entities/EntityUtils.hpp>
-#include <DUNE/Entities/BasicEntity.hpp>
-#include <DUNE/Entities/StatefulEntity.hpp>
-#include <DUNE/Entities/ActLockEntity.hpp>
-
-#endif
