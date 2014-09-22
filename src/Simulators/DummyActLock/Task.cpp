@@ -27,7 +27,6 @@
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
-#include <DUNE/Tasks/ActLockEntity.hpp>
 
 using DUNE_NAMESPACES;
 
@@ -47,7 +46,7 @@ namespace Simulators
     struct Task: public Tasks::Task
     {
       //! Activation lock entity.
-      ActLockEntity* m_entity;
+      Entities::ActLockEntity* m_entity;
       //! Random error gerenaror
       Math::Random::Generator* m_rnd;
       //! True if was in error
@@ -66,7 +65,7 @@ namespace Simulators
       void
       onEntityReservation(void)
       {
-        m_entity = reserveEntity<ActLockEntity>("Activation Lock Test");
+        m_entity = reserveEntity<Entities::ActLockEntity>("Activation Lock Test");
         inf("created ActLockEntity with id %d", m_entity->getId());
       }
 
