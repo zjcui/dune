@@ -30,7 +30,6 @@
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
-#include <DUNE/Tasks/ActLockEntity.hpp>
 
 namespace Transports
 {
