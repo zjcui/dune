@@ -26,7 +26,7 @@
 //***************************************************************************
 // Automatically generated.                                                 *
 //***************************************************************************
-// IMC XML MD5: 4ab0411c6256574a5ac1785347d0a9f2                            *
+// IMC XML MD5: a7898fe1c8d204bae57484b0b009bf7a                            *
 //***************************************************************************
 
 #ifndef DUNE_IMC_MACROS_HPP_INCLUDED_
@@ -58,6 +58,12 @@
 #define DUNE_IMC_QUERYENTITYACTIVATIONSTATE 15
 //! VehicleOperationalLimits identification number.
 #define DUNE_IMC_VEHICLEOPERATIONALLIMITS 16
+//! EntityActivationLock identification number.
+#define DUNE_IMC_ENTITYACTIVATIONLOCK 17
+//! EntityStatus identification number.
+#define DUNE_IMC_ENTITYSTATUS 18
+//! QueryEntityStatus identification number.
+#define DUNE_IMC_QUERYENTITYSTATUS 19
 //! MsgList identification number.
 #define DUNE_IMC_MSGLIST 20
 //! SimulatedState identification number.

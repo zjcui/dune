@@ -26,7 +26,7 @@
 //***************************************************************************
 // Automatically generated.                                                 *
 //***************************************************************************
-// IMC XML MD5: 4ab0411c6256574a5ac1785347d0a9f2                            *
+// IMC XML MD5: a7898fe1c8d204bae57484b0b009bf7a                            *
 //***************************************************************************
 
 // ISO C++ 98 headers.
@@ -933,6 +933,163 @@ namespace DUNE
       IMC::toJSON(os__, "rpm_min", rpm_min, nindent__);
       IMC::toJSON(os__, "rpm_max", rpm_max, nindent__);
       IMC::toJSON(os__, "rpm_rate_max", rpm_rate_max, nindent__);
+    }
+
+    EntityActivationLock::EntityActivationLock(void)
+    {
+      m_header.mgid = 17;
+      clear();
+    }
+
+    void
+    EntityActivationLock::clear(void)
+    {
+      op = 0;
+      timeout = 0;
+    }
+
+    bool
+    EntityActivationLock::fieldsEqual(const Message& msg__) const
+    {
+      const IMC::EntityActivationLock& other__ = static_cast<const EntityActivationLock&>(msg__);
+      if (op != other__.op) return false;
+      if (timeout != other__.timeout) return false;
+      return true;
+    }
+
+    int
+    EntityActivationLock::validate(void) const
+    {
+      return false;
+    }
+
+    uint8_t*
+    EntityActivationLock::serializeFields(uint8_t* bfr__) const
+    {
+      uint8_t* ptr__ = bfr__;
+      ptr__ += IMC::serialize(op, ptr__);
+      ptr__ += IMC::serialize(timeout, ptr__);
+      return ptr__;
+    }
+
+    uint16_t
+    EntityActivationLock::deserializeFields(const uint8_t* bfr__, uint16_t size__)
+    {
+      const uint8_t* start__ = bfr__;
+      bfr__ += IMC::deserialize(op, bfr__, size__);
+      bfr__ += IMC::deserialize(timeout, bfr__, size__);
+      return bfr__ - start__;
+    }
+
+    uint16_t
+    EntityActivationLock::reverseDeserializeFields(const uint8_t* bfr__, uint16_t size__)
+    {
+      const uint8_t* start__ = bfr__;
+      bfr__ += IMC::deserialize(op, bfr__, size__);
+      bfr__ += IMC::reverseDeserialize(timeout, bfr__, size__);
+      return bfr__ - start__;
+    }
+
+    void
+    EntityActivationLock::fieldsToJSON(std::ostream& os__, unsigned nindent__) const
+    {
+      IMC::toJSON(os__, "op", op, nindent__);
+      IMC::toJSON(os__, "timeout", timeout, nindent__);
+    }
+
+    EntityStatus::EntityStatus(void)
+    {
+      m_header.mgid = 18;
+      clear();
+    }
+
+    void
+    EntityStatus::clear(void)
+    {
+      state = 0;
+    }
+
+    bool
+    EntityStatus::fieldsEqual(const Message& msg__) const
+    {
+      const IMC::EntityStatus& other__ = static_cast<const EntityStatus&>(msg__);
+      if (state != other__.state) return false;
+      return true;
+    }
+
+    int
+    EntityStatus::validate(void) const
+    {
+      return false;
+    }
+
+    uint8_t*
+    EntityStatus::serializeFields(uint8_t* bfr__) const
+    {
+      uint8_t* ptr__ = bfr__;
+      ptr__ += IMC::serialize(state, ptr__);
+      return ptr__;
+    }
+
+    uint16_t
+    EntityStatus::deserializeFields(const uint8_t* bfr__, uint16_t size__)
+    {
+      const uint8_t* start__ = bfr__;
+      bfr__ += IMC::deserialize(state, bfr__, size__);
+      return bfr__ - start__;
+    }
+
+    uint16_t
+    EntityStatus::reverseDeserializeFields(const uint8_t* bfr__, uint16_t size__)
+    {
+      const uint8_t* start__ = bfr__;
+      bfr__ += IMC::deserialize(state, bfr__, size__);
+      return bfr__ - start__;
+    }
+
+    void
+    EntityStatus::fieldsToJSON(std::ostream& os__, unsigned nindent__) const
+    {
+      IMC::toJSON(os__, "state", state, nindent__);
+    }
+
+    QueryEntityStatus::QueryEntityStatus(void)
+    {
+      m_header.mgid = 19;
+      clear();
+    }
+
+    void
+    QueryEntityStatus::clear(void)
+    {
+    }
+
+    int
+    QueryEntityStatus::validate(void) const
+    {
+      return false;
+    }
+
+    uint8_t*
+    QueryEntityStatus::serializeFields(uint8_t* bfr__) const
+    {
+      return bfr__;
+    }
+
+    uint16_t
+    QueryEntityStatus::deserializeFields(const uint8_t* bfr__, uint16_t size__)
+    {
+      (void)bfr__;
+      (void)size__;
+      return 0;
+    }
+
+    uint16_t
+    QueryEntityStatus::reverseDeserializeFields(const uint8_t* bfr__, uint16_t size__)
+    {
+      (void)bfr__;
+      (void)size__;
+      return 0;
     }
 
     MsgList::MsgList(void)
