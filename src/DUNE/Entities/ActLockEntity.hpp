@@ -25,43 +25,40 @@
 // Author: Renato Caldas                                                    *
 //***************************************************************************
 
-#ifndef DUNE_TASKS_ACTIVATION_LOCK_ENTITY_HPP_INCLUDED_
-#define DUNE_TASKS_ACTIVATION_LOCK_ENTITY_HPP_INCLUDED_
+#ifndef DUNE_ENTITIES_ACTIVATION_LOCK_ENTITY_HPP_INCLUDED_
+#define DUNE_ENTITIES_ACTIVATION_LOCK_ENTITY_HPP_INCLUDED_
 
 // ISO C++ 98 headers.
 #include <string>
 
 // DUNE headers.
-#include <DUNE/Tasks/BasicEntity.hpp>
-#include <DUNE/Status/Messages.hpp>
+#include <DUNE/Entities/BasicEntity.hpp>
 #include <DUNE/Time/Counter.hpp>
 
 // Activate compatibility with *EntityState messages
-#define DUNE_TASKS_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
+#define DUNE_ENTITIES_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
 
 namespace DUNE
 {
-  namespace Tasks
+  namespace Entities
   {
-    class Task;
-
     class ActLockEntity : public BasicEntity
     {
     public:
-      ActLockEntity(Task* task):
+      ActLockEntity(Tasks::Task* task):
         BasicEntity(task),
         m_active(false),
         m_error(false)
       { }
 
       void
-      setBindings(Recipient* recipient)
+      setBindings(Tasks::Recipient* recipient)
       {
         BasicEntity::setBindings(recipient);
         bind<IMC::EntityActivationLock>(recipient, this);
         bind<IMC::QueryEntityStatus>(recipient, this);
 
-#if defined DUNE_TASKS_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
+#if defined DUNE_ENTITIES_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
         bind<IMC::QueryEntityState>(recipient, this);
 #endif
       }
@@ -99,7 +96,7 @@ namespace DUNE
       void
       consume(const IMC::QueryEntityStatus* msg);
 
-#if defined DUNE_TASKS_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
+#if defined DUNE_ENTITIES_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
       //! Consume QueryEntityState messages and reply accordingly.
       //! @param[in] msg QueryEntityState message.
       void

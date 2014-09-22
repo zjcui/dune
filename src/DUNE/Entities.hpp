@@ -38,5 +38,6 @@ namespace DUNE
 #include <DUNE/Entities/EntityUtils.hpp>
 #include <DUNE/Entities/BasicEntity.hpp>
 #include <DUNE/Entities/StatefulEntity.hpp>
+#include <DUNE/Entities/ActLockEntity.hpp>
 
 #endif

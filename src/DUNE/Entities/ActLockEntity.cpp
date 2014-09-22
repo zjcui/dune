@@ -26,12 +26,12 @@
 //***************************************************************************
 
 // DUNE headers.
-#include <DUNE/Tasks/ActLockEntity.hpp>
+#include <DUNE/Entities/ActLockEntity.hpp>
 #include <DUNE/Tasks/Task.hpp>
 
 namespace DUNE
 {
-  namespace Tasks
+  namespace Entities
   {
     void
     ActLockEntity::consume(const IMC::EntityActivationLock* msg)
@@ -97,7 +97,7 @@ namespace DUNE
       reportStatus(msg);
     }
 
-#if defined DUNE_TASKS_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
+#if defined DUNE_ENTITIES_ACTIVATION_LOCK_ENTITY_COMPATIBILITY
     void
     ActLockEntity::consume(const IMC::QueryEntityState* msg)
     {
