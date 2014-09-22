@@ -25,16 +25,15 @@
 // Author: Renato Caldas                                                    *
 //***************************************************************************
 
-#ifndef DUNE_TASKS_PLAIN_ENTITY_HPP_INCLUDED_
-#define DUNE_TASKS_PLAIN_ENTITY_HPP_INCLUDED_
+#ifndef DUNE_ENTITIES_PLAIN_ENTITY_HPP_INCLUDED_
+#define DUNE_ENTITIES_PLAIN_ENTITY_HPP_INCLUDED_
 
 // ISO C++ 98 headers.
-#include <stdexcept>
+#include <string>
 
 // DUNE Headers.
 #include <DUNE/IMC/Constants.hpp>
 #include <DUNE/IMC/Definitions.hpp>
-#include <DUNE/IMC/Factory.hpp>
 #include <DUNE/Tasks/Recipient.hpp>
 #include <DUNE/Tasks/Consumer.hpp>
 
@@ -43,11 +42,13 @@ namespace DUNE
   namespace Tasks
   {
     class Task;
-
+  }
+  namespace Entities
+  {
     class BasicEntity
     {
     public:
-      BasicEntity(Task* task):
+      BasicEntity(Tasks::Task* task):
         m_owner(task),
         m_id(DUNE_IMC_CONST_UNK_EID)
       { }
@@ -56,7 +57,7 @@ namespace DUNE
       { }
 
       virtual void
-      setBindings(Recipient* recipient)
+      setBindings(Tasks::Recipient* recipient)
       {
         bind<IMC::QueryEntityInfo, BasicEntity>(recipient, this);
       }
@@ -139,7 +140,7 @@ namespace DUNE
 
     protected:
       //! Owner task.
-      Task* m_owner;
+      Tasks::Task* m_owner;
       //! Entity information message.
       IMC::EntityInfo m_ent_info;
 
@@ -149,9 +150,9 @@ namespace DUNE
       //! @param consumer consumer method.
       template <typename M, typename E>
       void
-      bind(Recipient* recipient, E* ent_obj, void (E::* consumer)(const M*) = &E::consume)
+      bind(Tasks::Recipient* recipient, E* ent_obj, void (E::* consumer)(const M*) = &E::consume)
       {
-        recipient->bind(M::getIdStatic(), new Consumer<E, M>(*ent_obj, consumer));
+        recipient->bind(M::getIdStatic(), new Tasks::Consumer<E, M>(*ent_obj, consumer));
       }
 
     private:

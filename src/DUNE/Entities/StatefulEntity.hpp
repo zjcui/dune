@@ -25,25 +25,21 @@
 // Author: Renato Caldas                                                    *
 //***************************************************************************
 
-#ifndef DUNE_TASKS_STATEFUL_ENTITY_HPP_INCLUDED_
-#define DUNE_TASKS_STATEFUL_ENTITY_HPP_INCLUDED_
+#ifndef DUNE_ENTITIES_STATEFUL_ENTITY_HPP_INCLUDED_
+#define DUNE_ENTITIES_STATEFUL_ENTITY_HPP_INCLUDED_
 
-// ISO C++ 98 headers.
-#include <stdexcept>
-
-#include <DUNE/Tasks/BasicEntity.hpp>
+// DUNE Headers.
+#include <DUNE/Entities/BasicEntity.hpp>
 #include <DUNE/Status/Messages.hpp>
 
 namespace DUNE
 {
-  namespace Tasks
+  namespace Entities
   {
-    class Task;
-
     class StatefulEntity : public BasicEntity
     {
     public:
-      StatefulEntity(Task* task):
+      StatefulEntity(Tasks::Task* task):
         BasicEntity(task),
         m_entity_state_code(-1),
         m_next_act_state(NAS_SAME)
@@ -53,7 +49,7 @@ namespace DUNE
       }
 
       void
-      setBindings(Recipient* recipient)
+      setBindings(Tasks::Recipient* recipient)
       {
         BasicEntity::setBindings(recipient);
         bind<IMC::QueryEntityState, StatefulEntity>(recipient, this);
