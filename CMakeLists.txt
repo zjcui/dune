@@ -382,6 +382,7 @@ include(InstallRequiredSystemLibraries)
 include(CPack)
 
 include(programs/video-client/Program.cmake)
+include(programs/edgetech/Program.cmake)
 include(programs/gsmux/Program.cmake)
 
 ##########################################################################
