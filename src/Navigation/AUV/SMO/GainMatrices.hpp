@@ -43,7 +43,7 @@ namespace Navigation
       public:
 
         static Matrix
-        compute_k1(float k1[6])
+        computeK1(float k1[6])
         {
           Matrix K1 = Matrix(6, 6, 0.0);
           K1(0, 0) = k1[0];
@@ -56,9 +56,8 @@ namespace Navigation
           return K1;
         }
 
-
         static Matrix
-        compute_k2(float k2[6])
+        computeK2(float k2[6])
         {
           Matrix K2 = Matrix(6, 6, 0.0);
           K2(0, 0) = k2[0];
@@ -72,7 +71,7 @@ namespace Navigation
         }
 
         static Matrix
-        compute_alfa1(float alfa_1[6])
+        computeAlfa1(float alfa_1[6])
         {
           Matrix alfa1 = Matrix(6, 6, 0.0);
           alfa1(0, 0) = alfa_1[0];
@@ -86,7 +85,7 @@ namespace Navigation
         }
 
         static Matrix
-        compute_alfa2(float alfa_2[6])
+        computeAlfa2(float alfa_2[6])
         {
           Matrix alfa2 = Matrix(6, 6, 0.0);
           alfa2(0, 0) = alfa_2[0];
@@ -100,18 +99,18 @@ namespace Navigation
         }
 
         static Matrix
-        computesignum(Matrix nu_error)
+        computeSignum(Matrix nu_error)
         {
           Matrix signum = Matrix(6, 1, 0.0);
           int i=0;
 
-          for ( i = 0; i <= 5; i++ )
+          for (i = 0; i <= 5; i++)
           {
-            if(nu_error(i)<0)
+            if (nu_error(i)<0)
             {
               signum(i, 0) = - 1;
             }
-            if(nu_error(i)>=0)
+            if (nu_error(i)>=0)
             {
               signum(i, 0) = 1;
             }
@@ -121,18 +120,19 @@ namespace Navigation
         }
 
         static Matrix
-        compute_tanh(Matrix nu_error, double boundary_layer)
+        computeTanh(Matrix nu_error, double boundary_layer)
         {
           Matrix tgh = Matrix(6,1,0.0);
           int i=0;
 
-          for ( i = 0; i <= 5; i++)
+          for (i = 0; i <= 5; i++)
           {
             tgh(i, 0) = tanh(nu_error(i) / boundary_layer);
           }
 
           return tgh;
         }
+
       };
     }
   }

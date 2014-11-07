@@ -44,59 +44,55 @@ namespace Navigation
       {
       public:
 
-
         static double
-        compute_average_filter(int flag_ini, int window, double data[])
+        computeAverageFilter(int flag_ini, int window, double data[])
         {
+          int i;
+          double sum;
+          int counter;
+          double average;
 
-        int i;
-        double sum;
-        int counter;
-        double average;
+          i = 0;
+          sum = 0;
+          counter = 0;
+          average = 0;
 
-        i = 0;
-        sum = 0;
-        counter = 0;
-        average = 0;
-
-        if(flag_ini == 0)
-        {
-          for(i=0; i<window; i++)
+          if (flag_ini == 0)
           {
-            if(data[i] != 0)
+            for (i = 0; i < window; i++)
+            {
+              if (data[i] != 0)
+              {
+                sum = sum + data[i];
+                counter++;
+              }
+            }
+            average = sum / counter;
+          }
+
+          if (flag_ini ==1)
+          {
+            for (i = 0; i < window; i++)
             {
               sum = sum + data[i];
               counter++;
             }
+            average = sum / counter;
           }
-          average = sum / counter;
-        }
 
-        if(flag_ini ==1)
-        {
-          for(i=0; i<window; i++)
-          {
-            sum = sum + data[i];
-            counter++;
-          }
-          average = sum / counter;
-        }
-
-        return average;
-
+          return average;
         }
 
         static Matrix
-        compute_acc(double velocities[6], Matrix v_bar, double delta_t)
+        computeAcceleration(double velocities[6], Matrix v_bar, double delta_t)
         {
-
           Matrix T = Matrix(6,6, 0.0);
-          T(0,0) = 1*delta_t;
-          T(1,1) = 1*delta_t;
-          T(2,2) = 1*delta_t;
-          T(3,3) = 1*delta_t;
-          T(4,4) = 1*delta_t;
-          T(5,5) = 1*delta_t;
+          T(0,0) = delta_t;
+          T(1,1) = delta_t;
+          T(2,2) = delta_t;
+          T(3,3) = delta_t;
+          T(4,4) = delta_t;
+          T(5,5) = delta_t;
 
           Matrix v = Matrix(6,1, 0.0);
           v(0, 0) = velocities[0];
@@ -114,21 +110,22 @@ namespace Navigation
 
 
         static Matrix
-        compute_J(double euler_angles[3])
+        computeRotationMatrix(double euler_angles[3])
         {
           // Pass euler angles to row matrix
-          Math::Matrix ea(3,1);
+          Math::Matrix ea(3, 1);
           ea(0) = Math::Angles::normalizeRadian(euler_angles[0]);
           ea(1) = Math::Angles::normalizeRadian(euler_angles[1]);
           ea(2) = Math::Angles::normalizeRadian(euler_angles[2]);
 
-          Math::Matrix J_tmp(6,6,0.0); J_tmp = ea.toDCMSMO();
+          Math::Matrix rotation_matrix(6, 6, 0.0);
+          rotation_matrix = ea.toDCMSMO();
 
-          return J_tmp;
+          return rotation_matrix;
         }
 
         static Matrix
-        compute_standard_error(Matrix nu_error)
+        computeStandardError(Matrix nu_error)
         {
           if (nu_error(3,0) <= -3.14)
             nu_error(3,0) = nu_error(3,0)+360*3.14/180;
@@ -149,14 +146,8 @@ namespace Navigation
         }
 
         static Matrix
-        compute_Cov(Matrix Cov,Matrix x, Matrix y,int n)
+        computeCov(Matrix Cov,Matrix x, Matrix y,int n)
         {
-
-          /*Cov[0] = Cov[0] + x(0);
-            Cov[1] = Cov[1] + y(0);
-            Cov[2] = Cov[2] + x(0) * y(0);
-            Cov[3] = (1.0 / n) * (Cov[2] - (1.0 / n) * Cov[0] * Cov[1]);*/
-
           Cov(0,0) = Cov(0,0) + x(0);
           Cov(0,1) = Cov(0,1) + y(0);Cov(0,3) = Cov(0,3) + x(0)*y(0);
           Cov(0,2) = Cov(0,2) + 1.0 / n * ( (x(0) - Cov(0,0) / n) * (y(0) - Cov(0,1) / n) );
@@ -181,10 +172,8 @@ namespace Navigation
           Cov(5,1) = Cov(5,1) + y(5);
           Cov(5,2) = 1.0 / n * ( (x(5) - Cov(5,0) / n) * (y(5) - Cov(5,1) / n) );
 
-
           return Cov;
         }
-
 
       };
     }
