@@ -27,8 +27,6 @@
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
-#include "Aux.hpp"
-#include "Model.hpp"
 
 namespace Identification
 {
@@ -96,10 +94,6 @@ namespace Identification
       double m_orientation_delta;
       DUNE::Time::Delta m_delta_orientation;
 
-      // Orientation variables
-      double m_euler_angles[3];
-      double m_flag_initial_orientation;
-
       // Velocities variables
       double m_velocities[6];
       double m_velocities_ant[6];
@@ -166,6 +160,8 @@ namespace Identification
       bool m_matrices_ini;
 
       Arguments m_args;
+
+      DUNE::Model::Dynamic m_dynamics;
 
       Task(const std::string& name, Tasks::Context& ctx):
         Periodic(name, ctx)
@@ -281,10 +277,6 @@ namespace Identification
         m_bearing = 0;
         m_orientation_delta = 0;
 
-        // Orientation variables
-        memset(m_euler_angles,0,sizeof(m_euler_angles));
-        m_flag_initial_orientation = 0;
-
         // Velocities variables
         memset(m_velocities,0,sizeof(m_velocities));
         memset(m_velocities_ant,0,sizeof(m_velocities));
@@ -351,7 +343,6 @@ namespace Identification
         bind<IMC::SetThrusterActuation>(this);
         bind<IMC::ServoPosition>(this);
       }
-
 
       void
       onEntityResolution(void)
@@ -440,17 +431,9 @@ namespace Identification
       void
       consume(const IMC::EulerAngles* msg)
       {
-        m_euler_angles[0] = msg->phi;
-        m_euler_angles[1] = msg->theta;
-        m_euler_angles[2] = msg->psi;
-
-        if (m_flag_initial_orientation == 0)
-        {
-          m_flag_initial_orientation = 1;
-          m_nu(3,0) = msg->phi;
-          m_nu(4,0) = msg->theta;
-          m_nu(5,0) = msg->psi;
-        }
+        m_nu(3,0) = msg->phi;
+        m_nu(4,0) = msg->theta;
+        m_nu(5,0) = msg->psi;
       }
 
       void
@@ -541,34 +524,33 @@ namespace Identification
         if (m_filter_delta == -1)
           m_filter_delta = 0.05;
 
-        m_acc_filter = Aux::compute_acc(m_velocities, m_vel_filter, m_filter_delta);
+        m_acc_filter = m_dynamics.computeAcceleration(m_velocities, m_vel_filter, m_filter_delta);
         m_vel_filter = m_vel_filter + m_acc_filter * m_filter_delta;
 
         // Calculate Vehicle Model Coefficients and M Matrix one time
         if (m_model_coef_init == 0)
         {
-          Model::compute_Model_Coeff(m_args.mass, m_args.a, m_args.b, m_args.c, m_args.volume, m_args.l, m_args.d, m_args.density, m_args.sfin, m_model_coeff);
+          m_dynamics.computeModelCoeff(m_args.mass, m_args.a, m_args.b, m_args.c, m_args.volume, m_args.l, m_args.d, m_args.density, m_args.sfin, m_model_coeff);
 
           // Calculate Vehicle Model
-          m_inertia_added_mass = Model::compute_M(m_args.mass, m_model_coeff, m_args.zG);
+          m_inertia_added_mass = m_dynamics.computeM(m_args.mass, m_model_coeff, m_args.zG);
 
           m_model_coef_init = m_model_coef_init + 1;
         }
 
-        m_coriolis = Model::compute_C(m_args.mass, m_model_coeff, m_args.zG, m_vel_filter);
+        m_coriolis = m_dynamics.computeC(m_args.mass, m_model_coeff, m_args.zG, m_vel_filter);
 
-        m_restoring = Model::compute_G(m_model_coeff, m_args.zG, m_euler_angles);
+        m_restoring = m_dynamics.computeG(m_model_coeff, m_args.zG, m_nu);
 
-        m_lift = Model::compute_L(m_vel_filter, m_args.l, m_model_coeff);
+        m_lift = m_dynamics.computeL(m_vel_filter, m_args.l, m_model_coeff);
 
-        m_tau = Model::compute_Tau(m_thruster, m_servo_pos, m_vel_filter, m_model_coeff);
+        m_tau = m_dynamics.computeTau(m_thruster, m_servo_pos, m_vel_filter, m_model_coeff);
 
         m_y = -m_tau + m_coriolis  * m_vel_filter + m_inertia_added_mass * m_acc_filter + m_restoring + m_lift * m_vel_filter;
 
         // Continuous Least Squares
 
         // Longitudinal Linear Velocity Damping
-
         try{
           inf("theta_x");
           m_phi_x(0,0) = -m_vel_filter(0);
@@ -595,14 +577,13 @@ namespace Identification
           m_theta_x = m_theta_x + m_dtheta_dt_x * m_cls_theta_delta_x;
 
           std::cout<<m_theta_x<<std::endl;
-
         }
         catch(...){}
 
         // Roll Angular velocity Damping
         try{
           inf("theta_k");
-          m_phi_k(0,0) = m_thruster * 10/0.84;
+          m_phi_k(0,0) = m_thruster * 10 / 0.84;
           m_phi_k(1,0) = (m_servo_pos[3] - m_servo_pos[0] + m_servo_pos[1] - m_servo_pos[2]) * pow(m_vel_filter(0), 2.0);
           m_phi_k(2,0) = -m_vel_filter(3);
           m_phi_k(3,0) = -std::abs(m_vel_filter(3)) * m_vel_filter(3);
@@ -628,7 +609,6 @@ namespace Identification
           m_theta_k = m_theta_k + m_dtheta_dt_k * m_cls_theta_delta_k;
 
           std::cout<<m_theta_k<<std::endl;
-
         }
         catch(...){}
       }
