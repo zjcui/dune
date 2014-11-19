@@ -41,6 +41,7 @@
 #include <DUNE/Maneuvers.hpp>
 #include <DUNE/Math.hpp>
 #include <DUNE/IMC.hpp>
+#include <DUNE/Model.hpp>
 #include <DUNE/Monitors.hpp>
 #include <DUNE/Network.hpp>
 #include <DUNE/Streams.hpp>
