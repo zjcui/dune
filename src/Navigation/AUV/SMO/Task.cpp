@@ -27,7 +27,6 @@
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
-#include "Model.hpp"
 #include "GainMatrices.hpp"
 #include "Aux.hpp"
 
@@ -232,6 +231,8 @@ namespace Navigation
         IMC::NavigationUncertainty m_uncertainty;
 
         Arguments m_args;
+
+        DUNE::Model::Dynamic m_dynamics;
 
         Task(const std::string& name, Tasks::Context& ctx):
           Periodic(name, ctx)
@@ -894,7 +895,6 @@ namespace Navigation
         void
         task(void)
         {
-
           // Entity State Management
           stateManagement();
 
@@ -921,7 +921,7 @@ namespace Navigation
               m_nu(4,0) = -1.56;
 
             // Rotation Matrix and Velocities
-            m_rotation_matrix = Aux::computeRotationMatrix(m_euler_angles);
+            m_rotation_matrix = m_dynamics.computeRotationMatrix(m_euler_angles);
             m_vel = Matrix(m_velocities,6,1);
 
             // GPS Signal Acquisition
@@ -1023,23 +1023,23 @@ namespace Navigation
               // Calculate Vehicle Model Coefficients and M Matrix one time
               if (m_model_coef_init == 0)
               {
-                Model::computeModelCoeff(m_args.mass, m_args.a, m_args.b, m_args.c, m_args.volume, m_args.l, m_args.d, m_args.density, m_args.sfin, m_model_coeff);
+                m_dynamics.computeModelCoeff(m_args.mass, m_args.a, m_args.b, m_args.c, m_args.volume, m_args.l, m_args.d, m_args.density, m_args.sfin, m_model_coeff);
 
                 // Calculate Inertia and Added Mass Matrix
-                m_inertia_added_mass = Model::computeM(m_args.mass, m_model_coeff, m_args.zG);
+                m_inertia_added_mass = m_dynamics.computeM(m_args.mass, m_model_coeff, m_args.zG);
 
                 m_model_coef_init = m_model_coef_init + 1;
               }
 
-              m_coriolis = Model::computeC(m_args.mass, m_model_coeff, m_args.zG, m_vel_est);
+              m_coriolis = m_dynamics.computeC(m_args.mass, m_model_coeff, m_args.zG, m_vel_est);
 
-              m_damping = Model::computeD(m_vel_est, m_args.x_u, m_args.y_v, m_args.y_r, m_args.z_w, m_args.z_q, m_args.k_p, m_args.m_w,  m_args.m_q, m_args.n_v,  m_args.n_r,  m_args.x_absuu,  m_args.y_absvv,  m_args.y_absrr,  m_args.z_absww,  m_args.z_absqq,  m_args.k_abspp,  m_args.m_absww,  m_args.m_absqq, m_args.n_absvv,  m_args.n_absrr);
+              m_damping = m_dynamics.computeD(m_vel_est, m_args.x_u, m_args.y_v, m_args.y_r, m_args.z_w, m_args.z_q, m_args.k_p, m_args.m_w,  m_args.m_q, m_args.n_v,  m_args.n_r,  m_args.x_absuu,  m_args.y_absvv,  m_args.y_absrr,  m_args.z_absww,  m_args.z_absqq,  m_args.k_abspp,  m_args.m_absww,  m_args.m_absqq, m_args.n_absvv,  m_args.n_absrr);
 
-              m_restoring = Model::computeG(m_model_coeff, m_args.zG, m_nu_est);
+              m_restoring = m_dynamics.computeG(m_model_coeff, m_args.zG, m_nu_est);
 
-              m_lift = Model::computeL(m_vel_est, m_args.l, m_model_coeff);
+              m_lift = m_dynamics.computeL(m_vel_est, m_args.l, m_model_coeff);
 
-              m_tau = Model::computeTau(m_thruster, m_servo_pos, m_vel, m_model_coeff);
+              m_tau = m_dynamics.computeTau(m_thruster, m_servo_pos, m_vel, m_model_coeff);
 
               m_rotation_matrix_delta = m_delta_rotation_matrix.getDelta();
               if (m_rotation_matrix_delta == -1)
@@ -1120,7 +1120,7 @@ namespace Navigation
               m_tmp_velocities[3]=m_vel_est(3);
               m_tmp_velocities[4]=m_vel_est(4);
               m_tmp_velocities[5]=m_vel_est(5);
-              m_acc_filter = Aux::computeAcceleration(m_tmp_velocities,m_vel_filter, m_filter_delta);
+              m_acc_filter = m_dynamics.computeAcceleration(m_tmp_velocities,m_vel_filter, m_filter_delta);
               m_vel_filter = m_vel_filter + m_acc_filter * m_filter_delta;*/
 
             m_est.x = m_nu_est(0, 0);

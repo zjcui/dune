@@ -84,47 +84,6 @@ namespace Navigation
         }
 
         static Matrix
-        computeAcceleration(double velocities[6], Matrix v_bar, double delta_t)
-        {
-          Matrix T = Matrix(6,6, 0.0);
-          T(0,0) = delta_t;
-          T(1,1) = delta_t;
-          T(2,2) = delta_t;
-          T(3,3) = delta_t;
-          T(4,4) = delta_t;
-          T(5,5) = delta_t;
-
-          Matrix v = Matrix(6,1, 0.0);
-          v(0, 0) = velocities[0];
-          v(1, 0) = velocities[1];
-          v(2, 0) = velocities[2];
-          v(3, 0) = velocities[3];
-          v(4, 0) = velocities[4];
-          v(5, 0) = velocities[5];
-
-          Matrix acc = Matrix(6,1, 0.0);
-          acc = inverse(T) * 0.05 * ( v - v_bar);
-
-          return acc;
-        }
-
-
-        static Matrix
-        computeRotationMatrix(double euler_angles[3])
-        {
-          // Pass euler angles to row matrix
-          Math::Matrix ea(3, 1);
-          ea(0) = Math::Angles::normalizeRadian(euler_angles[0]);
-          ea(1) = Math::Angles::normalizeRadian(euler_angles[1]);
-          ea(2) = Math::Angles::normalizeRadian(euler_angles[2]);
-
-          Math::Matrix rotation_matrix(6, 6, 0.0);
-          rotation_matrix = ea.toDCMSMO();
-
-          return rotation_matrix;
-        }
-
-        static Matrix
         computeStandardError(Matrix nu_error)
         {
           if (nu_error(3,0) <= -3.14)
