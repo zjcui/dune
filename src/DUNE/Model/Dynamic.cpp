@@ -35,7 +35,7 @@ namespace DUNE
   {
     //Compute AUV Model coefficients
     void
-    Dynamic::computeModelCoeff(double Mass, double a, double b, double c,double Volume,double l, double d, double D, double Sfin,double *Model_Coeff)
+    Dynamic::computeModelCoeff(double Mass, double a, double b, double c,double Volume,double l, double d, double D, double Sfin, double *Model_Coeff)
     {
       // Inertia
       double Ixx = Mass / 5 * ( pow(b, 2.0) + pow(c, 2.0) );
@@ -167,7 +167,7 @@ namespace DUNE
 
     // AUV MODEL MATRICES
     Matrix
-    Dynamic::computeM(double Mass,double *Model_Coeff, double zG)
+    Dynamic::computeM(double Mass, double *Model_Coeff, double zG)
     {
       Math::Matrix M_tmp(6, 6);
       M_tmp.resizeAndFill(6, 6, 0.0);
@@ -224,7 +224,7 @@ namespace DUNE
     }
 
     Matrix
-    Dynamic::computeD(Matrix vel_est, float X_u, float Y_v, float Y_r, float Z_w, float Z_q, float K_p, float M_w, float M_q, float N_v, float N_r, float X_uabsu, float Y_vabsv, float Y_rabsr, float Z_wabsw, float Z_qabsq, float K_pabsp, float M_wabsw, float M_qabsq, float N_vabsv, float N_rabsr)
+    Dynamic::computeD(Matrix vel_est, std::vector<float> damping)
     {
       // Damping Matrix
       double ur = vel_est(0);
@@ -234,19 +234,31 @@ namespace DUNE
       double qr = vel_est(4);
       double rr = vel_est(5);
 
-      double D1_vector[36] = { X_u, 0,   0,    0,   0,   0,
-                               0,   Y_v, 0,    0,   0,   Y_r,
-                               0,   0,   Z_w,  0,   Z_q, 0,
-                               0,   0,   0,    K_p, 0,   0,
-                               0,   0,   M_w,  0,   M_q, 0,
-                               0,   N_v, 0,    0,   0,   N_r };
+      double D1_vector[36];
+      memset(D1_vector, 0, sizeof(D1_vector));
+      D1_vector[0] = damping[0];
+      D1_vector[7] = damping[1];
+      D1_vector[11] = damping[2];
+      D1_vector[14] = damping[3];
+      D1_vector[16] = damping[4];
+      D1_vector[21] = damping[5];
+      D1_vector[26] = damping[6];
+      D1_vector[28] = damping[7];
+      D1_vector[31] = damping[8];
+      D1_vector[35] = damping[9];
 
-      double D2_vector[36] = { X_uabsu * std::abs(ur), 0,                      0,                      0,                      0,                      0,
-                               0,                      Y_vabsv * std::abs(vr), 0,                      0,                      0,                      Y_rabsr * std::abs(rr),
-                               0,                      0,                      Z_wabsw * std::abs(wr), 0,                      Z_qabsq * std::abs(qr), 0,
-                               0,                      0,                      0,                      K_pabsp * std::abs(pr), 0,                      0,
-                               0,                      0,                      M_wabsw * std::abs(wr), 0,                      M_qabsq *std::abs(qr),  0,
-                               0,                      N_vabsv * std::abs(vr), 0,                      0,                      0,                      N_rabsr * std::abs(rr) };
+      double D2_vector[36];
+      memset(D2_vector, 0, sizeof(D1_vector));
+      D2_vector[0] = damping[10] * std::abs(ur);
+      D2_vector[7] = damping[11] * std::abs(vr);
+      D2_vector[11] = damping[12] * std::abs(rr);
+      D2_vector[14] = damping[13] * std::abs(wr);
+      D2_vector[16] = damping[14] * std::abs(qr);
+      D2_vector[21] = damping[15] * std::abs(pr);
+      D2_vector[26] = damping[16] * std::abs(wr);
+      D2_vector[28] = damping[17] * std::abs(qr);
+      D2_vector[31] = damping[18] * std::abs(vr);
+      D2_vector[35] = damping[19] * std::abs(rr);
 
       return (Matrix(D1_vector, 6, 6) + Matrix(D2_vector, 6, 6) );
     }

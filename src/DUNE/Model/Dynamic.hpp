@@ -34,7 +34,8 @@ namespace DUNE
 {
   namespace Model
   {
-    class Dynamic {
+    class Dynamic
+    {
     public:
 
       //! Method to compute AUV's model coefficients
@@ -51,7 +52,7 @@ namespace DUNE
 
       //! Method to compute D matrix for AUV dynamics
       Matrix
-      computeD(Matrix vel_est, float X_u, float Y_v, float Y_r, float Z_w, float Z_q, float K_p, float M_w, float M_q, float N_v, float N_r, float X_uabsu, float Y_vabsv, float Y_rabsr, float Z_wabsw, float Z_qabsq, float K_pabsp, float M_wabsw, float M_qabsq, float N_vabsv, float N_rabsr);
+      computeD(Matrix vel_est, std::vector<float> damping);
 
       //! Method to compute G matrix for AUV dynamics
       Matrix
