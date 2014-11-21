@@ -30,7 +30,6 @@
 
 namespace Identification
 {
-
   namespace AUV
   {
     //! AUV Identification algorithm
@@ -82,17 +81,8 @@ namespace Identification
 
     struct Task: public DUNE::Tasks::Periodic
     {
-      // GPS variables
-      double m_gps_initial_point[3];
-      double m_gps_fix[3];
-      double m_gps_treshold;
-      double m_flag_initial_point;
-      double m_flag_valid_pos;
+      // Depth
       double m_depth;
-      double m_range;
-      double m_bearing;
-      double m_orientation_delta;
-      DUNE::Time::Delta m_delta_orientation;
 
       // Velocities variables
       double m_velocities[6];
@@ -110,8 +100,8 @@ namespace Identification
       DUNE::Time::Delta m_delta_filter;
 
       // Entity Variables
-      int m_flag_imu_active;
-      int m_flag_ahrs_active;
+      bool m_flag_imu_active;
+      bool m_flag_ahrs_active;
       int m_imu_entity_id;
       int m_ahrs_entity_id;
 
@@ -166,7 +156,6 @@ namespace Identification
       Task(const std::string& name, Tasks::Context& ctx):
         Periodic(name, ctx)
       {
-
         // Sensor Entities
         param("Entity Label IMU", m_args.imu_entity_name)
         .defaultValue("IMU")
@@ -177,35 +166,35 @@ namespace Identification
         .description("Label of the AHRS message");
 
         // Vehicle physical properties
-        param("Mass", m_args.mass)
+        param("Vehicle Mass", m_args.mass)
         .defaultValue("18")
         .description("Vehicle Mass");
 
-        param("a", m_args.a)
+        param("Vehicle Half Lenght", m_args.a)
         .defaultValue("0.54")
         .description("Vehicle lenght");
 
-        param("b", m_args.b)
+        param("Vehicle Width", m_args.b)
         .defaultValue("0.075")
         .description("Vehicle height");
 
-        param("c", m_args.c)
+        param("Vehicle Height", m_args.c)
         .defaultValue("0.075")
         .description("Vehicle width");
 
-        param("Volume", m_args.volume)
+        param("Vehicle Volume", m_args.volume)
         .defaultValue("0.0181")
         .description("Vehicle Volume");
 
-        param("zG", m_args.zG)
+        param("Vehicle zG", m_args.zG)
         .defaultValue("0.01")
         .description("Vehicle CG");
 
-        param("l", m_args.l)
+        param("Vehicle Lenght", m_args.l)
         .defaultValue("1.08")
         .description("Vehicle CG");
 
-        param("d", m_args.d)
+        param("Vehicle Diameter", m_args.d)
         .defaultValue("0.15")
         .description("Vehicle CG");
 
@@ -266,16 +255,8 @@ namespace Identification
         .defaultValue("0.5")
         .description("Roll covariance initial value");
 
-        // GPS variables
-        memset (m_gps_initial_point, 0, sizeof(m_gps_initial_point));
-        memset (m_gps_fix, 0, sizeof(m_gps_fix));
-        m_gps_treshold = 0;
-        m_flag_initial_point = 0;
-        m_flag_valid_pos = 0;
+        // Depth
         m_depth = 0;
-        m_range = 0;
-        m_bearing = 0;
-        m_orientation_delta = 0;
 
         // Velocities variables
         memset(m_velocities,0,sizeof(m_velocities));
@@ -335,7 +316,6 @@ namespace Identification
 
         // Register Consumers
         bind<IMC::EntityState>(this);
-        bind<IMC::GpsFix>(this);
         bind<IMC::Depth>(this);
         bind<IMC::EulerAngles>(this);
         bind<IMC::GroundVelocity>(this);
@@ -354,7 +334,7 @@ namespace Identification
         catch (...)
         {
           m_imu_entity_id = -1;
-          m_flag_imu_active = -1;
+          m_flag_imu_active = false;
         }
 
         try
@@ -364,7 +344,7 @@ namespace Identification
         catch (...)
         {
           m_ahrs_entity_id = -1;
-          m_flag_ahrs_active = -1;
+          m_flag_ahrs_active = false;
         }
       }
 
@@ -374,52 +354,18 @@ namespace Identification
         if (msg->getSourceEntity() == m_imu_entity_id)
         {
           if (msg->state == IMC::EntityState::ESTA_NORMAL)
-            m_flag_imu_active = 1;
+            m_flag_imu_active = true;
           else
-            m_flag_imu_active = 0;
+            m_flag_imu_active = false;
         }
 
         if (msg->getSourceEntity() == m_ahrs_entity_id)
         {
           if (msg->state == IMC::EntityState::ESTA_NORMAL)
-            m_flag_ahrs_active = 1;
+            m_flag_ahrs_active = true;
           else
-            m_flag_ahrs_active = 0;
+            m_flag_ahrs_active = false;
         }
-      }
-
-      void
-      consume(const IMC::GpsFix* msg)
-      {
-        if (m_flag_initial_point == 0 && m_gps_treshold < 50)
-          m_gps_treshold = msg->hacc + 1;
-
-        if (m_flag_initial_point != 0)
-          m_gps_treshold = 10;
-
-        if(msg->validity & IMC::GpsFix::GFV_VALID_POS)
-        {
-          if (msg->hacc < m_gps_treshold)
-          {
-            m_gps_fix[0] = msg->lat;
-            m_gps_fix[1] = msg->lon;
-            m_gps_fix[2] = msg->height;
-            m_flag_valid_pos = 1;
-          }
-
-          if (m_flag_initial_point == 0)
-          {
-            m_gps_initial_point[0] = msg->lat;
-            m_gps_initial_point[1] = msg->lon;
-            m_gps_initial_point[2] = msg->height;
-            m_flag_initial_point = 1;
-          }
-        }
-        if (msg->hacc >= m_gps_treshold)
-          m_flag_valid_pos = 0;
-
-        if ((msg->validity & IMC::GpsFix::GFV_VALID_POS)==0)
-          m_flag_valid_pos = 0;
       }
 
       void
@@ -440,44 +386,30 @@ namespace Identification
       consume(const IMC::GroundVelocity* msg)
       {
         if (msg->validity & IMC::GroundVelocity::VAL_VEL_X)
-        {
           m_velocities[0] = msg->x;
-          m_velocities_ant[0] = m_velocities[0];
-        }
-        if (!(msg->validity & IMC::GroundVelocity::VAL_VEL_X))
-          m_velocities[0] = m_velocities_ant[0];
 
         if (msg->validity & IMC::GroundVelocity::VAL_VEL_Y)
-        {
           m_velocities[1] = msg->y;
-          m_velocities_ant[1] = m_velocities[1];
-        }
-        if (!(msg->validity & IMC::GroundVelocity::VAL_VEL_Y))
-          m_velocities[1] = m_velocities_ant[1];
 
         if (msg->validity & IMC::GroundVelocity::VAL_VEL_Z)
-        {
           m_velocities[2] = msg->z;
-          m_velocities_ant[2] = m_velocities[2];
-        }
-        if (!(msg->validity & IMC::GroundVelocity::VAL_VEL_Z))
-          m_velocities[2] = m_velocities_ant[2];
       }
 
       void
       consume(const IMC::AngularVelocity* msg)
       {
-        if (m_flag_imu_active == 1 && msg->getSourceEntity() == m_imu_entity_id)
+        if (m_flag_imu_active && msg->getSourceEntity() == m_imu_entity_id)
         {
           m_velocities[3] = msg->x;
           m_velocities[4] = msg->y;
           m_velocities[5] = msg->z;
         }
-        if (m_flag_ahrs_active == 1 && msg->getSourceEntity() == m_ahrs_entity_id)
+
+        if (m_flag_ahrs_active && msg->getSourceEntity() == m_ahrs_entity_id)
         {
-          m_velocities[3] = msg->x;
-          m_velocities[4] = msg->y;
-          m_velocities[5] = msg->z;
+          m_angular_vel[0] = msg->x;
+          m_angular_vel[1] = msg->y;
+          m_angular_vel[2] = msg->z;
         }
       }
 
@@ -514,19 +446,8 @@ namespace Identification
       }
 
       void
-      task(void)
+      auvModel(void)
       {
-        if (!m_matrices_ini)
-          initMatrices();
-
-        // Filters velocities
-        m_filter_delta = m_delta_filter.getDelta();
-        if (m_filter_delta == -1)
-          m_filter_delta = 0.05;
-
-        m_acc_filter = m_dynamics.computeAcceleration(m_velocities, m_vel_filter, m_filter_delta);
-        m_vel_filter = m_vel_filter + m_acc_filter * m_filter_delta;
-
         // Calculate Vehicle Model Coefficients and M Matrix one time
         if (m_model_coef_init == 0)
         {
@@ -545,6 +466,21 @@ namespace Identification
         m_lift = m_dynamics.computeL(m_vel_filter, m_args.l, m_model_coeff);
 
         m_tau = m_dynamics.computeTau(m_thruster, m_servo_pos, m_vel_filter, m_model_coeff);
+      }
+
+      void
+      task(void)
+      {
+        if (!m_matrices_ini)
+          initMatrices();
+
+        // Filters velocities
+        m_filter_delta = m_delta_filter.getDelta();
+        if (m_filter_delta == -1)
+          m_filter_delta = 0.05;
+
+        m_acc_filter = m_dynamics.computeAcceleration(m_velocities, m_vel_filter, m_filter_delta);
+        m_vel_filter = m_vel_filter + m_acc_filter * m_filter_delta;
 
         m_y = -m_tau + m_coriolis  * m_vel_filter + m_inertia_added_mass * m_acc_filter + m_restoring + m_lift * m_vel_filter;
 
@@ -553,6 +489,7 @@ namespace Identification
         // Longitudinal Linear Velocity Damping
         try{
           inf("theta_x");
+
           m_phi_x(0,0) = -m_vel_filter(0);
           m_phi_x(1,0) = -std::abs(m_vel_filter(0)) * m_vel_filter(0);
 
@@ -583,6 +520,7 @@ namespace Identification
         // Roll Angular velocity Damping
         try{
           inf("theta_k");
+
           m_phi_k(0,0) = m_thruster * 10 / 0.84;
           m_phi_k(1,0) = (m_servo_pos[3] - m_servo_pos[0] + m_servo_pos[1] - m_servo_pos[2]) * pow(m_vel_filter(0), 2.0);
           m_phi_k(2,0) = -m_vel_filter(3);
