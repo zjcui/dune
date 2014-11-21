@@ -41,5 +41,6 @@ namespace DUNE
 #include <DUNE/Navigation/CompassCalibration.hpp>
 #include <DUNE/Navigation/KalmanFilter.hpp>
 #include <DUNE/Navigation/Ranging.hpp>
+#include <DUNE/Navigation/SlidingModeObserver.hpp>
 
 #endif
