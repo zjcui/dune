@@ -40,30 +40,29 @@ namespace Navigation
 
       struct Arguments
       {
-
         // GPS variables
         double gps_absolute_treshold;
         double gps_average_treshold;
 
         // Timeout variables
-        double timeout_m_altitude;
+        double timeout_altitude;
         double timeout_dvl;
 
         // Sliding Matrix Gains
-        float m_k1[6];
-        float m_k2[6];
-        float m_alfa1[6];
-        float m_alfa2[6];
+        std::vector<float> k1;
+        std::vector<float> k2;
+        std::vector<float> alfa1;
+        std::vector<float> alfa2;
 
         // Sliding boundary layers
         float vel_bound;
-        float m_nu_bound;
+        float nu_bound;
 
         // Resolve Entity string
         std::string imu_entity_name;
         std::string ahrs_entity_name;
         std::string dvl_entity_name;
-        std::string m_altitude_entity_name;
+        std::string altitude_entity_name;
 
         // AUV caracteristic
         double mass;
@@ -78,28 +77,7 @@ namespace Navigation
         double sfin;
 
         // Linear Damping terms
-        float x_u;
-        float y_v;
-        float y_r;
-        float z_w;
-        float z_q;
-        float k_p;
-        float m_w;
-        float m_q;
-        float n_v;
-        float n_r;
-
-        // Quadratic Damping terms
-        float x_absuu;
-        float y_absvv;
-        float y_absrr;
-        float z_absww;
-        float z_absqq;
-        float k_abspp;
-        float m_absww;
-        float m_absqq;
-        float n_absvv;
-        float n_absrr;
+        std::vector<float> damping;
       };
 
       struct Task: public DUNE::Tasks::Periodic
@@ -107,8 +85,8 @@ namespace Navigation
         // GPS variables
         double m_gps_initial_point[3];
         double m_gps_fix[3];
-        double m_flag_initial_point;
-        double m_flag_valid_pos;
+        bool m_flag_initial_point;
+        bool m_flag_valid_pos;
         double m_depth;
         double m_range;
         double m_bearing;
@@ -118,51 +96,43 @@ namespace Navigation
         int m_counter;
         DUNE::Time::Delta m_delta_orientation;
 
-
         // Orientation variables
         double m_euler_angles[3];
-        double m_flag_initial_orientation;
+        bool m_flag_initial_orientation;
 
         // Velocities variables
         double m_velocities[6];
-        double m_velocities_ant[6];
         Math::Matrix m_vel;
 
         // Rotation Matrix
         Math::Matrix m_rotation_matrix;
 
-        // Filter Variables
-        Math::Matrix m_acc_filter;
-        Math::Matrix m_vel_filter;
-        double m_filter_delta;
-        double m_tmp_velocities[6];
-        DUNE::Time::Delta m_delta_filter;
-
         // Entity Variables
-        int m_flag_imu_active;
-        int m_flag_ahrs_active;
-        int m_flag_dvl_active;
-        int m_flag_m_altitude_active;
+        bool m_flag_imu_active;
+        bool m_flag_ahrs_active;
+        bool m_flag_dvl_active;
+        bool m_flag_altitude_active;
         int m_imu_entity_id;
         int m_ahrs_entity_id;
         int m_dvl_entity_id;
         int m_altitude_entity_id;
 
         // Task management variables
-        double m_task_management;
+        bool m_task_management;
 
         // Position Matrices
         Math::Matrix m_nu_dot;
         Math::Matrix m_nu;
 
         // Position from velocity Delta
-        double m_pos_from_vel_dela;
+        double m_pos_from_vel_delta;
         DUNE::Time::Delta delta_posfromvel;
 
         // Sliding Mode Observer
         Math::Matrix m_nu_error;
         Math::Matrix m_nu_est;
         Math::Matrix m_nu_dot_est;
+        Math::Matrix m_nu_dot_dot_est;
         Math::Matrix m_vel_est;
         Math::Matrix m_acc_est;
         Math::Matrix m_rotation_matrix_ant;
@@ -177,7 +147,7 @@ namespace Navigation
         double m_vel_est_delta;
         double m_nu_est_delta;
         double m_rotation_matrix_delta;
-        int m_init_nu_est;
+        bool m_init_nu_est;
         DUNE::Time::Delta m_delta_vel_est;
         DUNE::Time::Delta m_delta_nu_est;
         DUNE::Time::Delta m_delta_rotation_matrix;
@@ -200,7 +170,7 @@ namespace Navigation
 
         // Vehicle Model coefficients
         double m_model_coeff[26];
-        int m_model_coef_init;
+        bool m_model_coef_init;
 
         // Covariance Variables
         Math::Matrix m_cov_nu;
@@ -213,14 +183,12 @@ namespace Navigation
         // RPM variables
         double m_rpms;
 
-        // m_altitude variables
+        //! Moving average for altitude vector.
+        MovingAverage<double>* m_avg_alt;
         double m_altitude;
-        double m_altitude_filter[20];
-        int m_altitude_filter_counter;
-        int m_altitude_filter_ini;
 
         // Timers variables
-        int m_timers_init;
+        bool m_timers_init;
         // Time without m_altitude readings deadline.
         Time::Counter<double> m_altitude_timeout;
         // Time without m_altitude readings deadline.
@@ -233,9 +201,11 @@ namespace Navigation
         Arguments m_args;
 
         DUNE::Model::Dynamic m_dynamics;
+        DUNE::Navigation::SlidingModeObserver m_smo;
 
         Task(const std::string& name, Tasks::Context& ctx):
-          Periodic(name, ctx)
+          Periodic(name, ctx),
+          m_avg_alt(NULL)
         {
 
           // GPS variables
@@ -252,7 +222,7 @@ namespace Navigation
           .defaultValue("0.01")
           .description("Boundary Layer Size");
 
-          param("Position Boundary Layer", m_args.m_nu_bound)
+          param("Position Boundary Layer", m_args.nu_bound)
           .defaultValue("0.1")
           .description("Boundary Layer Size");
 
@@ -269,40 +239,40 @@ namespace Navigation
           .defaultValue("DVL")
           .description("Label of the DVL message");
 
-          param("Entity Label Altitude", m_args.m_altitude_entity_name)
+          param("Entity Label Altitude", m_args.altitude_entity_name)
           .defaultValue("DVL")
           .description("Label of the m_altitude message");
 
           // Vehicle physical properties
-          param("Mass", m_args.mass)
+          param("Vehicle Mass", m_args.mass)
           .defaultValue("18")
           .description("Vehicle Mass");
 
-          param("a", m_args.a)
+          param("Vehicle Half Lenght", m_args.a)
           .defaultValue("0.54")
           .description("Vehicle lenght");
 
-          param("b", m_args.b)
+          param("Vehicle Width", m_args.b)
           .defaultValue("0.075")
           .description("Vehicle height");
 
-          param("c", m_args.c)
+          param("Vehicle Height", m_args.c)
           .defaultValue("0.075")
           .description("Vehicle width");
 
-          param("Volume", m_args.volume)
+          param("Vehicle Volume", m_args.volume)
           .defaultValue("0.0181")
           .description("Vehicle Volume");
 
-          param("zG", m_args.zG)
+          param("Vehicle zG", m_args.zG)
           .defaultValue("0.01")
           .description("Vehicle CG");
 
-          param("l", m_args.l)
+          param("Vehicle Lenght", m_args.l)
           .defaultValue("1.08")
           .description("Vehicle CG");
 
-          param("d", m_args.d)
+          param("Vehicle Diameter", m_args.d)
           .defaultValue("0.15")
           .description("Vehicle CG");
 
@@ -315,185 +285,24 @@ namespace Navigation
           .description("Vehicle CG");
 
           // Damping Matrix terms
-          param("X_u", m_args.x_u)
-          .defaultValue("2.4")
-          .description("Longitudinal term");
+          param("Damping terms", m_args.damping)
+          .description("Matrix damping terms");
 
-          param("Y_v", m_args.y_v)
-          .defaultValue("23")
-          .description("Lateral term");
+          // Sliding Mode Observer Gains
+          param("k1 gains", m_args.k1)
+          .description("Sliding Mode Observer k1 gain");
 
-          param("Y_r", m_args.y_r)
-          .defaultValue("-11.5")
-          .description("Lateral term");
+          param("k2 gains", m_args.k2)
+          .description("Sliding Mode Observer k2 gain");
 
-          param("Z_w", m_args.z_w)
-          .defaultValue("23")
-          .description("Vertical term");
+          param("alfa1 gains", m_args.alfa1)
+          .description("Sliding Mode Observer alfa1 gain");
 
-          param("Z_q", m_args.z_q)
-          .defaultValue("11.5")
-          .description("Vertical term");
+          param("alfa2 gains", m_args.alfa2)
+          .description("Sliding Mode Observer alfa2 gain");
 
-          param("K_p", m_args.k_p)
-          .defaultValue("0")
-          .description("Roll term");
-
-          param("M_w", m_args.m_w)
-          .defaultValue("-3.1")
-          .description("Rotational term");
-
-          param("M_q", m_args.m_q)
-          .defaultValue("9.7")
-          .description("Rotational term");
-
-          param("N_v", m_args.n_v)
-          .defaultValue("3.1")
-          .description("Rotational term");
-
-          param("N_r", m_args.n_r)
-          .defaultValue("9.7")
-          .description("Longitudinal term");
-
-          param("X_absuu", m_args.x_absuu)
-          .defaultValue("2.4")
-          .description("Longitudinal term");
-
-          param("Y_absvv", m_args.y_absvv)
-          .defaultValue("80")
-          .description("Lateral term");
-
-          param("Y_absrr", m_args.y_absrr)
-          .defaultValue("-0.3")
-          .description("Lateral term");
-
-          param("Z_absww", m_args.z_absww)
-          .defaultValue("80")
-          .description("Vertical term");
-
-          param("Z_absqq", m_args.z_absqq)
-          .defaultValue("0.3")
-          .description("Vertical term");
-
-          param("K_abspp", m_args.k_abspp)
-          .defaultValue("0")
-          .description("Roll term");
-
-          param("M_absww", m_args.m_absww)
-          .defaultValue("-1.5")
-          .description("Rotational term");
-
-          param("M_absqq", m_args.m_absqq)
-          .defaultValue("9.1")
-          .description("Rotational term");
-
-          param("N_absvv", m_args.n_absvv)
-          .defaultValue("1.5")
-          .description("Rotational term");
-
-          param("N_absrr", m_args.n_absrr)
-          .defaultValue("9.1")
-          .description("Longitudinal term");
-
-          // Sliding Mode Observer Gains*/
-          param("k1 gain one", m_args.m_k1[0])
-          .defaultValue("0.7")
-          .description("Sliding Mode Observer gain");
-
-          param("k1 gain two", m_args.m_k1[1])
-          .defaultValue("0.1")
-          .description("Sliding Mode Observer gain");
-
-          param("k1 gain three", m_args.m_k1[2])
-          .defaultValue("0.1")
-          .description("Sliding Mode Observer gain");
-
-          param("k1 gain four", m_args.m_k1[3])
-          .defaultValue("1.7")
-          .description("Sliding Mode Observer gain");
-
-          param("k1 gain five", m_args.m_k1[4])
-          .defaultValue("0.2")
-          .description("Sliding Mode Observer gain");
-
-          param("k1 gain six", m_args.m_k1[5])
-          .defaultValue("0.2")
-          .description("Sliding Mode Observer gain");
-
-          param("k2 gain one", m_args.m_k2[0])
-          .defaultValue("0.7")
-          .description("Sliding Mode Observer gain");
-
-          param("k2 gain two", m_args.m_k2[1])
-          .defaultValue("0.1")
-          .description("Sliding Mode Observer gain");
-
-          param("k2 gain three", m_args.m_k2[2])
-          .defaultValue("0.1")
-          .description("Sliding Mode Observer gain");
-
-          param("k2 gain four", m_args.m_k2[3])
-          .defaultValue("1")
-          .description("Sliding Mode Observer gain");
-
-          param("k2 gain five", m_args.m_k2[4])
-          .defaultValue("0.2")
-          .description("Sliding Mode Observer gain");
-
-          param("k2 gain six", m_args.m_k2[5])
-          .defaultValue("0.2")
-          .description("Sliding Mode Observer gain");
-
-          param("alfa1 gain one", m_args.m_alfa1[0])
-          .defaultValue("0.7")
-          .description("Luenberger term");
-
-          param("alfa1 gain two", m_args.m_alfa1[1])
-          .defaultValue("0.1")
-          .description("Luenberger term");
-
-          param("alfa1 gain three", m_args.m_alfa1[2])
-          .defaultValue("0.1")
-          .description("Luenberger term");
-
-          param("alfa1 gain four", m_args.m_alfa1[3])
-          .defaultValue("2")
-          .description("Luenberger term");
-
-          param("alfa1 gain five", m_args.m_alfa1[4])
-          .defaultValue("0.2")
-          .description("Luenberger term");
-
-          param("alfa1 gain six", m_args.m_alfa1[5])
-          .defaultValue("0.2")
-          .description("Luenberger term");
-
-          param("alfa2 gain one", m_args.m_alfa2[0])
-          .defaultValue("0.8")
-          .description("Luenberger term");
-
-          param("alfa2 gain two", m_args.m_alfa2[1])
-          .defaultValue("0.7")
-          .description("Luenberger term");
-
-          param("alfa2 gain three", m_args.m_alfa2[2])
-          .defaultValue("0.6")
-          .description("Luenberger term");
-
-          param("alfa2 gain four", m_args.m_alfa2[3])
-          .defaultValue("1")
-          .description("Luenberger term");
-
-          param("alfa2 gain five", m_args.m_alfa2[4])
-          .defaultValue("0.1")
-          .description("Luenberger term");
-
-          param("alfa2 gain six", m_args.m_alfa2[5])
-          .defaultValue("0.2")
-          .description("Luenberger term");
-
-          // Timeout Variables*/
-          param("Timeout Altitude", m_args.timeout_m_altitude)
+          // Timeout Variables
+          param("Timeout Altitude", m_args.timeout_altitude)
           .defaultValue("3")
           .description("m_altitude timeout definition");
 
@@ -504,8 +313,8 @@ namespace Navigation
           // GPS variables
           memset(m_gps_initial_point, 0, sizeof(m_gps_initial_point));
           memset(m_gps_fix, 0, sizeof(m_gps_fix));
-          m_flag_initial_point = 0;
-          m_flag_valid_pos = 0;
+          m_flag_initial_point = false;
+          m_flag_valid_pos = false;
           m_depth = 0;
           m_range = 0;
           m_bearing = 0;
@@ -516,46 +325,40 @@ namespace Navigation
 
           // Orientation variables
           memset(m_euler_angles, 0, sizeof(m_euler_angles));
-          m_flag_initial_orientation = 0;
+          m_flag_initial_orientation = false;
 
           // Velocities variables
           memset(m_velocities, 0, sizeof(m_velocities));
-          memset(m_velocities_ant, 0, sizeof(m_velocities));
           m_vel.resizeAndFill(6, 1, 0.0);
 
           // Rotation Matrix
           m_rotation_matrix.resizeAndFill(6, 6, 0.0);
 
-          // Filter Variables
-          m_acc_filter.resizeAndFill(6, 1, 0.0);
-          m_vel_filter.resizeAndFill(6, 1, 0.0);
-          m_filter_delta = 0;
-          memset(m_tmp_velocities, 0, sizeof(m_tmp_velocities));
-
           // Entity Variables
-          m_flag_imu_active = 0;
-          m_flag_ahrs_active = 0;
-          m_flag_dvl_active = 0;
-          m_flag_m_altitude_active = 0;
+          m_flag_imu_active = false;
+          m_flag_ahrs_active = false;
+          m_flag_dvl_active = false;
+          m_flag_altitude_active = false;
           m_imu_entity_id = 0;
           m_ahrs_entity_id = 0;
           m_dvl_entity_id = 0;
           m_altitude_entity_id = 0;
 
           // Task Management Variables
-          m_task_management = 0;
+          m_task_management = false;
 
           // Position Matrices
           m_nu_dot.resizeAndFill(6, 1, 0.0);
           m_nu.resizeAndFill(6, 1, 0.0);
 
           // Position from velocity Delta
-          m_pos_from_vel_dela = 0;
+          m_pos_from_vel_delta = 0;
 
           // Sliding Mode Observer
           m_nu_error.resizeAndFill(6, 1, 0.0);
           m_nu_est.resizeAndFill(6, 1, 0.0);
           m_nu_dot_est.resizeAndFill(6, 1, 0.0);
+          m_nu_dot_dot_est.resizeAndFill(6, 1, 0.0);
           m_vel_est.resizeAndFill(6, 1, 0.0);
           m_acc_est.resizeAndFill(6, 1, 0.0);
           m_rotation_matrix_ant.resizeAndFill(6, 6, 0.0);
@@ -570,7 +373,7 @@ namespace Navigation
           m_vel_est_delta = 0;
           m_nu_est_delta = 0;
           m_rotation_matrix_delta = 0;
-          m_init_nu_est = 0;
+          m_init_nu_est = false;
 
           // Vehicle Model
           m_inertia_added_mass.resizeAndFill(6, 6, 0.0);
@@ -590,7 +393,7 @@ namespace Navigation
 
           // Vehicle Model coefficients
           memset(m_model_coeff, 0, sizeof(m_model_coeff));
-          m_model_coef_init = 0;
+          m_model_coef_init = false;
 
           // Covariance Variables
           m_cov_nu.resizeAndFill(6, 4, 0.0);
@@ -605,12 +408,9 @@ namespace Navigation
 
           // m_altitude variables
           m_altitude = 0;
-          memset(m_altitude_filter, 0, sizeof(m_altitude_filter));
-          m_altitude_filter_counter = 0;
-          m_altitude_filter_ini = 0;
 
           // Timers variables
-          m_timers_init = 0;
+          m_timers_init = false;
 
           //Register Consumers
           bind<IMC::EntityState>(this);
@@ -625,6 +425,17 @@ namespace Navigation
           bind<IMC::Distance>(this);
         }
 
+        void
+        onResourceInitialization(void)
+        {
+          m_avg_alt = new MovingAverage<double>(20);
+        }
+
+        void
+        onResourceRelease(void)
+        {
+          Memory::clear(m_avg_alt);
+        }
 
         void
         onEntityResolution(void)
@@ -636,7 +447,7 @@ namespace Navigation
           catch (...)
           {
             m_imu_entity_id = -1;
-            m_flag_imu_active = -1;
+            m_flag_imu_active = false;
           }
 
           try
@@ -646,7 +457,7 @@ namespace Navigation
           catch (...)
           {
             m_ahrs_entity_id = -1;
-            m_flag_ahrs_active = -1;
+            m_flag_ahrs_active = false;
           }
 
           try
@@ -656,17 +467,17 @@ namespace Navigation
           catch (...)
           {
             m_dvl_entity_id = -1;
-            m_flag_dvl_active = -1;
+            m_flag_dvl_active = false;
           }
 
           try
           {
-            m_altitude_entity_id = resolveEntity(m_args.m_altitude_entity_name);
+            m_altitude_entity_id = resolveEntity(m_args.altitude_entity_name);
           }
           catch (...)
           {
             m_altitude_entity_id = -1;
-            m_flag_m_altitude_active = -1;
+            m_flag_altitude_active = false;
           }
         }
 
@@ -676,35 +487,35 @@ namespace Navigation
           if (msg->getSourceEntity() == m_imu_entity_id)
           {
             if (msg->state == IMC::EntityState::ESTA_NORMAL)
-              m_flag_imu_active = 1;
+              m_flag_imu_active = true;
             else
-              m_flag_imu_active = 0;
+              m_flag_imu_active = false;
           }
 
           if (msg->getSourceEntity() == m_ahrs_entity_id)
           {
             if (msg->state == IMC::EntityState::ESTA_NORMAL)
-              m_flag_ahrs_active = 1;
+              m_flag_ahrs_active = true;
             else
-              m_flag_ahrs_active = 0;
+              m_flag_ahrs_active = false;
           }
 
           if (msg->getSourceEntity() == m_dvl_entity_id)
           {
-            if (msg->state == IMC::EntityState::ESTA_NORMAL && (msg->description == "active" || msg->description == "active but without bottom lock" || msg->description == "active (no medium data: need user input)") && m_dvl_timeout.overflow() == 0)
-              m_flag_dvl_active = 1;
-            else if(msg->state == IMC::EntityState::ESTA_NORMAL && (msg->description == "idle" || msg->description == "initializing" || msg->description == "communication error" || msg->description == "idle (no medium data: need user input)") && m_dvl_timeout.overflow() == 1)
-              m_flag_dvl_active = 0;
+            if (msg->state == IMC::EntityState::ESTA_NORMAL && m_dvl_timeout.overflow() == 0)
+              m_flag_dvl_active = true;
+            else if(msg->state == IMC::EntityState::ESTA_NORMAL && m_dvl_timeout.overflow() == 1)
+              m_flag_dvl_active = false;
             else
-              m_flag_dvl_active = 0;
+              m_flag_dvl_active = false;
           }
 
           if (msg->getSourceEntity() == m_altitude_entity_id)
           {
             if (msg->state == IMC::EntityState::ESTA_NORMAL && m_altitude_timeout.overflow() == 0)
-              m_flag_m_altitude_active = 1;
+              m_flag_altitude_active = true;
             else
-              m_flag_m_altitude_active = 0;
+              m_flag_altitude_active = false;
           }
         }
 
@@ -717,29 +528,28 @@ namespace Navigation
             m_counter++;
             m_hacc_average = m_hacc_sum / m_counter;
 
-            if (std::abs(m_hacc_average - msg->hacc) < m_args.gps_average_treshold && msg->hacc < m_args.gps_absolute_treshold  && (msg->lat > -1.571 && msg->lat < 1.571) && (msg->lon > -3.142 && msg->lon < 3.142))
+            if (std::abs(m_hacc_average - msg->hacc) < m_args.gps_average_treshold && msg->hacc < m_args.gps_absolute_treshold  && std::abs(msg->lat) < DUNE::Math::c_pi  && std::abs(msg->lon) < DUNE::Math::c_half_pi)
             {
               m_gps_fix[0] = msg->lat;
               m_gps_fix[1] = msg->lon;
               m_gps_fix[2] = msg->height;
-              m_flag_valid_pos = 1;
+              m_flag_valid_pos = true;
+
+              if (!m_flag_initial_point)
+              {
+                m_gps_initial_point[0] = msg->lat;
+                m_gps_initial_point[1] = msg->lon;
+                m_gps_initial_point[2] = msg->height;
+                m_flag_initial_point = true;
+              }
             }
 
-            if (std::abs(m_hacc_average - msg->hacc) < m_args.gps_average_treshold && msg->hacc < m_args.gps_absolute_treshold && m_flag_initial_point == 0 && (msg->lat > -1.571 && msg->lat < 1.571) && (msg->lon > -3.142 && msg->lon < 3.142))
-            {
-              m_gps_initial_point[0] = msg->lat;
-              m_gps_initial_point[1] = msg->lon;
-              m_gps_initial_point[2] = msg->height;
-              m_flag_initial_point = 1;
-            }
-
-            if (std::abs(m_hacc_average - msg->hacc) > m_args.gps_average_treshold || msg->hacc > m_args.gps_absolute_treshold || (msg->lat < -1.571 || msg->lat > 1.571) || (msg->lon < -3.142 || msg->lon > 3.142))
-              m_flag_valid_pos = 0;
-
+            if (std::abs(m_hacc_average - msg->hacc) > m_args.gps_average_treshold || msg->hacc > m_args.gps_absolute_treshold || std::abs(msg->lat) > DUNE::Math::c_pi || std::abs(msg->lon) > DUNE::Math::c_half_pi)
+              m_flag_valid_pos = false;
           }
 
-          if ((msg->validity & IMC::GpsFix::GFV_VALID_POS)==0)
-            m_flag_valid_pos = 0;
+          if (!(msg->validity & IMC::GpsFix::GFV_VALID_POS))
+            m_flag_valid_pos = false;
         }
 
         void
@@ -755,58 +565,42 @@ namespace Navigation
           m_euler_angles[1] = msg->theta;
           m_euler_angles[2] = msg->psi;
 
-          if (m_flag_initial_orientation == 0)
+          if (!m_flag_initial_orientation)
           {
-            m_flag_initial_orientation = 1;
+            m_flag_initial_orientation = true;
             m_nu(3,0) = msg->phi;
             m_nu(4,0) = msg->theta;
             m_nu(5,0) = msg->psi;
           }
         }
 
-
         void
         consume(const IMC::GroundVelocity* msg)
         {
           if (msg->validity & IMC::GroundVelocity::VAL_VEL_X)
-          {
             m_velocities[0] = msg->x;
-            m_velocities_ant[0] = m_velocities[0];
-          }
-          if (!(msg->validity & IMC::GroundVelocity::VAL_VEL_X))
-            m_velocities[0] = m_velocities_ant[0];
 
           if (msg->validity & IMC::GroundVelocity::VAL_VEL_Y)
-          {
             m_velocities[1] = msg->y;
-            m_velocities_ant[1] = m_velocities[1];
-          }
-          if (!(msg->validity & IMC::GroundVelocity::VAL_VEL_Y))
-            m_velocities[1] = m_velocities_ant[1];
 
           if (msg->validity & IMC::GroundVelocity::VAL_VEL_Z)
-          {
             m_velocities[2] = msg->z;
-            m_velocities_ant[2] = m_velocities[2];
-          }
-          if (!(msg->validity & IMC::GroundVelocity::VAL_VEL_Z))
-            m_velocities[2] = m_velocities_ant[2];
 
-          if((msg->validity & IMC::GroundVelocity::VAL_VEL_X) || (msg->validity & IMC::GroundVelocity::VAL_VEL_Y) || (msg->validity & IMC::GroundVelocity::VAL_VEL_Z))
+          if ((msg->validity & IMC::GroundVelocity::VAL_VEL_X) || (msg->validity & IMC::GroundVelocity::VAL_VEL_Y) || (msg->validity & IMC::GroundVelocity::VAL_VEL_Z))
             m_dvl_timeout.reset();
         }
 
         void
         consume(const IMC::AngularVelocity* msg)
         {
-          if (m_flag_imu_active == 1 && msg->getSourceEntity() == m_imu_entity_id)
+          if (m_flag_imu_active && msg->getSourceEntity() == m_imu_entity_id)
           {
             m_velocities[3] = msg->x;
             m_velocities[4] = msg->y;
             m_velocities[5] = msg->z;
           }
 
-          if (m_flag_ahrs_active == 1 && msg->getSourceEntity() == m_ahrs_entity_id)
+          if (m_flag_ahrs_active && msg->getSourceEntity() == m_ahrs_entity_id)
           {
             m_angular_vel[0] = msg->x;
             m_angular_vel[1] = msg->y;
@@ -829,7 +623,7 @@ namespace Navigation
         void
         consume(const IMC::Rpm* msg)
         {
-          if(m_flag_dvl_active == 0 || m_flag_dvl_active == -1)
+          if(!m_flag_dvl_active)
           {
             m_rpms = msg->value;
             m_velocities[0] = m_rpms * 1.6 / 1400;
@@ -839,57 +633,62 @@ namespace Navigation
         void
         consume(const IMC::Distance* msg)
         {
-          if (m_flag_m_altitude_active == 1 && msg->getSourceEntity() == m_altitude_entity_id && msg->validity == IMC::Distance::DV_VALID)
+          if (m_flag_altitude_active && msg->getSourceEntity() == m_altitude_entity_id && msg->validity == IMC::Distance::DV_VALID)
           {
-            if(m_altitude_filter_counter == 20)
-              m_altitude_filter_counter = 0;
-
-            if (m_altitude_filter_counter < 20 && m_altitude_filter_ini == 0)
-            {
-              m_altitude_filter[m_altitude_filter_counter] = msg->value;
-              m_altitude_filter_counter++;
-            }
-
-            if (m_altitude_filter_counter == 20)
-            {
-              m_altitude_filter_ini = 1;
-            }
-
-            if (m_altitude_filter_ini == 1 && m_altitude_filter_counter < 20)
-            {
-              m_altitude_filter[m_altitude_filter_counter] = msg->value;
-              m_altitude_filter_counter++;
-            }
-
-            m_altitude = Aux::computeAverageFilter(m_altitude_filter_ini, NELEMS(m_altitude_filter), m_altitude_filter);
-
+            m_avg_alt->update(msg->value);
+            m_altitude = m_avg_alt->mean();
             m_altitude_timeout.reset();
           }
 
-          if (m_flag_m_altitude_active == -1 || m_flag_m_altitude_active == 0)
-          {
+          if (!m_flag_altitude_active)
             m_altitude = -1; // Default value for invalid m_altitude measurement
-          }
         }
 
+        void
+        auvModel(void)
+        {
+          // Calculate Vehicle Model Coefficients and M Matrix one time
+          if (!m_model_coef_init)
+          {
+            m_dynamics.computeModelCoeff(m_args.mass, m_args.a, m_args.b, m_args.c, m_args.volume, m_args.l, m_args.d, m_args.density, m_args.sfin, m_model_coeff);
+            m_inertia_added_mass = m_dynamics.computeM(m_args.mass, m_model_coeff, m_args.zG);
+            m_model_coef_init = true;
+          }
+          // Calculate Vehicle Model Matrices
+          m_coriolis = m_dynamics.computeC(m_args.mass, m_model_coeff, m_args.zG, m_vel_est);
+          m_damping = m_dynamics.computeD(m_vel_est, m_args.damping);
+          m_restoring = m_dynamics.computeG(m_model_coeff, m_args.zG, m_nu_est);
+          m_lift = m_dynamics.computeL(m_vel_est, m_args.l, m_model_coeff);
+          m_tau = m_dynamics.computeTau(m_thruster, m_servo_pos, m_vel, m_model_coeff);
+        }
+
+        void
+        rotationMatrixDerivative(void)
+        {
+          // Calculate Derivative of rotational matrix
+          m_rotation_matrix_delta = m_delta_rotation_matrix.getDelta();
+          if (m_rotation_matrix_delta == -1)
+            m_rotation_matrix_delta = 0.05;
+
+          m_rotation_matrix_diff = (m_rotation_matrix - m_rotation_matrix_ant) / m_rotation_matrix_delta;
+          m_rotation_matrix_ant = m_rotation_matrix;
+        }
 
         // Task Management
         void
         stateManagement(void)
         {
-          if (m_flag_initial_point == 0 || m_flag_initial_orientation == 0)
+          if (!m_flag_initial_point || !m_flag_initial_orientation)
           {
             setEntityState(IMC::EntityState::ESTA_BOOT, Status::CODE_WAIT_GPS_FIX);
-            m_task_management = 0;
+            m_task_management = false;
           }
 
-          if (m_flag_initial_point == 1 && m_flag_initial_orientation == 1)
+          if (m_flag_initial_point && m_flag_initial_orientation)
           {
             setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
-            m_task_management = 1;
+            m_task_management = true;
           }
-
-          return;
         }
 
         void
@@ -898,102 +697,74 @@ namespace Navigation
           // Entity State Management
           stateManagement();
 
-          if (m_task_management == 1)
+          if (m_task_management)
           {
-
             // Timers Init
-            if (m_timers_init == 0)
+            if (!m_timers_init)
             {
-              m_altitude_timeout.setTop(m_args.timeout_m_altitude);
+              m_altitude_timeout.setTop(m_args.timeout_altitude);
               m_dvl_timeout.setTop(m_args.timeout_dvl);
-              m_timers_init = 1;
+              m_timers_init = true;
             }
 
             // Sensors Fault Detection
             if (m_altitude_timeout.overflow() == 1)
               m_altitude = -1;
 
-            // Avoid Singularaties in Rotation Matrix
-            if (m_nu(4,0)>1.56 || m_nu(4,0)<1.58)
-              m_nu(4,0) = 1.56;
-
-            if (m_nu(4,0)<-1.56 || m_nu(4,0)>-1.58)
-              m_nu(4,0) = -1.56;
-
             // Rotation Matrix and Velocities
             m_rotation_matrix = m_dynamics.computeRotationMatrix(m_euler_angles);
-            m_vel = Matrix(m_velocities,6,1);
+            m_vel = Matrix(m_velocities, 6, 1);
 
             // GPS Signal Acquisition
             m_orientation_delta = m_delta_orientation.getDelta();
-            if (m_flag_valid_pos == 1)
+            if (m_flag_valid_pos)
             {
               Coordinates::WGS84::getNEBearingAndRange(m_gps_initial_point[0], m_gps_initial_point[1], m_gps_fix[0], m_gps_fix[1], &m_bearing, &m_range);
 
-              m_nu(0,0) = m_range * std::cos(m_bearing);
-              m_nu(1,0) = m_range * std::sin(m_bearing);
-              m_nu(2,0) = m_depth;
+              m_nu = Aux::posFromBearingAndRange(m_nu, m_range, m_bearing, m_depth);
 
-              if (m_flag_imu_active == 1)
+              if (m_flag_imu_active)
               {
                 if (m_orientation_delta == -1)
                   m_orientation_delta = 0.05;
 
                 m_nu_dot = m_rotation_matrix * m_vel;
-                m_nu(3,0) = m_nu(3,0) + m_nu_dot(3,0) * m_orientation_delta;
-                m_nu(4,0) = m_nu(4,0) + m_nu_dot(4,0) * m_orientation_delta;
-                m_nu(5,0) = m_nu(5,0) + m_nu_dot(5,0) * m_orientation_delta;
+                for (int k = 3; k < 6; k++)
+                  m_nu(k, 0) = m_nu(k, 0) + m_nu_dot(k, 0) * m_orientation_delta;
               }
 
-              if (m_flag_imu_active == 0 || m_flag_imu_active == -1)
+              if (!m_flag_imu_active)
+                m_nu = Aux::orientationFromEulerAngles(m_nu, m_euler_angles);
+
+              if (!m_init_nu_est)
               {
-                m_nu(3,0) = m_euler_angles[0];
-                m_nu(4,0) = m_euler_angles[1];
-                m_nu(5,0) = m_euler_angles[2];
+                m_nu = Aux::posFromBearingAndRange(m_nu, m_range, m_bearing, m_depth);
+                m_nu = Aux::orientationFromEulerAngles(m_nu, m_euler_angles);
+                m_init_nu_est = true;
               }
-
-              if (m_init_nu_est == 0)
-              {
-                m_nu_est(0,0) = m_range * std::cos(m_bearing);
-                m_nu_est(1,0) = m_range * std::sin(m_bearing);
-                m_nu_est(2,0) = m_depth;
-                m_nu_est(3,0) = m_euler_angles[0];
-                m_nu_est(4,0) = m_euler_angles[1];
-                m_nu_est(5,0) = m_euler_angles[2];
-                m_init_nu_est = m_init_nu_est + 1;
-              }
-
             }
 
             // Position from measured Velocities
-            m_pos_from_vel_dela = delta_posfromvel.getDelta();
-
-            if (m_flag_valid_pos == 0)
+            m_pos_from_vel_delta = delta_posfromvel.getDelta();
+            if (!m_flag_valid_pos)
             {
-              if (m_pos_from_vel_dela == -1)
-                m_pos_from_vel_dela = 0.05;
+              if (m_pos_from_vel_delta == -1)
+                m_pos_from_vel_delta = 0.05;
 
               m_nu_dot = m_rotation_matrix * m_vel;
-              m_nu = m_nu + m_nu_dot * m_pos_from_vel_dela;
+              m_nu = m_nu + m_nu_dot * m_pos_from_vel_delta;
               // Depth Sensor is always available
               m_nu(2,0) = m_depth;
 
-              if (m_flag_imu_active == 0 || m_flag_imu_active == -1)
-              {
-                m_nu(3,0) = m_euler_angles[0];
-                m_nu(4,0) = m_euler_angles[1];
-                m_nu(5,0) = m_euler_angles[2];
-              }
-
+              if (!m_flag_imu_active)
+                m_nu = Aux::orientationFromEulerAngles(m_nu, m_euler_angles);
             }
 
             // Normalize Vehicle Orientation
-            m_nu(3,0) = Math::Angles::normalizeRadian( m_nu(3,0) );
-            m_nu(4,0) = Math::Angles::normalizeRadian( m_nu(4,0) );
-            m_nu(5,0) = Math::Angles::normalizeRadian( m_nu(5,0) );
+            m_nu_est = Aux::normalizePositionOrientation(m_nu_est);
 
             // Sliding Mode Observer Error
-            if (m_init_nu_est == 1)
+            if (m_init_nu_est)
             {
               //Calculate error for Sliding Mode Observer
               m_nu_error = m_nu_est - m_nu;
@@ -1002,81 +773,27 @@ namespace Navigation
               m_nu_error = Aux::computeStandardError(m_nu_error);
 
               // To minimize peaks by GPS Corrections - to be used after code tested at sea
-              if (std::abs(m_nu_error(0,0)) >= 2)
+              for (int k = 0; k < 3; k++)
               {
-                m_nu_error(0,0) = 0.0;
-                m_nu_est(0,0) = m_nu(0,0);
+                if (std::abs(m_nu_error(k, 0)) >= 2)
+                {
+                  m_nu_error(k, 0) = 0.0;
+                  m_nu_est(k, 0) = m_nu(k, 0);
+                }
               }
 
-              if (std::abs(m_nu_error(1,0)) >= 2)
-              {
-                m_nu_error(1,0) = 0.0;
-                m_nu_est(1,0) = m_nu(1,0);
-              }
-
-              if (std::abs(m_nu_error(2,0)) >= 1)
-              {
-                m_nu_error(2,0) = 0.0;
-                m_nu_est(2,0) = m_nu(2,0);
-              }
-
-              // Calculate Vehicle Model Coefficients and M Matrix one time
-              if (m_model_coef_init == 0)
-              {
-                m_dynamics.computeModelCoeff(m_args.mass, m_args.a, m_args.b, m_args.c, m_args.volume, m_args.l, m_args.d, m_args.density, m_args.sfin, m_model_coeff);
-
-                // Calculate Inertia and Added Mass Matrix
-                m_inertia_added_mass = m_dynamics.computeM(m_args.mass, m_model_coeff, m_args.zG);
-
-                m_model_coef_init = m_model_coef_init + 1;
-              }
-
-              m_coriolis = m_dynamics.computeC(m_args.mass, m_model_coeff, m_args.zG, m_vel_est);
-
-              m_damping = m_dynamics.computeD(m_vel_est, m_args.x_u, m_args.y_v, m_args.y_r, m_args.z_w, m_args.z_q, m_args.k_p, m_args.m_w,  m_args.m_q, m_args.n_v,  m_args.n_r,  m_args.x_absuu,  m_args.y_absvv,  m_args.y_absrr,  m_args.z_absww,  m_args.z_absqq,  m_args.k_abspp,  m_args.m_absww,  m_args.m_absqq, m_args.n_absvv,  m_args.n_absrr);
-
-              m_restoring = m_dynamics.computeG(m_model_coeff, m_args.zG, m_nu_est);
-
-              m_lift = m_dynamics.computeL(m_vel_est, m_args.l, m_model_coeff);
-
-              m_tau = m_dynamics.computeTau(m_thruster, m_servo_pos, m_vel, m_model_coeff);
-
-              m_rotation_matrix_delta = m_delta_rotation_matrix.getDelta();
-              if (m_rotation_matrix_delta == -1)
-                m_rotation_matrix_delta = 0.05;
-
-              m_rotation_matrix_diff = (m_rotation_matrix - m_rotation_matrix_ant) / m_rotation_matrix_delta;
-              m_rotation_matrix_ant = m_rotation_matrix;
-
+              auvModel();
+              rotationMatrixDerivative();
 
               // Calculate Vehicle Mode in Earth-fixed Frame
-              m_inertia_added_mass_n = inverse (transpose(m_rotation_matrix) ) * ( m_inertia_added_mass )  * inverse(m_rotation_matrix);
+              Aux::transformToEarthFrame(&m_inertia_added_mass_n, &m_coriolis_n, &m_damping_n, &m_restoring_n, &m_lift_n, &m_tau_n, m_rotation_matrix, m_inertia_added_mass, m_coriolis, m_damping, m_restoring, m_lift, m_tau, m_rotation_matrix_diff);
 
-              m_coriolis_n = inverse (transpose(m_rotation_matrix) ) * ( m_coriolis - m_inertia_added_mass * inverse (m_rotation_matrix) * m_rotation_matrix_diff ) * inverse (m_rotation_matrix);
-
-              m_damping_n = inverse (transpose(m_rotation_matrix) ) * m_damping * inverse (m_rotation_matrix);
-
-              m_restoring_n = inverse (transpose(m_rotation_matrix) ) * m_restoring;
-
-              m_lift_n = inverse (transpose(m_rotation_matrix) ) * m_lift * inverse (m_rotation_matrix);
-
-              m_tau_n = inverse (transpose(m_rotation_matrix) ) * m_tau;
-
-              // Calculate Observer Gains
-              m_k1 = GainMatrices::computeK1(m_args.m_k1);
-
-              m_k2 = GainMatrices::computeK2(m_args.m_k2);
-
-              m_alfa1 = GainMatrices::computeAlfa1(m_args.m_alfa1);
-
-              m_alfa2 = GainMatrices::computeAlfa2(m_args.m_alfa2);
-
-              m_tang_hyper = GainMatrices::computeTanh(m_nu_error, m_args.vel_bound);
-
+              // SMO
               m_nu_dot_est = m_rotation_matrix * m_vel_est;
+              // Second Order Equation
+              m_nu_dot_dot_est = m_smo.generalForm(GainMatrices::parseGain(m_args.alfa2), inverse(m_inertia_added_mass_n) * (m_tau_n - m_coriolis_n * m_nu_dot_est - m_damping_n * m_nu_dot_est - m_lift_n * m_nu_dot_est - m_restoring_n), GainMatrices::computeTanh(m_nu_error, m_args.vel_bound), GainMatrices::parseGain(m_args.k2), m_nu_error);
 
-              // Estimation Caculation
-              m_acc_est = inverse(m_rotation_matrix) * (-m_alfa2 * m_nu_error + inverse( m_inertia_added_mass_n ) * ( m_tau_n - m_coriolis_n * m_nu_dot_est - m_damping_n * m_nu_dot_est - m_lift_n * m_nu_dot_est - m_restoring_n ) - m_rotation_matrix_diff * m_vel_est - m_k2 * m_tang_hyper);
+              m_acc_est =  inverse(m_rotation_matrix) * (m_nu_dot_dot_est - m_rotation_matrix_diff * m_vel_est);
 
               m_vel_est_delta = m_delta_vel_est.getDelta();
               if (m_vel_est_delta == -1)
@@ -1084,13 +801,8 @@ namespace Navigation
 
               m_vel_est = m_vel_est + m_acc_est * m_vel_est_delta;
 
-              // To avoid velocity m_rotation_matrixumps and diminish position error in dead-reckonning
-              if (std::abs(m_vel_est(0) - m_vel(0)) > 0.3)
-                m_vel_est(0) = m_vel(0);
-
-              m_tang_hyper = GainMatrices::computeTanh(m_nu_error, m_args.m_nu_bound);
-
-              m_nu_dot_est = -m_alfa1 * m_nu_error + m_rotation_matrix * m_vel_est - m_k1 * m_tang_hyper;
+              // First Order Equation
+              m_nu_dot_est = m_smo.generalForm(GainMatrices::parseGain(m_args.alfa1), m_rotation_matrix * m_vel_est, GainMatrices::computeTanh(m_nu_error, m_args.nu_bound), GainMatrices::parseGain(m_args.k1), m_nu_error);
 
               m_nu_est_delta = m_delta_nu_est.getDelta();
 
@@ -1098,30 +810,8 @@ namespace Navigation
                 m_nu_est_delta = 0.05;
 
               m_nu_est = m_nu_est + m_nu_dot_est * m_nu_est_delta;
-
-              // Grant that vehicle doesn't come out of the water
-              if (m_nu_est(2,0) < 0)
-                m_nu_est(2,0) = 0;
-
-              m_nu_est(3,0) = Math::Angles::normalizeRadian(m_nu_est(3, 0));
-              m_nu_est(4,0) = Math::Angles::normalizeRadian(m_nu_est(4, 0));
-              m_nu_est(5,0) = Math::Angles::normalizeRadian(m_nu_est(5, 0));
-
+              m_nu_est = Aux::normalizePositionOrientation(m_nu_est);
             }
-
-            // Filters velocities before send to estimated state
-            /*m_filter_delta = m_delta_filter.getDelta();
-              if (m_filter_delta == -1)
-              m_filter_delta = 0.05;
-
-              m_tmp_velocities[0]=m_vel_est(0);
-              m_tmp_velocities[1]=m_vel_est(1);
-              m_tmp_velocities[2]=m_vel_est(2);
-              m_tmp_velocities[3]=m_vel_est(3);
-              m_tmp_velocities[4]=m_vel_est(4);
-              m_tmp_velocities[5]=m_vel_est(5);
-              m_acc_filter = m_dynamics.computeAcceleration(m_tmp_velocities,m_vel_filter, m_filter_delta);
-              m_vel_filter = m_vel_filter + m_acc_filter * m_filter_delta;*/
 
             m_est.x = m_nu_est(0, 0);
             m_est.y = m_nu_est(1, 0);
@@ -1150,16 +840,15 @@ namespace Navigation
             m_est.alt = m_altitude;
             dispatch( m_est );
 
-
             // Covariance between measure and estimated
             m_num_amostras++;
             m_cov_nu = Aux::computeCov(m_cov_nu, m_nu_est, m_nu, m_num_amostras);
 
             // Verify what angular velocities to use IMU/AHRS
-            if(m_flag_imu_active == 1)
+            if(m_flag_imu_active)
               m_vel_cov = m_vel;
 
-            if ((m_flag_imu_active == 0 || m_flag_imu_active == -1) && m_flag_ahrs_active == 1)
+            if (!m_flag_imu_active && m_flag_ahrs_active)
             {
               m_vel_cov(0) = m_vel(0);
               m_vel_cov(1) = m_vel(1);
@@ -1172,7 +861,7 @@ namespace Navigation
             m_cov_vel = Aux::computeCov(m_cov_vel, m_vel_est, m_vel_cov, m_num_amostras);
 
             // If no GPS and/or no DVL is available, Cov increases more for X and Y
-            if (m_flag_valid_pos == 1)
+            if (m_flag_valid_pos)
             {
               m_cov_multiplier = 0;
               m_cov_nu.fill(0);
@@ -1180,10 +869,10 @@ namespace Navigation
               m_num_amostras = 0;
             }
 
-            if (m_flag_valid_pos == 0 && m_flag_dvl_active == 1)
+            if (!m_flag_valid_pos && m_flag_dvl_active)
               m_cov_multiplier = 0.01;
 
-            if (m_flag_valid_pos == 0 && (m_flag_dvl_active == 0 || m_flag_dvl_active == -1))
+            if (!m_flag_valid_pos && !m_flag_dvl_active)
               m_cov_multiplier = 0.1;
 
             m_uncertainty.x = m_cov_nu(0,2) * m_cov_multiplier;
@@ -1199,7 +888,7 @@ namespace Navigation
             m_uncertainty.q = m_cov_vel(4,2);
             m_uncertainty.r = m_cov_vel(5,2);
 
-            dispatch( m_uncertainty );
+            dispatch(m_uncertainty);
           }
         }
       };

@@ -43,77 +43,28 @@ namespace Navigation
       public:
 
         static Matrix
-        computeK1(float k1[6])
+        parseGain(std::vector<float> gain)
         {
-          Matrix K1 = Matrix(6, 6, 0.0);
-          K1(0, 0) = k1[0];
-          K1(1, 1) = k1[1];
-          K1(2, 2) = k1[2];
-          K1(3, 3) = k1[3];
-          K1(4, 4) = k1[4];
-          K1(5, 5) = k1[5];
+          Matrix Gain = Matrix(6, 6, 0.0);
 
-          return K1;
-        }
+          for (int k = 0; k < 6; k++)
+            Gain(k, k) = gain[k];
 
-        static Matrix
-        computeK2(float k2[6])
-        {
-          Matrix K2 = Matrix(6, 6, 0.0);
-          K2(0, 0) = k2[0];
-          K2(1, 1) = k2[1];
-          K2(2, 2) = k2[2];
-          K2(3, 3) = k2[3];
-          K2(4, 4) = k2[4];
-          K2(5, 5) = k2[5];
-
-          return K2;
-        }
-
-        static Matrix
-        computeAlfa1(float alfa_1[6])
-        {
-          Matrix alfa1 = Matrix(6, 6, 0.0);
-          alfa1(0, 0) = alfa_1[0];
-          alfa1(1, 1) = alfa_1[1];
-          alfa1(2, 2) = alfa_1[2];
-          alfa1(3, 3) = alfa_1[3];
-          alfa1(4, 4) = alfa_1[4];
-          alfa1(5, 5) = alfa_1[5];
-
-          return alfa1;
-        }
-
-        static Matrix
-        computeAlfa2(float alfa_2[6])
-        {
-          Matrix alfa2 = Matrix(6, 6, 0.0);
-          alfa2(0, 0) = alfa_2[0];
-          alfa2(1, 1) = alfa_2[1];
-          alfa2(2, 2) = alfa_2[2];
-          alfa2(3, 3) = alfa_2[3];
-          alfa2(4, 4) = alfa_2[4];
-          alfa2(5, 5) = alfa_2[5];
-
-          return alfa2;
+          return Gain;
         }
 
         static Matrix
         computeSignum(Matrix nu_error)
         {
           Matrix signum = Matrix(6, 1, 0.0);
-          int i=0;
 
-          for (i = 0; i <= 5; i++)
+          for (int i = 0; i <= 5; i++)
           {
-            if (nu_error(i)<0)
-            {
+            if (nu_error(i) < 0)
               signum(i, 0) = - 1;
-            }
-            if (nu_error(i)>=0)
-            {
+
+            if (nu_error(i) >= 0)
               signum(i, 0) = 1;
-            }
           }
 
           return signum;
@@ -122,13 +73,10 @@ namespace Navigation
         static Matrix
         computeTanh(Matrix nu_error, double boundary_layer)
         {
-          Matrix tgh = Matrix(6,1,0.0);
-          int i=0;
+          Matrix tgh = Matrix(6, 1, 0.0);
 
-          for (i = 0; i <= 5; i++)
-          {
+          for (int i = 0; i <= 5; i++)
             tgh(i, 0) = tanh(nu_error(i) / boundary_layer);
-          }
 
           return tgh;
         }

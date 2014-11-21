@@ -30,8 +30,6 @@
 
 #include <DUNE/DUNE.hpp>
 
-#define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
-
 namespace Navigation
 {
   namespace AUV
@@ -44,92 +42,89 @@ namespace Navigation
       {
       public:
 
-        static double
-        computeAverageFilter(int flag_ini, int window, double data[])
+        static Matrix
+        posFromBearingAndRange(Matrix nu, double range, double bearing, double depth)
         {
-          int i;
-          double sum;
-          int counter;
-          double average;
+          nu(0,0) = range * std::cos(bearing);
+          nu(1,0) = range * std::sin(bearing);
+          nu(2,0) = depth;
 
-          i = 0;
-          sum = 0;
-          counter = 0;
-          average = 0;
+          return nu;
+        }
 
-          if (flag_ini == 0)
-          {
-            for (i = 0; i < window; i++)
-            {
-              if (data[i] != 0)
-              {
-                sum = sum + data[i];
-                counter++;
-              }
-            }
-            average = sum / counter;
-          }
+        static Matrix
+        orientationFromEulerAngles(Matrix nu, double euler_angles[])
+        {
+          nu(3,0) = euler_angles[0];
+          nu(4,0) = euler_angles[1];
+          nu(5,0) = euler_angles[2];
 
-          if (flag_ini ==1)
-          {
-            for (i = 0; i < window; i++)
-            {
-              sum = sum + data[i];
-              counter++;
-            }
-            average = sum / counter;
-          }
+          return nu;
+        }
 
-          return average;
+        static Matrix
+        normalizePositionOrientation(Matrix nu)
+        {
+          for (int k = 3; k < 6; k++)
+            nu(k, 0) = Math::Angles::normalizeRadian(nu(k, 0));
+
+          return nu;
+        }
+
+
+        static void
+        transformToEarthFrame(Matrix* inertia_added_mass_n, Matrix* coriolis_n, Matrix* damping_n, Matrix* restoring_n, Matrix* lift_n, Matrix* tau_n, Matrix rotation_matrix,
+                              Matrix inertia_added_mass, Matrix coriolis, Matrix damping, Matrix restoring, Matrix lift, Matrix tau, Matrix rotation_matrix_diff)
+        {
+          *inertia_added_mass_n = inverse(transpose(rotation_matrix)) * (inertia_added_mass)  * inverse(rotation_matrix);
+          *coriolis_n = inverse(transpose(rotation_matrix)) * (coriolis - inertia_added_mass * inverse(rotation_matrix) * rotation_matrix_diff) * inverse(rotation_matrix);
+          *damping_n = inverse(transpose(rotation_matrix)) * damping * inverse(rotation_matrix);
+          *restoring_n = inverse(transpose(rotation_matrix)) * restoring;
+          *lift_n = inverse(transpose(rotation_matrix)) * lift * inverse(rotation_matrix);
+          *tau_n = inverse(transpose(rotation_matrix)) * tau;
         }
 
         static Matrix
         computeStandardError(Matrix nu_error)
         {
-          if (nu_error(3,0) <= -3.14)
-            nu_error(3,0) = nu_error(3,0)+360*3.14/180;
-          if (nu_error(3,0) >= 3.14)
-            nu_error(3,0) = nu_error(3,0)-360*3.14/180;
-
-          if (nu_error(4,0) <= -3.14)
-            nu_error(4,0) = nu_error(4,0)+360*3.14/180;
-          if (nu_error(4,0) >= 3.14)
-            nu_error(4,0) = nu_error(4,0)-360*3.14/180;
-
-          if (nu_error(5,0) <= -3.14)
-            nu_error(5,0) = nu_error(5,0)+360*3.14/180;
-          if (nu_error(5,0) >= 3.14)
-            nu_error(5,0) = nu_error(5,0)-360*3.14/180;
+          for (int k = 3; k < 6; k++)
+          {
+            if (nu_error(k,0) <= -3.14)
+              nu_error(k,0) = nu_error(k,0) + DUNE::Math::c_two_pi;
+            if (nu_error(k,0) >= 3.14)
+              nu_error(k,0) = nu_error(k,0) - DUNE::Math::c_two_pi;
+          }
 
           return nu_error;
         }
 
         static Matrix
-        computeCov(Matrix Cov,Matrix x, Matrix y,int n)
+        computeCov(Matrix Cov, Matrix x, Matrix y, int n)
         {
           Cov(0,0) = Cov(0,0) + x(0);
-          Cov(0,1) = Cov(0,1) + y(0);Cov(0,3) = Cov(0,3) + x(0)*y(0);
-          Cov(0,2) = Cov(0,2) + 1.0 / n * ( (x(0) - Cov(0,0) / n) * (y(0) - Cov(0,1) / n) );
+          Cov(0,1) = Cov(0,1) + y(0);
+          Cov(0,3) = Cov(0,3) + x(0) * y(0);
+          Cov(0,2) = Cov(0,2) + 1.0 / n * ((x(0) - Cov(0,0) / n) * (y(0) - Cov(0,1) / n));
 
           Cov(1,0) = Cov(1,0) + x(1);
           Cov(1,1) = Cov(1,1) + y(1);
-          Cov(1,2) = Cov(1,2) + 1.0 / n * ( (x(1) - Cov(1,0) / n) * (y(1) - Cov(1,1) / n) );
+          Cov(1,2) = Cov(1,2) + 1.0 / n * ((x(1) - Cov(1,0) / n) * (y(1) - Cov(1,1) / n));
 
           Cov(2,0) = Cov(2,0) + x(2);
           Cov(2,1) = Cov(2,1) + y(2);
-          Cov(2,2) = Cov(2,2) + 1.0 / n * ( (x(2) - Cov(2,0) / n) * (y(2) - Cov(2,1) / n) );
+          Cov(2,2) = Cov(2,2) + 1.0 / n * ( (x(2) - Cov(2,0) / n) * (y(2) - Cov(2,1) / n));
 
           Cov(3,0) = Cov(3,0) + x(3);
           Cov(3,1) = Cov(3,1) + y(3);
-          Cov(3,2) = 1.0 / n * ( (x(3) - Cov(3,0) / n) * (y(3) - Cov(3,1) / n) );
+          Cov(3,2) = 1.0 / n * ( (x(3) - Cov(3,0) / n) * (y(3) - Cov(3,1) / n));
 
           Cov(4,0) = Cov(4,0) + x(4);
           Cov(4,1) = Cov(4,1) + y(4);
-          Cov(4,2) = 1.0 / n * ( (x(4) - Cov(4,0) / n) * (y(4) - Cov(4,1) / n) );
+          Cov(4,2) = 1.0 / n * ((x(4) - Cov(4,0) / n) * (y(4) - Cov(4,1) / n));
 
           Cov(5,0) = Cov(5,0) + x(5);
           Cov(5,1) = Cov(5,1) + y(5);
-          Cov(5,2) = 1.0 / n * ( (x(5) - Cov(5,0) / n) * (y(5) - Cov(5,1) / n) );
+          Cov(5,2) = 1.0 / n * ((x(5) - Cov(5,0) / n) * (y(5) - Cov(5,1) / n));
 
           return Cov;
         }
