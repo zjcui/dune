@@ -55,15 +55,14 @@ namespace Navigation
         static Matrix
         orientationFromEulerAngles(Matrix nu, double euler_angles[])
         {
-          nu(3,0) = euler_angles[0];
-          nu(4,0) = euler_angles[1];
-          nu(5,0) = euler_angles[2];
+          for (int k = 3; k < 6; k++)
+            nu(k, 0) = euler_angles[k-3];
 
           return nu;
         }
 
         static Matrix
-        normalizePositionOrientation(Matrix nu)
+        normalizeOrientation(Matrix nu)
         {
           for (int k = 3; k < 6; k++)
             nu(k, 0) = Math::Angles::normalizeRadian(nu(k, 0));
@@ -71,31 +70,13 @@ namespace Navigation
           return nu;
         }
 
-
-        static void
-        transformToEarthFrame(Matrix* inertia_added_mass_n, Matrix* coriolis_n, Matrix* damping_n, Matrix* restoring_n, Matrix* lift_n, Matrix* tau_n, Matrix rotation_matrix,
-                              Matrix inertia_added_mass, Matrix coriolis, Matrix damping, Matrix restoring, Matrix lift, Matrix tau, Matrix rotation_matrix_diff)
-        {
-          *inertia_added_mass_n = inverse(transpose(rotation_matrix)) * (inertia_added_mass)  * inverse(rotation_matrix);
-          *coriolis_n = inverse(transpose(rotation_matrix)) * (coriolis - inertia_added_mass * inverse(rotation_matrix) * rotation_matrix_diff) * inverse(rotation_matrix);
-          *damping_n = inverse(transpose(rotation_matrix)) * damping * inverse(rotation_matrix);
-          *restoring_n = inverse(transpose(rotation_matrix)) * restoring;
-          *lift_n = inverse(transpose(rotation_matrix)) * lift * inverse(rotation_matrix);
-          *tau_n = inverse(transpose(rotation_matrix)) * tau;
-        }
-
         static Matrix
-        computeStandardError(Matrix nu_error)
+        normalizePosition(Matrix nu)
         {
-          for (int k = 3; k < 6; k++)
-          {
-            if (nu_error(k,0) <= -3.14)
-              nu_error(k,0) = nu_error(k,0) + DUNE::Math::c_two_pi;
-            if (nu_error(k,0) >= 3.14)
-              nu_error(k,0) = nu_error(k,0) - DUNE::Math::c_two_pi;
-          }
+          if (nu(2,0)< 0.0)
+            nu(2,0) = 0;
 
-          return nu_error;
+          return nu;
         }
 
         static Matrix
@@ -103,7 +84,6 @@ namespace Navigation
         {
           Cov(0,0) = Cov(0,0) + x(0);
           Cov(0,1) = Cov(0,1) + y(0);
-          Cov(0,3) = Cov(0,3) + x(0) * y(0);
           Cov(0,2) = Cov(0,2) + 1.0 / n * ((x(0) - Cov(0,0) / n) * (y(0) - Cov(0,1) / n));
 
           Cov(1,0) = Cov(1,0) + x(1);
@@ -128,7 +108,6 @@ namespace Navigation
 
           return Cov;
         }
-
       };
     }
   }
