@@ -45,5 +45,7 @@ namespace DUNE
 #include <DUNE/Math/QPSolver.hpp>
 #include <DUNE/Math/MovingAverage.hpp>
 #include <DUNE/Math/MultiMovingAverage.hpp>
+#include <DUNE/Math/MatrixDerivative.hpp>
+#include <DUNE/Math/MatrixIntegrator.hpp>
 
 #endif
