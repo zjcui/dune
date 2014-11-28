@@ -34,11 +34,111 @@ namespace DUNE
 {
   namespace Navigation
   {
+    //! Nonlinear Observer
+    //! using the sliding technique
     class SlidingModeObserver
     {
     public:
+      //! Observer Gains and boundary layers.
+      struct Parameters
+      {
+        //! Gain for first order equation
+        std::vector<double> k1;
+        //! Gain for second order equation
+        std::vector<double> k2;
+       //! Luenberger term for first order equation
+        std::vector<double> alfa1;
+        //! Luenberger term for second order equation
+        std::vector<double> alfa2;
+        //! Boundary layer for first order equation
+        float first_bound;
+        //! Boundary layer for second order equation
+        float second_bound;
+      };
+      enum MatrixSize
+      {
+        MS_ROWS = 6,
+        MS_MAX_COLUMNS = 6,
+        MS_MIN_COLUMNS = 1,
+        MS_SEPARATOR_POS_OR = 3
+      };
+      //! Constructor
+      SlidingModeObserver(void);
+      //! Destructor
+      ~SlidingModeObserver(void);
+      //! This routine initializes all values to zero
+      void
+      clear(void);
+      //! This routine loads the Parameters values,
+      //! the gains and the boundary layers
+      void
+      load(const Parameters& args);
+      //! This routine acts as a destructor
+      void
+      erase(void);
+      //! This routine updates the Observer error
+      //! @param[in] estimated value
+      //! @param[in] real value
+      void
+      updateError(Matrix est, Matrix  real);
+      //! This routine updates the state
+      //! of the second order equation
+      //! @param[in] second order state[6x1]
+      //! @return updated state[6x1]
       Matrix
-      generalForm(Matrix alfa, Matrix fx, Matrix tangh, Matrix k, Matrix error);
+      updateSecondOrderEquation(Matrix second_order_function);
+      //! This routine updates the state
+      //! of the first order equation
+      //! @param[in] first order state[6x1]
+      //! @return updated state[6x1]
+      Matrix
+      updateFirstOrderEquation(Matrix first_order_function);
+    private:
+      //! This routine parses the gains from
+      //! the structure to member matrices
+      //! @param[in] vector with gains
+      //! @return diagonal matrix[6x6]
+      Matrix
+      parseGains(std::vector<double> gain);
+      //! This routine calculate the standard
+      //! error for vehicle orientation to be
+      //! between -pi and pi
+      void
+      getStandardError(void);
+      //! This routine calculate the tanh function
+      //! for the Observer
+      //! This function is a "slide" function
+      void
+      getTanh(float boundary_layer);
+      //! This routine calculate the signum function
+      //! for the Observer
+      //! This is a discontinuous function
+      void
+      getSignum(void);
+
+      //! This struct contains the Observer
+      //! gains abd boundary layers
+      Parameters m_args;
+      //! Matrix for sliding gain for
+      //! first order equation
+      Math::Matrix m_k_1;
+      //! Matrix for sliding gain for
+      //! second order equation
+      Math::Matrix m_k_2;
+      //! Matrix for Luenberger term for
+      //! first order equation
+      Math::Matrix m_alfa_1;
+      //! Matrix for Luenberger term for
+      //! second order equation
+      Math::Matrix m_alfa_2;
+      //! Matrix for the sliding function
+      //! depending on state error
+      Math::Matrix m_tang_hyper;
+      //! Matrix for the discontinuous function
+      //! depending on state error
+      Math::Matrix m_signum;
+      //! Matrix containing the state error
+      Math::Matrix m_error;
     };
   }
 }
