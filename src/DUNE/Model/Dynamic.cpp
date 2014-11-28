@@ -33,342 +33,384 @@ namespace DUNE
 {
   namespace Model
   {
-    //Compute AUV Model coefficients
+    //! Lift Coefficient for l / d < 10
+    static const float c_lift_coeff_clb_one = 1.24f;
+    //! Lift Coefficient for l / d > 10
+    static const float c_lift_coeff_clb_two = 3.3f;
+    //! Lift Coefficient that deppends on
+    //! geometrical aspect of the fin
+    static const float c_lift_coeff_clf = 3.0f;
+    //! Empirical coefficient for the center of pressure
+    //! where lift forces are applied in % of length
+    static const float c_empirical_coeff_center_pressure = 0.65f;
+    //! Empirical coefficient for position of the CB
+    //! relatively to the position of the nose in % of length
+    static const float c_pos_cb_relative_nose = 0.35f;
+    //! Empirical coefficient for position of the fins
+    //! relatively to the position of the CB in % of length
+    static const float c_pos_fins_relative_cb = 0.35f;
+    //! Force of the fins in roll moment
+    static const float c_roll_fin_force = 0.15f;
+    //! Force of the motor torque in roll moment
+    static const float c_roll_torque_motor_force = 0.01f;
+    //! Low Pass Filter smooth coefficient
+    static const float c_low_pass_filter_coeff = 0.05f;
+
+    Dynamic::Dynamic(void)
+    {
+      clear();
+    }
+
     void
-    Dynamic::computeModelCoeff(double Mass, double a, double b, double c,double Volume,double l, double d, double D, double Sfin, double *Model_Coeff)
+    Dynamic::clear(void)
+    {
+      m_inertia_added_mass_matrix.resizeAndFill(MS_ROWS, MS_MAX_COLUMNS , 0.0);
+      m_coriolis_matrix.resizeAndFill(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      m_damping_matrix.resizeAndFill(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      m_restoring_matrix.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+      m_lift_matrix.resizeAndFill(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      m_tau_matrix.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+
+      m_inertia_added_mass_n.resizeAndFill(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      m_coriolis_n.resizeAndFill(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      m_damping_n.resizeAndFill(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      m_restoring_n.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+      m_lift_n.resizeAndFill(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      m_tau_n.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+
+      memset(m_model_coeff, 0, sizeof(m_model_coeff));
+    }
+
+    void
+    Dynamic::load(const Parameters& args)
+    {
+      m_args = args;
+      getModelCoeff();
+      m_inertia_added_mass_matrix = getInertia();
+    }
+
+    Dynamic::~Dynamic(void)
+    {
+      erase();
+    }
+
+    void
+    Dynamic::erase(void)
+    {
+      m_args.damping.clear();
+    }
+
+    void
+    Dynamic::getModelCoeff()
     {
       // Inertia
-      double Ixx = Mass / 5 * ( pow(b, 2.0) + pow(c, 2.0) );
+      double Ixx = m_args.mass / IT_R * ( pow(m_args.b, 2.0) + pow(m_args.c, 2.0) );
       double l_r = 0;
 
-      if (b >= c)
-        l_r = b;
-      if (c > b)
-        l_r = c;
+      if (m_args.b >= m_args.c)
+        l_r = m_args.b;
+      if (m_args.c > m_args.b)
+        l_r = m_args.c;
 
-      double Iyy = Mass * (pow(a*2, 2.0) / 20 + pow(l_r, 2.0) / 5);
+      double Iyy = m_args.mass * (pow(m_args.a * 2, 2.0) / IT_L + pow(l_r, 2.0) / IT_R);
+      double Izz = m_args.mass * (pow(m_args.a * 2, 2.0) / IT_L + pow(l_r, 2.0) / IT_R);
 
-      double Izz = Mass * (pow(a*2, 2.0) / 20 + pow(l_r, 2.0) / 5);
-
-      // Added Mass
-      double e = 1 - pow(b / a, 2.0);
-
+      // Added Mass [Fossen]
+      double e = 1 - pow(m_args.b / m_args.a, 2.0);
       double alpha_0 = (2 * ( 1 - pow(e, 2.0)) / pow(e, 3.0)) * ((1.0 / 2.0) * std::log(( 1 + e ) / ( 1 - e )) - e);
-
       double betha_0 = 1.0 / pow(e, 2.0) - (1 - pow(e, 2.0) ) / (2 * pow(e, 3.0)) * std::log(( 1 + e ) / ( 1 - e ));
-
-      double X_dudt = - alpha_0 / (2 - alpha_0) * Mass;
-
-      double Y_dvdt = - betha_0 / (2 - betha_0) * Mass;
-
+      double X_dudt = - alpha_0 / (2 - alpha_0) * m_args.mass;
+      double Y_dvdt = - betha_0 / (2 - betha_0) * m_args.mass;
       double Z_dwdt = Y_dvdt;
-
       double K_dpdt = 0;
-
-      double M_dqdt = - (1.0 / 5) * (pow((pow(b, 2.0) - pow(a, 2.0)), 2.0) * (alpha_0 - betha_0)) / (2 * (pow(b, 2.0) - pow(a, 2.0)) + (pow(b, 2.0) + pow(a, 2.0)) * (betha_0 - alpha_0)) * Mass;
-
+      double M_dqdt = - (1.0 / 5) * (pow((pow(m_args.b, 2.0) - pow(m_args.a, 2.0)), 2.0) * (alpha_0 - betha_0)) / (2 * (pow(m_args.b, 2.0) - pow(m_args.a, 2.0)) + (pow(m_args.b, 2.0) + pow(m_args.a, 2.0)) * (betha_0 - alpha_0)) * m_args.mass;
       double N_drdt = M_dqdt;
 
       // Lift Coefficients
-      double CLF = 3;
-      double CLB = 1.24;
-      double Yb;
-      double Zb;
-      double Mb;
-      double Nb;
+      double CLF = c_lift_coeff_clf;
+      double CLB = c_lift_coeff_clb_one;
 
-      double Yf_uv;
-      double Zf_uw;
-      double Yf_ur;
-      double Zf_uq;
-      double Mf_uw;
-      double Mf_uq;
-      double Nf_uv;
-      double Nf_ur;
+      if (m_args.l / m_args.d > LD_REF_ONE && m_args.l / m_args.d < LD_REF_TWO)
+        CLB = c_lift_coeff_clb_one;
 
-      if (l / d > 5 && l / d < 10)
-        CLB = 1.24;
+      if (m_args.l / m_args.d > LD_REF_TWO && m_args.l / m_args.d < LD_REF_THREE)
+        CLB = c_lift_coeff_clb_two;
 
-      if (l / d > 10 && l / d < 15)
-        CLB = 3.3;
-
-      Yb = -0.5 * D * 3.14 * pow(d / 2.0, 2) * CLB;
-
-      Zb = Yb;
-
-      Mb = -(-0.65 * l - (-0.35 * l)) * Zb;
-
-      Nb = -Mb;
-
-      Yf_uv = -D * CLF * Sfin;
-
-      Yf_ur = D * CLF * Sfin;
-
-      Zf_uw = -D * CLF * Sfin;
-
-      Zf_uq = Zf_uw;
-
-      Mf_uw = -(-0.35 * l) * Zf_uw;
-
-      Mf_uq = -(-0.35 * l)* - (-0.35 * l) * Zf_uq;
-
-      Nf_uv = -0.35 * l * Yf_uv;
-
-      Nf_ur = -(-0.35 * l) * (-0.35 * l) * Yf_ur;
+      double Yb = -0.5 * m_args.density * DUNE::Math::c_pi * pow(m_args.d / 2.0, 2) * CLB;
+      double Zb = Yb;
+      double Mb = -(-c_empirical_coeff_center_pressure * m_args.l - (-c_pos_cb_relative_nose * m_args.l)) * Zb;
+      double Nb = -Mb;
+      double Yf_uv = -m_args.density * CLF * m_args.sfin;
+      double Yf_ur = m_args.density * CLF * m_args.sfin;
+      double Zf_uw = -m_args.density * CLF * m_args.sfin;
+      double Zf_uq = Zf_uw;
+      double Mf_uw = -(-c_pos_fins_relative_cb * m_args.l) * Zf_uw;
+      double Mf_uq = -(-c_pos_fins_relative_cb * m_args.l) * - (-c_pos_fins_relative_cb * m_args.l) * Zf_uq;
+      double Nf_uv = -c_pos_fins_relative_cb * m_args.l * Yf_uv;
+      double Nf_ur = -(-c_pos_fins_relative_cb * m_args.l) * (-c_pos_fins_relative_cb * m_args.l) * Yf_ur;
 
       // Fins Coefficients
-      double Yf;
-      double Zf;
-      double Mf;
-      double Nf;
-
-      Yf = D * CLF * Sfin;
-
-      Zf = -D * CLF * Sfin;
-
-      Mf = -(-0.35 * l) * Zf;
-
-      Nf = -0.35 * l * Yf;
+      double Yf = m_args.density * CLF * m_args.sfin;
+      double Zf = -m_args.density * CLF * m_args.sfin;
+      double Mf = -(-c_pos_fins_relative_cb * m_args.l) * Zf;
+      double Nf = -c_pos_fins_relative_cb * m_args.l * Yf;
 
       // Fill Coefficient Vector
-      Model_Coeff[0] = Ixx;
-      Model_Coeff[1] = Iyy;
-      Model_Coeff[2] = Izz;
+      m_model_coeff[0] = Ixx;
+      m_model_coeff[1] = Iyy;
+      m_model_coeff[2] = Izz;
 
-      Model_Coeff[3] = X_dudt;
-      Model_Coeff[4] = Y_dvdt;
-      Model_Coeff[5] = Z_dwdt;
-      Model_Coeff[6] = K_dpdt;
-      Model_Coeff[7] = M_dqdt;
-      Model_Coeff[8] = N_drdt;
+      m_model_coeff[3] = X_dudt;
+      m_model_coeff[4] = Y_dvdt;
+      m_model_coeff[5] = Z_dwdt;
+      m_model_coeff[6] = K_dpdt;
+      m_model_coeff[7] = M_dqdt;
+      m_model_coeff[8] = N_drdt;
 
-      Model_Coeff[9] = Mass * 9.8;
-      Model_Coeff[10] = Volume * 9.8 * 1000;
+      m_model_coeff[9] = m_args.mass * DUNE::Math::c_gravity;
+      m_model_coeff[10] = m_args.volume * DUNE::Math::c_gravity * m_args.density;
 
-      Model_Coeff[11] = Yb;
-      Model_Coeff[12] = Zb;
-      Model_Coeff[13] = Mb;
-      Model_Coeff[14] = Nb;
-      Model_Coeff[15] = Yf_uv;
-      Model_Coeff[16] = Yf_ur;
-      Model_Coeff[17] = Zf_uw;
-      Model_Coeff[18] = Zf_uq;
-      Model_Coeff[19] = Mf_uw;
-      Model_Coeff[20] = Mf_uq;
-      Model_Coeff[21] = Nf_uv;
-      Model_Coeff[22] = Nf_ur;
+      m_model_coeff[11] = Yb;
+      m_model_coeff[12] = Zb;
+      m_model_coeff[13] = Mb;
+      m_model_coeff[14] = Nb;
+      m_model_coeff[15] = Yf_uv;
+      m_model_coeff[16] = Yf_ur;
+      m_model_coeff[17] = Zf_uw;
+      m_model_coeff[18] = Zf_uq;
+      m_model_coeff[19] = Mf_uw;
+      m_model_coeff[20] = Mf_uq;
+      m_model_coeff[21] = Nf_uv;
+      m_model_coeff[22] = Nf_ur;
 
-      Model_Coeff[23] = Yf;
-      Model_Coeff[24] = Zf;
-      Model_Coeff[25] = Mf;
-      Model_Coeff[26] = Nf;
+      m_model_coeff[23] = Yf;
+      m_model_coeff[24] = Zf;
+      m_model_coeff[25] = Mf;
+      m_model_coeff[26] = Nf;
     }
 
-
-    // AUV MODEL MATRICES
     Matrix
-    Dynamic::computeM(double Mass, double *Model_Coeff, double zG)
+    Dynamic::getInertia()
     {
-      Math::Matrix M_tmp(6, 6);
-      M_tmp.resizeAndFill(6, 6, 0.0);
-      M_tmp(0, 0) = Mass - Model_Coeff[3];
-      M_tmp(1, 1) = Mass - Model_Coeff[4];
-      M_tmp(2, 2) = Mass - Model_Coeff[5];
-      M_tmp(3, 3) = Model_Coeff[0] - Model_Coeff[6];
-      M_tmp(4, 4) = Model_Coeff[1] - Model_Coeff[7];
-      M_tmp(5, 5) = Model_Coeff[2] - Model_Coeff[8];
-      M_tmp(0, 4) = Mass * zG;
-      M_tmp(1, 3) = - Mass * zG;
-      M_tmp(3, 1) = - Mass * zG;
-      M_tmp(4, 0) = Mass * zG;
+      Math::Matrix M_tmp(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      M_tmp(0, 0) = m_args.mass - m_model_coeff[3];
+      M_tmp(1, 1) = m_args.mass - m_model_coeff[4];
+      M_tmp(2, 2) = m_args.mass - m_model_coeff[5];
+      M_tmp(3, 3) = m_model_coeff[0] - m_model_coeff[6];
+      M_tmp(4, 4) = m_model_coeff[1] - m_model_coeff[7];
+      M_tmp(5, 5) = m_model_coeff[2] - m_model_coeff[8];
+      M_tmp(0, 4) = m_args.mass * m_args.zG;
+      M_tmp(1, 3) = -m_args.mass * m_args.zG;
+      M_tmp(3, 1) = -m_args.mass * m_args.zG;
+      M_tmp(4, 0) = m_args.mass * m_args.zG;
 
       return M_tmp;
     }
 
     Matrix
-    Dynamic::computeC(double Mass, double *Model_Coeff, double zG, Matrix vel_est)
+    Dynamic::getCoriolis(Matrix vel)
     {
-      double u = vel_est(0);
-      double v = vel_est(1);
-      double w = vel_est(2);
-      double p = vel_est(3);
-      double q = vel_est(4);
-      double r = vel_est(5);
+      double u = vel(0);
+      double v = vel(1);
+      double w = vel(2);
+      double p = vel(3);
+      double q = vel(4);
+      double r = vel(5);
 
-      Math::Matrix C_tmp(6, 6);
-      C_tmp.resizeAndFill(6, 6, 0.0);
-      C_tmp(0, 3) = Mass * zG * r;
-      C_tmp(0, 4) = (Mass - Model_Coeff[5]) * w;
-      C_tmp(0, 5) = - (Mass - Model_Coeff[4]) * v;
-      C_tmp(1, 3) = - (Mass - Model_Coeff[5]) * w;
-      C_tmp(1, 4) = Mass * zG * r;
-      C_tmp(1, 5) = (Mass - Model_Coeff[3]) * u;
-      C_tmp(2, 3) = - Mass * zG * p + (Mass - Model_Coeff[4]) * v;
-      C_tmp(2, 4) = - Mass * zG * q - (Mass - Model_Coeff[3]) * u;
-      C_tmp(3, 0) = - Mass * zG * r;
-      C_tmp(3, 1) = (Mass - Model_Coeff[5]) * w;
-      C_tmp(3, 2) = Mass * zG * p - (Mass - Model_Coeff[4]) * v;
-      C_tmp(3, 4) = (Model_Coeff[2] - Model_Coeff[8]) * r;
-      C_tmp(3, 5) = -(Model_Coeff[1] - Model_Coeff[7]) * q;
-      C_tmp(4, 0) = - ( Mass - Model_Coeff[5]) * w;
-      C_tmp(4, 1) = - Mass * zG * r;
-      C_tmp(4, 2) = Mass * zG *q + (Mass - Model_Coeff[3]) * u;
-      C_tmp(4, 3) = - (Model_Coeff[2] - Model_Coeff[8]) * r;
-      C_tmp(4, 5) = (Model_Coeff[0] - Model_Coeff[6]) * p;
-      C_tmp(5, 0) = (Mass - Model_Coeff[4]) * v;
-      C_tmp(5, 1) = -(Mass - Model_Coeff[3]) * u;
-      C_tmp(5, 3) = (Model_Coeff[1] - Model_Coeff[7]) * q;
-      C_tmp(5, 4) = - (Model_Coeff[0] - Model_Coeff[6]) * p;
+      Math::Matrix C_tmp(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      C_tmp(0, 3) = m_args.mass * m_args.zG * r;
+      C_tmp(0, 4) = (m_args.mass - m_model_coeff[5]) * w;
+      C_tmp(0, 5) = -(m_args.mass - m_model_coeff[4]) * v;
+      C_tmp(1, 3) = -(m_args.mass - m_model_coeff[5]) * w;
+      C_tmp(1, 4) = m_args.mass * m_args.zG * r;
+      C_tmp(1, 5) = (m_args.mass - m_model_coeff[3]) * u;
+      C_tmp(2, 3) = -m_args.mass * m_args.zG * p + (m_args.mass - m_model_coeff[4]) * v;
+      C_tmp(2, 4) = -m_args.mass * m_args.zG * q - (m_args.mass - m_model_coeff[3]) * u;
+      C_tmp(3, 0) = -m_args.mass * m_args.zG * r;
+      C_tmp(3, 1) = (m_args.mass - m_model_coeff[5]) * w;
+      C_tmp(3, 2) = m_args.mass * m_args.zG * p - (m_args.mass - m_model_coeff[4]) * v;
+      C_tmp(3, 4) = (m_model_coeff[2] - m_model_coeff[8]) * r;
+      C_tmp(3, 5) = -(m_model_coeff[1] - m_model_coeff[7]) * q;
+      C_tmp(4, 0) = -(m_args.mass - m_model_coeff[5]) * w;
+      C_tmp(4, 1) = -m_args.mass * m_args.zG * r;
+      C_tmp(4, 2) = m_args.mass * m_args.zG * q + (m_args.mass - m_model_coeff[3]) * u;
+      C_tmp(4, 3) = -(m_model_coeff[2] - m_model_coeff[8]) * r;
+      C_tmp(4, 5) = (m_model_coeff[0] - m_model_coeff[6]) * p;
+      C_tmp(5, 0) = (m_args.mass - m_model_coeff[4]) * v;
+      C_tmp(5, 1) = -(m_args.mass - m_model_coeff[3]) * u;
+      C_tmp(5, 3) = (m_model_coeff[1] - m_model_coeff[7]) * q;
+      C_tmp(5, 4) = -(m_model_coeff[0] - m_model_coeff[6]) * p;
 
       return C_tmp;
     }
 
     Matrix
-    Dynamic::computeD(Matrix vel_est, std::vector<float> damping)
+    Dynamic::getDamping(Matrix vel)
     {
       // Damping Matrix
-      double ur = vel_est(0);
-      double vr = vel_est(1);
-      double wr = vel_est(2);
-      double pr = vel_est(3);
-      double qr = vel_est(4);
-      double rr = vel_est(5);
+      double ur = vel(0);
+      double vr = vel(1);
+      double wr = vel(2);
+      double pr = vel(3);
+      double qr = vel(4);
+      double rr = vel(5);
 
-      double D1_vector[36];
+      double D1_vector[VI_DAMPING_ARRAY];
       memset(D1_vector, 0, sizeof(D1_vector));
-      D1_vector[0] = damping[0];
-      D1_vector[7] = damping[1];
-      D1_vector[11] = damping[2];
-      D1_vector[14] = damping[3];
-      D1_vector[16] = damping[4];
-      D1_vector[21] = damping[5];
-      D1_vector[26] = damping[6];
-      D1_vector[28] = damping[7];
-      D1_vector[31] = damping[8];
-      D1_vector[35] = damping[9];
+      D1_vector[0] = m_args.damping[0];
+      D1_vector[7] = m_args.damping[1];
+      D1_vector[11] = m_args.damping[2];
+      D1_vector[14] = m_args.damping[3];
+      D1_vector[16] = m_args.damping[4];
+      D1_vector[21] = m_args.damping[5];
+      D1_vector[26] = m_args.damping[6];
+      D1_vector[28] = m_args.damping[7];
+      D1_vector[31] = m_args.damping[8];
+      D1_vector[35] = m_args.damping[9];
 
-      double D2_vector[36];
+      double D2_vector[VI_DAMPING_ARRAY];
       memset(D2_vector, 0, sizeof(D1_vector));
-      D2_vector[0] = damping[10] * std::abs(ur);
-      D2_vector[7] = damping[11] * std::abs(vr);
-      D2_vector[11] = damping[12] * std::abs(rr);
-      D2_vector[14] = damping[13] * std::abs(wr);
-      D2_vector[16] = damping[14] * std::abs(qr);
-      D2_vector[21] = damping[15] * std::abs(pr);
-      D2_vector[26] = damping[16] * std::abs(wr);
-      D2_vector[28] = damping[17] * std::abs(qr);
-      D2_vector[31] = damping[18] * std::abs(vr);
-      D2_vector[35] = damping[19] * std::abs(rr);
+      D2_vector[0] = m_args.damping[10] * std::abs(ur);
+      D2_vector[7] = m_args.damping[11] * std::abs(vr);
+      D2_vector[11] = m_args.damping[12] * std::abs(rr);
+      D2_vector[14] = m_args.damping[13] * std::abs(wr);
+      D2_vector[16] = m_args.damping[14] * std::abs(qr);
+      D2_vector[21] = m_args.damping[15] * std::abs(pr);
+      D2_vector[26] = m_args.damping[16] * std::abs(wr);
+      D2_vector[28] = m_args.damping[17] * std::abs(qr);
+      D2_vector[31] = m_args.damping[18] * std::abs(vr);
+      D2_vector[35] = m_args.damping[19] * std::abs(rr);
 
-      return (Matrix(D1_vector, 6, 6) + Matrix(D2_vector, 6, 6) );
+      return (Matrix(D1_vector, MS_ROWS, MS_MAX_COLUMNS) + Matrix(D2_vector, MS_ROWS, MS_MAX_COLUMNS) );
     }
 
     Matrix
-    Dynamic::computeG(double *Model_Coeff, double zG, Matrix nu_est)
+    Dynamic::getRestoringForces(Matrix nu)
     {
-      double phi = nu_est(3);
-      double theta = nu_est(4);
-      //double psi = nu_est(5);;
+      double phi = nu(3);
+      double theta = nu(4);
 
-      double W = Model_Coeff[9];
-      double B = Model_Coeff[10];
+      double W = m_model_coeff[9];
+      double B = m_model_coeff[10];
 
-      Math::Matrix G_tmp(6,1);
-      G_tmp.resizeAndFill(6,1,0.0);
+      Math::Matrix G_tmp(MS_ROWS, MS_MIN_COLUMNS, 0.0);
       G_tmp(0, 0) = (W - B) * std::sin(theta);
       G_tmp(1, 0) = -(W - B) * std::cos(theta) * std::sin(phi);
       G_tmp(2, 0) = -(W - B) * std::cos(theta) * std::cos(phi);
-      G_tmp(3, 0) = zG * W * std::cos(theta) * std::sin(phi);
-      G_tmp(4, 0) = zG * W * std::sin(theta);
+      G_tmp(3, 0) = m_args.zG * W * std::cos(theta) * std::sin(phi);
+      G_tmp(4, 0) = m_args.zG * W * std::sin(theta);
 
       return G_tmp;
     }
 
 
     Matrix
-    Dynamic::computeL(Matrix vel_est,double l, double *Model_Coeff)
+    Dynamic::getLift(Matrix vel)
     {
-      double Yb = Model_Coeff[11];
-      double Zb = Model_Coeff[12];
-      double Mb = Model_Coeff[13];
-      double Nb = Model_Coeff[14];
-      double Yf_uv = Model_Coeff[15];
-      double Yf_ur = Model_Coeff[16];
-      double Zf_uw = Model_Coeff[17];
-      double Zf_uq = Model_Coeff[18];
-      double Mf_uw = Model_Coeff[19];
-      double Mf_uq = Model_Coeff[20];
-      double Nf_uv = Model_Coeff[21];
-      double Nf_ur = Model_Coeff[22];
+      double Yb = m_model_coeff[11];
+      double Zb = m_model_coeff[12];
+      double Mb = m_model_coeff[13];
+      double Nb = m_model_coeff[14];
+      double Yf_uv = m_model_coeff[15];
+      double Yf_ur = m_model_coeff[16];
+      double Zf_uw = m_model_coeff[17];
+      double Zf_uq = m_model_coeff[18];
+      double Mf_uw = m_model_coeff[19];
+      double Mf_uq = m_model_coeff[20];
+      double Nf_uv = m_model_coeff[21];
+      double Nf_ur = m_model_coeff[22];
 
-      Math::Matrix L_tmp(6,6);
-      L_tmp.resizeAndFill(6,6,0.0);
+      Math::Matrix L_tmp(MS_ROWS, MS_MAX_COLUMNS, 0.0);
       L_tmp(1,1) = Yb + Yf_uv;
-      L_tmp(1,5) = Yf_ur * - (-0.35 * l);
+      L_tmp(1,5) = Yf_ur * - (-c_pos_fins_relative_cb * m_args.l);
       L_tmp(2,2) = Zb + Zf_uw;
-      L_tmp(2,4) = Zf_uq * - (-0.35 * l);
+      L_tmp(2,4) = Zf_uq * - (-c_pos_fins_relative_cb * m_args.l);
       L_tmp(4,2) = Mb + Mf_uw;
       L_tmp(4,4) = Mf_uq;
       L_tmp(5,1) = Nb + Nf_uv;
       L_tmp(5,5) = Nf_ur;
 
-      return -L_tmp * vel_est(0);
+      return -L_tmp * vel(0);
     }
 
     Matrix
-    Dynamic::computeTau(double thruster, double servo_pos[3], Matrix vel, double *Model_Coeff)
+    Dynamic::getTau(double thruster, double servo_pos[VI_SERVO], Matrix vel)
     {
       double Yf;
       double Zf;
       double Mf;
       double Nf;
 
-      Yf = Model_Coeff[23];
+      Yf = m_model_coeff[23];
+      Zf = m_model_coeff[24];
+      Mf = m_model_coeff[25];
+      Nf = m_model_coeff[26];
 
-      Zf = Model_Coeff[24];
-
-      Mf = Model_Coeff[25];
-
-      Nf = Model_Coeff[26];
-
-      Matrix tau_tmp(6, 1, 0.0);
+      Matrix tau_tmp(MS_ROWS, MS_MIN_COLUMNS, 0.0);
       tau_tmp(0, 0) = thruster * 10 / 0.84;
-      tau_tmp(1, 0) = (servo_pos[0] + servo_pos[3]) * Yf / 2 * pow(vel(0), 2.0);
-      tau_tmp(2, 0) = (servo_pos[1] + servo_pos[2]) * Zf / 2 * pow(vel(0), 2.0);
-      tau_tmp(3, 0) = (servo_pos[3] - servo_pos[0] + servo_pos[1] - servo_pos[2]) * 0.15 * pow(vel(0),2.0) + 0.01 * tau_tmp(0, 0);
-      tau_tmp(4, 0) = (servo_pos[1] + servo_pos[2]) * Mf / 2  * pow(vel(0), 2.0);
-      tau_tmp(5, 0) = (servo_pos[0] + servo_pos[3]) * Nf / 2  * pow(vel(0), 2.0);
+      tau_tmp(1, 0) = (servo_pos[SI_ONE] + servo_pos[SI_FOUR]) * Yf / 2 * pow(vel(0), 2.0);
+      tau_tmp(2, 0) = (servo_pos[SI_TWO] + servo_pos[SI_THREE]) * Zf / 2 * pow(vel(0), 2.0);
+      tau_tmp(3, 0) = (servo_pos[SI_FOUR] - servo_pos[SI_ONE] + servo_pos[SI_TWO] - servo_pos[SI_THREE]) * c_roll_fin_force * pow(vel(0),2.0) +
+      c_roll_torque_motor_force * tau_tmp(0, 0);
+      tau_tmp(4, 0) = (servo_pos[SI_TWO] + servo_pos[SI_THREE]) * Mf / 2  * pow(vel(0), 2.0);
+      tau_tmp(5, 0) = (servo_pos[SI_ONE] + servo_pos[SI_FOUR]) * Nf / 2  * pow(vel(0), 2.0);
 
       return tau_tmp;
     }
 
+
     Matrix
-    Dynamic::computeAcceleration(double velocities[6], Matrix v_bar, double delta_t)
+    Dynamic::update(Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[VI_SERVO], Matrix vel)
     {
-      Matrix T = Matrix(6,6, 0.0);
-      T(0,0) = delta_t;
-      T(1,1) = delta_t;
-      T(2,2) = delta_t;
-      T(3,3) = delta_t;
-      T(4,4) = delta_t;
-      T(5,5) = delta_t;
+      if (m_inertia_added_mass_matrix.isInvertible())
+      {
+        m_coriolis_matrix = getCoriolis(vel_est);
+        m_damping_matrix = getDamping(vel_est);
+        m_restoring_matrix = getRestoringForces(nu_est);
+        m_lift_matrix = getLift(vel_est);
+        m_tau_matrix = getTau(thruster, servo_pos, vel);
 
-      Matrix v = Matrix(6,1, 0.0);
-      v(0, 0) = velocities[0];
-      v(1, 0) = velocities[1];
-      v(2, 0) = velocities[2];
-      v(3, 0) = velocities[3];
-      v(4, 0) = velocities[4];
-      v(5, 0) = velocities[5];
-
-      Matrix acc = Matrix(6,1, 0.0);
-      acc = inverse(T) * 0.05 * ( v - v_bar);
-
-      return acc;
+        return inverse(m_inertia_added_mass_matrix) * (m_tau_matrix - m_coriolis_matrix * vel_est - m_damping_matrix * vel_est - m_restoring_matrix - m_lift_matrix * vel_est);
+      }
+      else
+        return Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
     }
 
     Matrix
-    Dynamic::computeRotationMatrix(double euler_angles[3])
+    Dynamic::update(Matrix vel, Matrix nu, double thruster, double servo_pos[VI_SERVO])
+    {
+      if (m_inertia_added_mass_matrix.isInvertible())
+        return update(vel, nu, thruster, servo_pos, vel);
+      else
+        return Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+    }
+
+    Matrix
+    Dynamic::getInEarthFrame(Matrix rotation_matrix, Matrix rotation_matrix_diff, Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[VI_SERVO], Matrix vel)
+    {
+
+      if (m_inertia_added_mass_matrix.isInvertible() && rotation_matrix.isInvertible())
+      {
+        Math::Matrix nu_dot = rotation_matrix * vel_est;
+
+        update(vel_est, nu_est, thruster, servo_pos, vel);
+
+        m_inertia_added_mass_n = inverse(transpose(rotation_matrix)) * (m_inertia_added_mass_matrix)  * inverse(rotation_matrix);
+        m_coriolis_n = inverse(transpose(rotation_matrix)) * (m_coriolis_matrix - m_inertia_added_mass_matrix * inverse(rotation_matrix)
+                                                              * rotation_matrix_diff) * inverse(rotation_matrix);
+        m_damping_n = inverse(transpose(rotation_matrix)) * m_damping_matrix * inverse(rotation_matrix);
+        m_restoring_n = inverse(transpose(rotation_matrix)) * m_restoring_matrix;
+        m_lift_n = inverse(transpose(rotation_matrix)) * m_lift_matrix * inverse(rotation_matrix);
+        m_tau_n = inverse(transpose(rotation_matrix)) * m_tau_matrix;
+
+      return inverse(m_inertia_added_mass_n) * (m_tau_n - m_coriolis_n * nu_dot - m_damping_n * nu_dot - m_lift_n * nu_dot - m_restoring_n);
+      }
+      else
+        return Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+    }
+
+    Matrix
+    Dynamic::computeRotationMatrix(double euler_angles[VI_EULER_ANGLE])
     {
       // Pass euler angles to row matrix
       Math::Matrix ea(3, 1);
@@ -376,11 +418,35 @@ namespace DUNE
       ea(1) = Math::Angles::normalizeRadian(euler_angles[1]);
       ea(2) = Math::Angles::normalizeRadian(euler_angles[2]);
 
-      Math::Matrix rotation_matrix(6, 6, 0.0);
+      Math::Matrix rotation_matrix(MS_ROWS, MS_MAX_COLUMNS, 0.0);
       rotation_matrix = ea.toDCMSMO();
 
       return rotation_matrix;
     }
 
+    Matrix
+    Dynamic::getAcceleration(double velocities[MS_ROWS], Matrix v_bar, double delta_t)
+    {
+      Matrix T = Matrix(MS_ROWS, MS_MAX_COLUMNS, 0.0);
+      T(0,0) = delta_t;
+      T(1,1) = delta_t;
+      T(2,2) = delta_t;
+      T(3,3) = delta_t;
+      T(4,4) = delta_t;
+      T(5,5) = delta_t;
+
+      Matrix v = Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+      v(0, 0) = velocities[0];
+      v(1, 0) = velocities[1];
+      v(2, 0) = velocities[2];
+      v(3, 0) = velocities[3];
+      v(4, 0) = velocities[4];
+      v(5, 0) = velocities[5];
+
+      Matrix acc = Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+      acc = inverse(T) * c_low_pass_filter_coeff * (v - v_bar);
+
+      return acc;
+    }
   }
 }

@@ -34,45 +34,222 @@ namespace DUNE
 {
   namespace Model
   {
+    //! Inertia Tensor divisors
+    enum InertiaTensor
+    {
+      IT_L = 20,
+      IT_R = 5
+    };
+
+    //! Length Diameter ratio to choose proper clb
+    enum LengthDiameter
+    {
+      LD_REF_ONE = 5,
+      LD_REF_TWO = 10,
+      LD_REF_THREE = 15
+    };
+
+    //! Variables Index
+    enum VariablesIndex
+    {
+      VI_SERVO = 3,
+      VI_EULER_ANGLE = 3,
+      VI_GPS_DATA = 3,
+      VI_COV_COLUMNS = 3,
+      VI_AVG_WINDOW = 20,
+      VI_MODEL_COEFF = 27,
+      VI_DAMPING_ARRAY = 36
+    };
+
+    //! Matrix Dimensions
+    enum MatrixSize
+    {
+      MS_ROWS = 6,
+      MS_MAX_COLUMNS = 6,
+      MS_MIN_COLUMNS = 1
+    };
+
+    //! Servos ID's
+    enum ServoID
+    {
+      SI_ONE = 0,
+      SI_TWO = 1,
+      SI_THREE = 2,
+      SI_FOUR = 3,
+      SI_TOTAL = 4
+    };
+
+    //! Compute AUV Dynamics
+    //! depending on physical
+    //! characteristics.
     class Dynamic
     {
     public:
+      //! AUV caracteristics.
+      struct Parameters
+      {
+        //! AUV mass (Kg).
+        double mass;
+        //! Half vehicle lenght (m)
+        double a;
+        //! Vehicle height
+        double b;
+        //! Vehicle width
+        double c;
+        //! Vehicle volume (Kg3)
+        double volume;
+        //! Vehicle Center of Gravity
+        double zG;
+        //! Vehicle lenght
+        double l;
+        //! Vehicle diameter
+        double d;
+        //! Water density
+        double density;
+        //! Fins coefficient
+        double sfin;
+        //! Damping coefficients
+        std::vector<float> damping;
+      };
 
-      //! Method to compute AUV's model coefficients
+      class Error: public std::runtime_error
+      {
+      public:
+        Error(const std::string& msg):
+          std::runtime_error("dynamic error: " + msg)
+        { }
+      };
+      //! Constructor
+      Dynamic(void);
+      //! Destructor
+      ~Dynamic(void);
+      //! This routine initializes all values to zero
       void
-      computeModelCoeff(double Mass, double a, double b, double c,double Volume,double l, double d, double D, double Sfin,double *Model_Coeff);
-
-      //! Method to compute M matrix for AUV dynamics
+      clear(void);
+      //! This routine loads the Parameters values,
+      //! the m_model_coeff array and the inertia matrix
+      void
+      load(const Parameters& args);
+      //! This routine acts as a destructor
+      void
+      erase(void);
+      //! This routine calculate the vehicle acceleration
+      //! in the body frame
+      //! @param[in] estimated velocity matrix[6x1]
+      //! @param[in] estimated position matrix[6x1]
+      //! @param[in] vehicle thruster actuation matrix[6x1]
+      //! @param[in] vehicle fins declination vector[3]
+      //! @param[in] measured velocity matrix[6x1]
+      //! @return an acceleration matrix[6x1],
+      //! if inertia matrix isn't invertible, it returns
+      //! a zero matrix
       Matrix
-      computeM(double Mass,double *Model_Coeff, double zG);
-
-      //! Method to compute C matrix for AUV dynamics
+      update(Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[VI_SERVO], Matrix vel);
+      //! This routine calculate the vehicle acceleration
+      //! in the body frame
+      //! @param[in] measured velocity matrix[6x1]
+      //! @param[in] measured position matrix[6x1]
+      //! @param[in] vehicle thruster actuation matrix[6x1]
+      //! @param[in] vehicle fins declination vector[3]
+      //! @return an acceleration matrix[6x1],
+      //! if inertia matrix isn't invertible, it returns
+      //! a zero matrix
       Matrix
-      computeC(double Mass, double *Model_Coeff, double zG, Matrix vel_est);
-
-      //! Method to compute D matrix for AUV dynamics
+      update(Matrix vel, Matrix nu, double thruster, double servo_pos[VI_SERVO]);
+      //! This routine calculate the vehicle acceleration
+      //! in the earth frame
+      //! @param[in] rotation matrix[6x6]
+      //! @param[in] derivative of rotation matrix[6x6]
+      //! @param[in] estimated velocity matrix[6x1]
+      //! @param[in] vehicle thruster actuation matrix[6x1]
+      //! @param[in] vehicle fins declination vector[3]
+      //! @param[in] vehicle velocity matrix[6x1]
+      //! @return an acceleration matrix[6x1],
+      //! if inertia matrix isn't invertible, it returns
+      //! a zero matrix
       Matrix
-      computeD(Matrix vel_est, std::vector<float> damping);
-
-      //! Method to compute G matrix for AUV dynamics
+      getInEarthFrame(Matrix rotation_matrix, Matrix rotation_matrix_diff, Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[VI_SERVO], Matrix vel);
+      //! This routine calculates a rotation matrix
+      //! @param[in] euler angles array[3]
+      //! @return a rotation matrix[6x6]
       Matrix
-      computeG(double *Model_Coeff, double zG, Matrix nu_est);
-
-      //! Method to compute L matrix for AUV dynamics
+      computeRotationMatrix(double euler_angles[VI_EULER_ANGLE]);
+      //! This routine calculates the acceleration
+      //! with a low pass filter
+      //! of an auv from velocities
+      //! @param[in] velocities array[6]
+      //! @param[in] filter velocity matrix[6x1]
+      //! @param[in] filter time delta
+      //! @return an acceleration matrix[6x1]
       Matrix
-      computeL(Matrix vel_est,double l, double *Model_Coeff);
+      getAcceleration(double velocities[MS_ROWS], Matrix v_bar, double delta_t);
 
-      //! Method to compute Tau matrix for AUV dynamics
+    private:
+      //! This routine fill the m_model_coeff vector
+      //! with vehicle model parameters
+      //! The parameters are calculated by using the
+      //! physic characteristics in Parameters
+      void
+      getModelCoeff();
+      //! This routine calculate the inertia and
+      //! added mass matrix
+      //! @return a Matrix [6x6]
       Matrix
-      computeTau(double thruster, double servo_pos[3], Matrix vel, double *Model_Coeff);
+      getInertia();
+      //! This routine calculate the coriolis
+      //! and centriptal matrix
+      //! @param[in] vehicle velocity in a matrix[6x1]
+      //! @param[in] vehicle thruster actuation
+      //! @return a matrix [6x6]
+      Matrix
+      getCoriolis(Matrix vel);
+      //! This routine return a damping matrix
+      //! filled with the values of vector damping
+      //! in Parameters
+      //! @param[in] vehicle velocity in a matrix[6x1]
+      //! @return a matrix[6x6]
+      Matrix
+      getDamping(Matrix vel);
+      //! This routine calculate the restoring
+      //! forces matrix
+      //! @param[in] vehicle position/orientation
+      //! in a matrix[6x1]
+      //! @return a matrix[6x1]
+      Matrix
+      getRestoringForces(Matrix nu);
+      //! This routine calculate the lift
+      //! matrix
+      //! @param[in] vehicle velocity in a matrix[6x1]
+      //! @return a matrix[6x6]
+      Matrix
+      getLift(Matrix vel);
+      //! This routine calculate the forces
+      //! input matrix
+      //! @param[in] vehicle thruster actuation
+      //! @param[in] fins position
+      //! @param[in] vehicle velocity
+      //! @return a matrix[6x1]
+      Matrix
+      getTau(double thruster, double servo_pos[VI_SERVO], Matrix vel);
 
-      //! Method to compute Acceleration with a low pass filter
-      Matrix
-      computeAcceleration(double velocities[6], Matrix v_bar, double delta_t);
-
-      //! Method to compute Rotation Matrix
-      Matrix
-      computeRotationMatrix(double euler_angles[3]);
+      //! Vehicle Model Physic Characteristics
+      Parameters m_args;
+      //! Vehicle Model coefficients
+      double m_model_coeff[VI_MODEL_COEFF];
+      //! Vehicle Body Frame Model Matrices
+      Math::Matrix m_inertia_added_mass_matrix;
+      Math::Matrix m_coriolis_matrix;
+      Math::Matrix m_damping_matrix;
+      Math::Matrix m_restoring_matrix;
+      Math::Matrix m_lift_matrix;
+      Math::Matrix m_tau_matrix;
+      //! Vehicle Earth Frame Model Matrices
+      Math::Matrix m_inertia_added_mass_n;
+      Math::Matrix m_coriolis_n;
+      Math::Matrix m_damping_n;
+      Math::Matrix m_restoring_n;
+      Math::Matrix m_lift_n;
+      Math::Matrix m_tau_n;
     };
   }
 }
