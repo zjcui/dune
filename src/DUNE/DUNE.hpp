@@ -79,6 +79,7 @@ namespace DUNE
   using namespace DUNE::FileSystem;             \
   using namespace DUNE::Hardware;               \
   using namespace DUNE::Math;                   \
+  using namespace DUNE::Model;                  \
   using namespace DUNE::IMC;                    \
   using namespace DUNE::Monitors;               \
   using namespace DUNE::Network;                \
