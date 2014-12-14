@@ -334,7 +334,7 @@ namespace DUNE
     }
 
     Matrix
-    Dynamic::getTau(double thruster, double servo_pos[VI_SERVO], Matrix vel)
+    Dynamic::getTau(double thruster, double servo_pos[SI_TOTAL], Matrix vel)
     {
       double Yf;
       double Zf;
@@ -347,7 +347,7 @@ namespace DUNE
       Nf = m_model_coeff[26];
 
       Matrix tau_tmp(MS_ROWS, MS_MIN_COLUMNS, 0.0);
-      tau_tmp(0, 0) = thruster * 10 / 0.84;
+      tau_tmp(0, 0) = thruster * m_args.thruster_force;
       tau_tmp(1, 0) = (servo_pos[SI_ONE] + servo_pos[SI_FOUR]) * Yf / 2 * pow(vel(0), 2.0);
       tau_tmp(2, 0) = (servo_pos[SI_TWO] + servo_pos[SI_THREE]) * Zf / 2 * pow(vel(0), 2.0);
       tau_tmp(3, 0) = (servo_pos[SI_FOUR] - servo_pos[SI_ONE] + servo_pos[SI_TWO] - servo_pos[SI_THREE]) * c_roll_fin_force * pow(vel(0),2.0) +
@@ -360,7 +360,7 @@ namespace DUNE
 
 
     Matrix
-    Dynamic::update(Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[VI_SERVO], Matrix vel)
+    Dynamic::update(Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[SI_TOTAL], Matrix vel)
     {
       if (m_inertia_added_mass_matrix.isInvertible())
       {
@@ -377,7 +377,7 @@ namespace DUNE
     }
 
     Matrix
-    Dynamic::update(Matrix vel, Matrix nu, double thruster, double servo_pos[VI_SERVO])
+    Dynamic::update(Matrix vel, Matrix nu, double thruster, double servo_pos[SI_TOTAL])
     {
       if (m_inertia_added_mass_matrix.isInvertible())
         return update(vel, nu, thruster, servo_pos, vel);
@@ -386,7 +386,7 @@ namespace DUNE
     }
 
     Matrix
-    Dynamic::getInEarthFrame(Matrix rotation_matrix, Matrix rotation_matrix_diff, Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[VI_SERVO], Matrix vel)
+    Dynamic::getInEarthFrame(Matrix rotation_matrix, Matrix rotation_matrix_diff, Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[SI_TOTAL], Matrix vel)
     {
 
       if (m_inertia_added_mass_matrix.isInvertible() && rotation_matrix.isInvertible())
@@ -403,10 +403,21 @@ namespace DUNE
         m_lift_n = inverse(transpose(rotation_matrix)) * m_lift_matrix * inverse(rotation_matrix);
         m_tau_n = inverse(transpose(rotation_matrix)) * m_tau_matrix;
 
-      return inverse(m_inertia_added_mass_n) * (m_tau_n - m_coriolis_n * nu_dot - m_damping_n * nu_dot - m_lift_n * nu_dot - m_restoring_n);
+        return inverse(m_inertia_added_mass_n) * (m_tau_n - m_coriolis_n * nu_dot - m_damping_n * nu_dot - m_lift_n * nu_dot - m_restoring_n);
       }
       else
         return Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+    }
+
+    Matrix
+    Dynamic::getIdentification(double thruster, double servo_pos[SI_TOTAL], Matrix vel, Matrix acc, Matrix nu)
+    {
+      m_coriolis_matrix = getCoriolis(vel);
+      m_restoring_matrix = getRestoringForces(nu);
+      m_lift_matrix = getLift(vel);
+      m_tau_matrix = getTau(thruster, servo_pos, vel);
+
+      return -m_tau_matrix + m_coriolis_matrix * vel + m_inertia_added_mass_matrix * acc + m_restoring_matrix + m_lift_matrix * vel;
     }
 
     Matrix
@@ -443,10 +454,16 @@ namespace DUNE
       v(4, 0) = velocities[4];
       v(5, 0) = velocities[5];
 
-      Matrix acc = Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
-      acc = inverse(T) * c_low_pass_filter_coeff * (v - v_bar);
+      if (T.isInvertible())
+      {
 
-      return acc;
+        Matrix acc = Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+        acc = inverse(T) * c_low_pass_filter_coeff * (v - v_bar);
+
+        return acc;
+      }
+      else
+        return Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
     }
   }
 }

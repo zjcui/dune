@@ -52,7 +52,6 @@ namespace DUNE
     //! Variables Index
     enum VariablesIndex
     {
-      VI_SERVO = 3,
       VI_EULER_ANGLE = 3,
       VI_GPS_DATA = 3,
       VI_COV_COLUMNS = 3,
@@ -108,6 +107,8 @@ namespace DUNE
         double density;
         //! Fins coefficient
         double sfin;
+        //! Thruster force in Newtons
+        double thruster_force;
         //! Damping coefficients
         std::vector<float> damping;
       };
@@ -144,7 +145,7 @@ namespace DUNE
       //! if inertia matrix isn't invertible, it returns
       //! a zero matrix
       Matrix
-      update(Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[VI_SERVO], Matrix vel);
+      update(Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[SI_TOTAL], Matrix vel);
       //! This routine calculate the vehicle acceleration
       //! in the body frame
       //! @param[in] measured velocity matrix[6x1]
@@ -155,7 +156,7 @@ namespace DUNE
       //! if inertia matrix isn't invertible, it returns
       //! a zero matrix
       Matrix
-      update(Matrix vel, Matrix nu, double thruster, double servo_pos[VI_SERVO]);
+      update(Matrix vel, Matrix nu, double thruster, double servo_pos[SI_TOTAL]);
       //! This routine calculate the vehicle acceleration
       //! in the earth frame
       //! @param[in] rotation matrix[6x6]
@@ -168,7 +169,17 @@ namespace DUNE
       //! if inertia matrix isn't invertible, it returns
       //! a zero matrix
       Matrix
-      getInEarthFrame(Matrix rotation_matrix, Matrix rotation_matrix_diff, Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[VI_SERVO], Matrix vel);
+      getInEarthFrame(Matrix rotation_matrix, Matrix rotation_matrix_diff, Matrix vel_est, Matrix nu_est, double thruster, double servo_pos[SI_TOTAL], Matrix vel);
+      //! This routine calculate the identification
+      //! coefficient to calculate damping matrix
+      //! @param[in] vehicle thruster actuation matrix[6x1]
+      //! @param[in] vehicle fins declination vector[3]
+      //! @param[in] vehicle velocity matrix[6x1]
+      //! @return an acceleration matrix[6x1],
+      //! if inertia matrix isn't invertible, it returns
+      //! a zero matrix
+      Matrix
+      getIdentification(double thruster, double servo_pos[SI_TOTAL], Matrix vel, Matrix acc, Matrix nu);
       //! This routine calculates a rotation matrix
       //! @param[in] euler angles array[3]
       //! @return a rotation matrix[6x6]
@@ -230,7 +241,7 @@ namespace DUNE
       //! @param[in] vehicle velocity
       //! @return a matrix[6x1]
       Matrix
-      getTau(double thruster, double servo_pos[VI_SERVO], Matrix vel);
+      getTau(double thruster, double servo_pos[SI_TOTAL], Matrix vel);
 
       //! Vehicle Model Physic Characteristics
       Parameters m_args;
