@@ -46,7 +46,7 @@ namespace DUNE
         std::vector<double> k1;
         //! Gain for second order equation
         std::vector<double> k2;
-       //! Luenberger term for first order equation
+        //! Luenberger term for first order equation
         std::vector<double> alfa1;
         //! Luenberger term for second order equation
         std::vector<double> alfa2;
@@ -79,7 +79,7 @@ namespace DUNE
       //! This routine updates the Observer error
       //! @param[in] estimated value
       //! @param[in] real value
-      void
+      Matrix
       updateError(Matrix est, Matrix  real);
       //! This routine updates the state
       //! of the second order equation

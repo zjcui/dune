@@ -83,7 +83,7 @@ namespace DUNE
       return Matrix(tmp_array, MS_ROWS);
     }
 
-    void
+    Matrix
     SlidingModeObserver::updateError(Matrix est, Matrix  real)
     {
       //Calculate error for Sliding Mode Observer
@@ -95,12 +95,14 @@ namespace DUNE
       // To minimize peaks by GPS Corrections - to be used after code tested at sea
       for (int k = 0; k < MS_SEPARATOR_POS_OR; k++)
       {
-        if (std::abs(m_error(k, 0)) >= 2)
+        if (std::abs(m_error(k, 0)) >= 3)
         {
           m_error(k, 0) = 0.0;
           est(k, 0) = real(k, 0);
         }
       }
+
+      return est;
     }
 
     void
@@ -134,8 +136,8 @@ namespace DUNE
     void
     SlidingModeObserver::getTanh(float boundary_layer)
     {
-     for (int i = 0; i < MS_ROWS; i++)
-       m_tang_hyper(i, 0) = tanh(m_error(i) / boundary_layer);
+      for (int i = 0; i < MS_ROWS; i++)
+        m_tang_hyper(i, 0) = tanh(m_error(i) / boundary_layer);
     }
 
     void
