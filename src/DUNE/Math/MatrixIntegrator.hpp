@@ -73,11 +73,18 @@ namespace DUNE
         return m_integrator;
       }
 
-      //! Check current derivative.
+      //! Check current integrator.
       Matrix
       check(void) const
       {
         return m_integrator;
+      }
+
+      //! Set initial condition
+      void
+      setInitialCondition(const Matrix& value)
+      {
+        m_integrator = value;
       }
 
     private:
