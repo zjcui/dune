@@ -73,7 +73,7 @@ namespace Navigation
         static Matrix
         normalizePosition(Matrix nu)
         {
-          if (nu(2,0)< 0.0)
+          if (nu(2,0) < 0.0)
             nu(2,0) = 0;
 
           return nu;

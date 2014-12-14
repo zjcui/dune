@@ -59,8 +59,11 @@ namespace Navigation
         std::string ahrs_entity_name;
         std::string dvl_entity_name;
         std::string altitude_entity_name;
-        //!
+
+        //! Sliding Mode Observer structure
         DUNE::Navigation::SlidingModeObserver::Parameters m_sliding_parameters;
+
+        //! AUV Model structure
         Model::Dynamic::Parameters m_auv_chars;
       };
 
@@ -75,9 +78,11 @@ namespace Navigation
         double m_range;
         double m_bearing;
         double m_orientation_delta;
+        double m_pos_from_dvl_delta;
         MovingAverage<double>* m_avg_hacc;
         double m_hacc_average;
         DUNE::Time::Delta m_delta_orientation;
+        DUNE::Time::Delta m_delta_pos_from_dvl;
 
         //! Orientation variables
         double m_euler_angles[VI_EULER_ANGLE];
@@ -154,7 +159,6 @@ namespace Navigation
         //! Integrators
         DUNE::Math::MatrixIntegrator* m_vel_est_integrator;
         DUNE::Math::MatrixIntegrator* m_nu_est_integrator;
-        DUNE::Math::MatrixIntegrator* m_pos_from_dvl_integrator;
 
         //! Send Estimated State message to bus
         IMC::EstimatedState m_est;
@@ -176,7 +180,6 @@ namespace Navigation
           m_avg_alt(NULL),
           m_vel_est_integrator(NULL),
           m_nu_est_integrator(NULL),
-          m_pos_from_dvl_integrator(NULL),
           m_dynamics(NULL),
           m_smo(NULL)
         {
@@ -255,6 +258,10 @@ namespace Navigation
           param("Sfin", m_args.m_auv_chars.sfin)
           .defaultValue("0.0064")
           .description("Vehicle CG");
+
+          param("Thruster Force", m_args.m_auv_chars.thruster_force)
+          .defaultValue("26.5")
+          .description("Vehicle thruster force in Newtons");
 
           // Damping Matrix terms
           param("Damping terms", m_args.m_auv_chars.damping)
@@ -384,7 +391,6 @@ namespace Navigation
           m_avg_alt = new MovingAverage<double>(VI_AVG_WINDOW);
           m_vel_est_integrator = new DUNE::Math::MatrixIntegrator(MS_ROWS, MS_MIN_COLUMNS);
           m_nu_est_integrator = new DUNE::Math::MatrixIntegrator(MS_ROWS, MS_MIN_COLUMNS);
-          m_pos_from_dvl_integrator = new DUNE::Math::MatrixIntegrator(MS_ROWS, MS_MIN_COLUMNS);
           m_dynamics = new DUNE::Model::Dynamic();
           m_smo = new DUNE::Navigation::SlidingModeObserver();
         }
@@ -397,7 +403,6 @@ namespace Navigation
           Memory::clear(m_avg_hacc);
           Memory::clear(m_vel_est_integrator);
           Memory::clear(m_nu_est_integrator);
-          Memory::clear(m_pos_from_dvl_integrator);
           Memory::clear(m_dynamics);
           Memory::clear(m_smo);
         }
@@ -455,7 +460,7 @@ namespace Navigation
 
           if (msg->getSourceEntity() == m_ahrs_entity_id)
             m_flag_ahrs_active = (msg->state == IMC::EntityState::ESTA_NORMAL &&
-                                 m_ahrs_timeout.overflow() == 0);
+                                  m_ahrs_timeout.overflow() == 0);
 
           if (msg->getSourceEntity() == m_dvl_entity_id)
             m_flag_dvl_active = (msg->state == IMC::EntityState::ESTA_NORMAL &&
@@ -642,8 +647,10 @@ namespace Navigation
         void
         posFromDvl(void)
         {
+          if (m_pos_from_dvl_delta < 0)
+            m_pos_from_dvl_delta = 0;
           m_nu_dot = m_rotation_matrix * m_vel;
-          m_nu = m_pos_from_dvl_integrator->update(m_nu_dot);
+          m_nu = m_nu + m_nu_dot * m_pos_from_dvl_delta;
           // Depth Sensor is always available
           m_nu(2, 0) = m_depth;
 
@@ -766,6 +773,7 @@ namespace Navigation
               posFromGps();
 
             // Position from Dvl
+            m_pos_from_dvl_delta = m_delta_pos_from_dvl.getDelta();
             if (!m_flag_valid_pos)
               posFromDvl();
 
@@ -775,7 +783,7 @@ namespace Navigation
             // Sliding Mode Observer Error
             if (m_init_nu_est)
             {
-              m_smo->updateError(m_nu_est, m_nu);
+              m_nu_est = m_smo->updateError(m_nu_est, m_nu);
 
               // Calculate Vehicle Model Coefficients and M Matrix one time
               if (!m_observer_init)
@@ -796,8 +804,8 @@ namespace Navigation
               m_nu_est = Aux::normalizePosition(m_nu_est);
               m_nu_est = Aux::normalizeOrientation(m_nu_est);
             }
-             fillAndDispatchEstimatedState();
-             fillAndDispatchNavigationUncertainty();
+            fillAndDispatchEstimatedState();
+            fillAndDispatchNavigationUncertainty();
           }
         }
       };
