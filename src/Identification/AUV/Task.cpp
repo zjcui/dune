@@ -27,6 +27,8 @@
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
+// ofstream constructor.
+#include <fstream>
 
 namespace Identification
 {
@@ -46,115 +48,109 @@ namespace Identification
     //! @author Tiago Rodrigues
     using DUNE_NAMESPACES;
 
+    //! Variables Index
+    enum IdentificationMatricesSize
+    {
+      IMS_SURGE = 2,
+      IMS_ROLL = 4
+    };
+
     struct Arguments
     {
-      // Resolve Entity string
+      //! GPS variables
+      double gps_absolute_treshold;
+      double gps_average_treshold;
+
+      //! Resolve Entity string
       std::string imu_entity_name;
       std::string ahrs_entity_name;
+      std::string dvl_entity_name;
 
-      // AUV caracteristic
-      double mass;
-      double a;
-      double b;
-      double c;
-      double volume;
-      double zG;
-      double l;
-      double d;
-      double density;
-      double sfin;
+      //! Model structures
+      Model::Dynamic::Parameters m_auv_chars;
 
-      // Parameters for Identification algorithm
-      double surge_ldi;
-      double surge_qdi;
-      double surge_cov1;
-      double surge_cov2;
-      double roll_mcoef;
-      double roll_ffcoef;
-      double roll_ldi;
-      double roll_qdi;
-      double roll_cov1;
-      double roll_cov2;
-      double roll_cov3;
-      double roll_cov4;
+      //! Parameters for Identification algorithm
+      std::vector<float> surge_coeff;
+      std::vector<float> roll_coeff;
+      std::vector<float> surge_cov;
+      std::vector<float> roll_cov;
     };
 
     struct Task: public DUNE::Tasks::Periodic
     {
-      // Depth
+      // Current log directory.
+      Path m_dir;
+
+      //! Depth
       double m_depth;
 
-      // Velocities variables
-      double m_velocities[6];
-      double m_velocities_ant[6];
+      //! Velocities variables
+      double m_velocities[MS_ROWS];
       Math::Matrix m_vel;
-      double m_angular_vel[3];
 
-      // Rotation Matrix
+      //! Rotation Matrix
       Math::Matrix m_rotation;
 
-      // Filter Variables
+      //! Filter Variables
       Math::Matrix m_acc_filter;
       Math::Matrix m_vel_filter;
       double m_filter_delta;
       DUNE::Time::Delta m_delta_filter;
 
-      // Entity Variables
+      //! Entity Variables
       bool m_flag_imu_active;
       bool m_flag_ahrs_active;
       int m_imu_entity_id;
       int m_ahrs_entity_id;
 
-      // Position Matrices
+      //! Position Matrices
       Math::Matrix m_nu_dot;
       Math::Matrix m_nu;
 
-      // vehicle Model
-      Math::Matrix m_inertia_added_mass;
-      Math::Matrix m_coriolis;
-      Math::Matrix m_damping;
-      Math::Matrix m_restoring;
-      Math::Matrix m_lift;
-      Math::Matrix m_tau;
+      //! vehicle Model
       double m_thruster;
-      double m_servo_pos[4];
+      double m_servo_pos[SI_TOTAL];
 
-      // Vehicle Model coefficients
-      double m_model_coeff[26];
-      int m_model_coef_init;
-
-      // Identification Matrices
+      //! Identification Matrices
+      // Reference
       Math::Matrix m_y;
+      // Surge Matrices
       Math::Matrix m_e_x;
       Math::Matrix m_dp_dt_x;
       Math::Matrix m_p_x;
       Math::Matrix m_dtheta_dt_x;
       Math::Matrix m_theta_x;
       Math::Matrix m_phi_x;
-      double m_cls_p_delta_x;
-      double m_cls_theta_delta_x;
-      DUNE::Time::Delta m_delta_cls_p_x;
-      DUNE::Time::Delta m_delta_cls_theta_x;
-
+      DUNE::Math::MatrixIntegrator* m_cls_p_x_integrator;
+      DUNE::Math::MatrixIntegrator* m_cls_theta_x_integrator;
+      // Roll Matrices
       Math::Matrix m_e_k;
       Math::Matrix m_dp_dt_k;
       Math::Matrix m_p_k;
       Math::Matrix m_dtheta_dt_k;
       Math::Matrix m_theta_k;
       Math::Matrix m_phi_k;
-      double m_cls_p_delta_k;
-      double m_cls_theta_delta_k;
-      DUNE::Time::Delta m_delta_cls_p_k;
-      DUNE::Time::Delta m_delta_cls_theta_k;
+      DUNE::Math::MatrixIntegrator* m_cls_p_k_integrator;
+      DUNE::Math::MatrixIntegrator* m_cls_theta_k_integrator;
 
-      bool m_matrices_ini;
+      //! Task initialize variable
+      bool m_identification_ini;
+
+      //! File stream variable
+      std::ofstream outfile;
 
       Arguments m_args;
 
-      DUNE::Model::Dynamic m_dynamics;
+      //! Pointer to class with auv dynamic
+      DUNE::Model::Dynamic* m_dynamics;
 
       Task(const std::string& name, Tasks::Context& ctx):
-        Periodic(name, ctx)
+        Periodic(name, ctx),
+        m_cls_p_x_integrator(NULL),
+        m_cls_theta_x_integrator(NULL),
+        m_cls_p_k_integrator(NULL),
+        m_cls_theta_k_integrator(NULL),
+        m_dynamics(NULL)
       {
         // Sensor Entities
         param("Entity Label IMU", m_args.imu_entity_name)
@@ -166,93 +162,61 @@ namespace Identification
         .description("Label of the AHRS message");
 
         // Vehicle physical properties
-        param("Vehicle Mass", m_args.mass)
+        param("Vehicle Mass", m_args.m_auv_chars.mass)
         .defaultValue("18")
         .description("Vehicle Mass");
 
-        param("Vehicle Half Lenght", m_args.a)
+        param("Vehicle Half Lenght", m_args.m_auv_chars.a)
         .defaultValue("0.54")
         .description("Vehicle lenght");
 
-        param("Vehicle Width", m_args.b)
+        param("Vehicle Width", m_args.m_auv_chars.b)
         .defaultValue("0.075")
         .description("Vehicle height");
 
-        param("Vehicle Height", m_args.c)
+        param("Vehicle Height", m_args.m_auv_chars.c)
         .defaultValue("0.075")
         .description("Vehicle width");
 
-        param("Vehicle Volume", m_args.volume)
+        param("Vehicle Volume", m_args.m_auv_chars.volume)
         .defaultValue("0.0181")
         .description("Vehicle Volume");
 
-        param("Vehicle zG", m_args.zG)
+        param("Vehicle zG", m_args.m_auv_chars.zG)
         .defaultValue("0.01")
         .description("Vehicle CG");
 
-        param("Vehicle Lenght", m_args.l)
+        param("Vehicle Lenght", m_args.m_auv_chars.l)
         .defaultValue("1.08")
         .description("Vehicle CG");
 
-        param("Vehicle Diameter", m_args.d)
+        param("Vehicle Diameter", m_args.m_auv_chars.d)
         .defaultValue("0.15")
         .description("Vehicle CG");
 
-        param("Density", m_args.density)
+        param("Density", m_args.m_auv_chars.density)
         .defaultValue("1030")
         .description("Vehicle CG");
 
-        param("Sfin", m_args.sfin)
+        param("Sfin", m_args.m_auv_chars.sfin)
         .defaultValue("0.0064")
         .description("Vehicle CG");
 
+        param("Thruster Force", m_args.m_auv_chars.thruster_force)
+        .defaultValue("26.5")
+        .description("Vehicle thruster force in Newtons");
+
         // Identification Algorithm initial values
-        param("Surge ld ini", m_args.surge_ldi)
-        .defaultValue("3.52")
-        .description("Surge linear damping initial value");
+        param("Surge Coefficients", m_args.surge_coeff)
+        .description("Surge coefficients initial value");
 
-        param("Surge qd ini", m_args.surge_qdi)
-        .defaultValue("1.76")
-        .description("Surge quadratic damping initial value");
+        param("Roll Coefficients", m_args.roll_coeff)
+        .description("Roll coefficients initial value");
 
-        param("Surge Cov one", m_args.surge_cov1)
-        .defaultValue("5")
+        param("Surge Covariance", m_args.surge_cov)
         .description("Surge covariance initial value");
 
-        param("Surge Cov two", m_args.surge_cov2)
-        .defaultValue("5")
-        .description("Surge covariance initial value");
-
-        param("Roll mcoef ini", m_args.roll_mcoef)
-        .defaultValue("0.05")
-        .description("Roll motor coefficient");
-
-        param("Roll ffcoef ini", m_args.roll_ffcoef)
-        .defaultValue("0.25")
-        .description("Roll fins coefficient");
-
-        param("Roll ld ini", m_args.roll_ldi)
-        .defaultValue("0.7")
-        .description("Roll linear damping initial value");
-
-        param("Roll qd ini", m_args.roll_qdi)
-        .defaultValue("0.81")
-        .description("Roll quadratic damping initia value");
-
-        param("Roll Cov one", m_args.roll_cov1)
-        .defaultValue("0.5")
-        .description("Roll covariance initial value");
-
-        param("Roll Cov two", m_args.roll_cov2)
-        .defaultValue("1")
-        .description("Roll covariance initial value");
-
-        param("Roll Cov three", m_args.roll_cov3)
-        .defaultValue("0.7")
-        .description("Roll covariance initial value");
-
-        param("Roll Cov four", m_args.roll_cov4)
-        .defaultValue("0.5")
+        param("Roll Covariance", m_args.roll_cov)
         .description("Roll covariance initial value");
 
         // Depth
@@ -260,59 +224,43 @@ namespace Identification
 
         // Velocities variables
         memset(m_velocities,0,sizeof(m_velocities));
-        memset(m_velocities_ant,0,sizeof(m_velocities));
-        m_vel.resizeAndFill(6,1,0.0);
-        memset(m_angular_vel,0,sizeof(m_angular_vel));
+        m_vel.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
 
         // Rotation Matrix
-        m_rotation.resizeAndFill(6,6,0.0);
+        m_rotation.resizeAndFill(MS_ROWS, MS_MAX_COLUMNS, 0.0);
 
         // Filter Variables
-        m_acc_filter.resizeAndFill(6,1,0.0);
-        m_vel_filter.resizeAndFill(6,1,0.0);
+        m_acc_filter.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+        m_vel_filter.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
         m_filter_delta = 0;
 
         // Position Matrices
-        m_nu_dot.resizeAndFill(6,1,0.0);
-        m_nu.resizeAndFill(6,1,0.0);
+        m_nu_dot.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
+        m_nu.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
 
         // Vehicle Model
-        m_inertia_added_mass.resizeAndFill(6,6,0.0);
-        m_coriolis.resizeAndFill(6,6,0.0);
-        m_damping.resizeAndFill(6,6,0.0);
-        m_restoring.resizeAndFill(6,1,0.0);
-        m_lift.resizeAndFill(6,6,0.0);
-        m_tau.resizeAndFill(6,1,0.0);
         m_thruster = 0;
         memset(m_servo_pos,0,sizeof(m_servo_pos));
 
-        // Vehicle Model coefficients*/
-        memset(m_model_coeff,0,sizeof(m_model_coeff));
-        m_model_coef_init = 0;
-
-        // Identification Matrices*/
+        // Identification Matrices
+        m_y.resizeAndFill(MS_ROWS, MS_MIN_COLUMNS, 0.0);
         // Surge
-        m_y.resizeAndFill(6,1,0.0);
-        m_e_x.resizeAndFill(1,1,0.0);
-        m_dp_dt_x.resizeAndFill(2,2,0.0);
-        m_p_x.resizeAndFill(2,2,0);
-        m_dtheta_dt_x.resizeAndFill(2,1,0.0);
-        m_theta_x.resizeAndFill(2,1,0);
-        m_phi_x.resizeAndFill(2,1,0.0);
-        m_cls_p_delta_x = 0;
-        m_cls_theta_delta_x = 0;
+        m_e_x.resizeAndFill(MS_MIN_COLUMNS, MS_MIN_COLUMNS, 0.0);
+        m_dp_dt_x.resizeAndFill(IMS_SURGE, IMS_SURGE, 0.0);
+        m_p_x.resizeAndFill(IMS_SURGE, IMS_SURGE, 0);
+        m_dtheta_dt_x.resizeAndFill(IMS_SURGE, MS_MIN_COLUMNS, 0.0);
+        m_theta_x.resizeAndFill(IMS_SURGE, MS_MIN_COLUMNS, 0);
+        m_phi_x.resizeAndFill(IMS_SURGE, MS_MIN_COLUMNS, 0.0);
 
         // Roll
-        m_e_k.resizeAndFill(1,1,0.0);
-        m_dp_dt_k.resizeAndFill(4,4,0.0);
-        m_p_k.resizeAndFill(4,4,0);
-        m_dtheta_dt_k.resizeAndFill(4,1,0.0);
-        m_theta_k.resizeAndFill(4,1,0.0);
-        m_phi_k.resizeAndFill(4,1,0.0);
-        m_cls_p_delta_k = 0;
-        m_cls_theta_delta_k = 0;
+        m_e_k.resizeAndFill(MS_MIN_COLUMNS, MS_MIN_COLUMNS, 0.0);
+        m_dp_dt_k.resizeAndFill(IMS_ROLL, IMS_ROLL, 0.0);
+        m_p_k.resizeAndFill(IMS_ROLL, IMS_ROLL, 0);
+        m_dtheta_dt_k.resizeAndFill(IMS_ROLL, MS_MIN_COLUMNS, 0.0);
+        m_theta_k.resizeAndFill(IMS_ROLL, MS_MIN_COLUMNS, 0.0);
+        m_phi_k.resizeAndFill(IMS_ROLL, MS_MIN_COLUMNS, 0.0);
 
-        m_matrices_ini = false;
+        m_identification_ini = false;
 
         // Register Consumers
         bind<IMC::EntityState>(this);
@@ -322,6 +270,27 @@ namespace Identification
         bind<IMC::AngularVelocity>(this);
         bind<IMC::SetThrusterActuation>(this);
         bind<IMC::ServoPosition>(this);
+      }
+
+      void
+      onResourceInitialization(void)
+      {
+        m_cls_p_x_integrator = new DUNE::Math::MatrixIntegrator(IMS_SURGE, IMS_SURGE);
+        m_cls_theta_x_integrator = new DUNE::Math::MatrixIntegrator(IMS_SURGE, IMS_SURGE);
+        m_cls_p_k_integrator = new DUNE::Math::MatrixIntegrator(IMS_ROLL, IMS_ROLL);
+        m_cls_theta_k_integrator = new DUNE::Math::MatrixIntegrator(IMS_ROLL, IMS_ROLL);
+        m_dynamics = new DUNE::Model::Dynamic();
+      }
+
+      void
+      onResourceRelease(void)
+      {
+        Memory::clear(m_cls_p_x_integrator);
+        Memory::clear(m_cls_theta_x_integrator);
+        Memory::clear(m_cls_p_k_integrator);
+        Memory::clear(m_cls_theta_k_integrator);
+        Memory::clear(m_dynamics);
+        outfile.close();
       }
 
       void
@@ -351,7 +320,7 @@ namespace Identification
       void
       consume(const IMC::EntityState* msg)
       {
-        if (msg->getSourceEntity() == m_imu_entity_id)
+        if (msg->getSourceEntity() == m_imu_entity_id && msg->state == IMC::EntityState::ESTA_NORMAL)
         {
           if (msg->state == IMC::EntityState::ESTA_NORMAL)
             m_flag_imu_active = true;
@@ -359,7 +328,7 @@ namespace Identification
             m_flag_imu_active = false;
         }
 
-        if (msg->getSourceEntity() == m_ahrs_entity_id)
+        if (msg->getSourceEntity() == m_ahrs_entity_id && msg->state == IMC::EntityState::ESTA_NORMAL)
         {
           if (msg->state == IMC::EntityState::ESTA_NORMAL)
             m_flag_ahrs_active = true;
@@ -405,11 +374,11 @@ namespace Identification
           m_velocities[5] = msg->z;
         }
 
-        if (m_flag_ahrs_active && msg->getSourceEntity() == m_ahrs_entity_id)
+        if (m_flag_ahrs_active && msg->getSourceEntity() == m_ahrs_entity_id && !m_flag_imu_active)
         {
-          m_angular_vel[0] = msg->x;
-          m_angular_vel[1] = msg->y;
-          m_angular_vel[2] = msg->z;
+          m_velocities[3] = msg->x;
+          m_velocities[4] = msg->y;
+          m_velocities[5] = msg->z;
         }
       }
 
@@ -426,127 +395,108 @@ namespace Identification
       }
 
       void
-      initMatrices()
+      initIdentification()
       {
-        m_p_x(0,0) = m_args.surge_cov1;
-        m_p_x(1,1) = m_args.surge_cov2;
+        // Initialize surge matrices
+        m_p_x(0, 0) = m_args.surge_cov[0];
+        m_p_x(1, 1) = m_args.surge_cov[1];
 
-        m_theta_x(0,0) = m_args.surge_ldi;
-        m_theta_x(1,0) = m_args.surge_qdi;
+        m_theta_x(0, 0) = m_args.surge_coeff[0];
+        m_theta_x(1, 0) = m_args.surge_coeff[1];
 
-        m_p_k(0,0) = m_args.roll_cov1;
-        m_p_k(1,1) = m_args.roll_cov2;
-        m_p_k(2,2) = m_args.roll_cov3;
-        m_p_k(3,3) = m_args.roll_cov4;
+        m_cls_p_x_integrator->setInitialCondition(m_p_x);
+        m_cls_theta_x_integrator->setInitialCondition(m_theta_x);
 
-        m_theta_k(0,0) = m_args.roll_mcoef;
-        m_theta_k(1,0) = m_args.roll_ffcoef;
-        m_theta_k(2,0) = m_args.roll_ldi;
-        m_theta_k(3,0) = m_args.roll_qdi;
-      }
+        // Initialize roll matrices
+        m_p_k(0, 0) = m_args.roll_cov[0];
+        m_p_k(1, 1) = m_args.roll_cov[1];
+        m_p_k(2, 2) = m_args.roll_cov[2];
+        m_p_k(3, 3) = m_args.roll_cov[3];
 
-      void
-      auvModel(void)
-      {
-        // Calculate Vehicle Model Coefficients and M Matrix one time
-        if (m_model_coef_init == 0)
-        {
-          m_dynamics.computeModelCoeff(m_args.mass, m_args.a, m_args.b, m_args.c, m_args.volume, m_args.l, m_args.d, m_args.density, m_args.sfin, m_model_coeff);
+        m_theta_k(0, 0) = m_args.roll_coeff[0];
+        m_theta_k(1, 0) = m_args.roll_coeff[1];
+        m_theta_k(2, 0) = m_args.roll_coeff[2];
+        m_theta_k(3, 0) = m_args.roll_coeff[3];
 
-          // Calculate Vehicle Model
-          m_inertia_added_mass = m_dynamics.computeM(m_args.mass, m_model_coeff, m_args.zG);
+        m_cls_p_k_integrator->setInitialCondition(m_p_k);
+        m_cls_theta_k_integrator->setInitialCondition(m_theta_k);
 
-          m_model_coef_init = m_model_coef_init + 1;
-        }
+        // Initialize file to output data
+        m_dir = m_ctx.dir_log;
+        Path out_path = m_dir / "identification.txt";
+        outfile.open(out_path.c_str(), std::ofstream::app);
+        outfile << "Date - " + DUNE::Time::Format::getTimeDate() + "\n";
 
-        m_coriolis = m_dynamics.computeC(m_args.mass, m_model_coeff, m_args.zG, m_vel_filter);
+        // Initialize AUV dynamic
+        m_dynamics->load(m_args.m_auv_chars);
 
-        m_restoring = m_dynamics.computeG(m_model_coeff, m_args.zG, m_nu);
-
-        m_lift = m_dynamics.computeL(m_vel_filter, m_args.l, m_model_coeff);
-
-        m_tau = m_dynamics.computeTau(m_thruster, m_servo_pos, m_vel_filter, m_model_coeff);
+        m_identification_ini = true;
       }
 
       void
       task(void)
       {
-        if (!m_matrices_ini)
-          initMatrices();
+        if (!m_identification_ini)
+          initIdentification();
 
-        // Filters velocities
         m_filter_delta = m_delta_filter.getDelta();
-        if (m_filter_delta == -1)
-          m_filter_delta = 0.05;
+        if (m_filter_delta <= 0.0)
+          m_filter_delta = 0;
 
-        m_acc_filter = m_dynamics.computeAcceleration(m_velocities, m_vel_filter, m_filter_delta);
+        // Velocity low pass filter
+        m_acc_filter = m_dynamics->getAcceleration(m_velocities, m_vel_filter, m_filter_delta);
         m_vel_filter = m_vel_filter + m_acc_filter * m_filter_delta;
 
-        m_y = -m_tau + m_coriolis  * m_vel_filter + m_inertia_added_mass * m_acc_filter + m_restoring + m_lift * m_vel_filter;
+        m_y = m_dynamics->getIdentification(m_thruster, m_servo_pos, m_vel_filter, m_acc_filter, m_nu);
 
         // Continuous Least Squares
-
         // Longitudinal Linear Velocity Damping
         try{
-          inf("theta_x");
+          outfile << "theta x\n";
 
-          m_phi_x(0,0) = -m_vel_filter(0);
-          m_phi_x(1,0) = -std::abs(m_vel_filter(0)) * m_vel_filter(0);
+          m_phi_x(0, 0) = -m_vel_filter(0);
+          m_phi_x(1, 0) = -std::abs(m_vel_filter(0)) * m_vel_filter(0);
 
-          m_e_x(0) = m_phi_x(0) * m_theta_x(0) + m_phi_x(1) * m_theta_x(1) - m_y(0);
+          m_e_x(0) = m_phi_x(0) * m_theta_x(0) +
+          m_phi_x(1) * m_theta_x(1) -
+          m_y(0);
 
           m_dp_dt_x = -m_p_x * m_phi_x * transpose(m_phi_x) * m_p_x;
 
-          m_cls_p_delta_x = m_delta_cls_p_x.getDelta();
-
-          if (m_cls_p_delta_x == -1)
-            m_cls_p_delta_x = 0.05;
-
-          m_p_x = m_p_x + m_dp_dt_x * m_cls_p_delta_x;
+          m_p_x = m_cls_p_x_integrator->update(m_dp_dt_x);
 
           m_dtheta_dt_x = -m_p_x * m_phi_x * m_e_x;
 
-          m_cls_theta_delta_x = m_delta_cls_theta_x.getDelta();
+          m_theta_x = m_cls_theta_x_integrator->update(m_dtheta_dt_x);
 
-          if (m_cls_theta_delta_x == -1)
-            m_cls_theta_delta_x = 0.05;
-
-          m_theta_x = m_theta_x + m_dtheta_dt_x * m_cls_theta_delta_x;
-
-          std::cout<<m_theta_x<<std::endl;
+          outfile << m_theta_x;
         }
         catch(...){}
 
         // Roll Angular velocity Damping
         try{
-          inf("theta_k");
+          outfile << "theta k\n";
 
-          m_phi_k(0,0) = m_thruster * 10 / 0.84;
-          m_phi_k(1,0) = (m_servo_pos[3] - m_servo_pos[0] + m_servo_pos[1] - m_servo_pos[2]) * pow(m_vel_filter(0), 2.0);
-          m_phi_k(2,0) = -m_vel_filter(3);
-          m_phi_k(3,0) = -std::abs(m_vel_filter(3)) * m_vel_filter(3);
+          m_phi_k(0, 0) = m_thruster * m_args.m_auv_chars.thruster_force;
+          m_phi_k(1, 0) = (m_servo_pos[3] - m_servo_pos[0] + m_servo_pos[1] - m_servo_pos[2]) * pow(m_vel_filter(0), 2.0);
+          m_phi_k(2, 0) = -m_vel_filter(3);
+          m_phi_k(3, 0) = -std::abs(m_vel_filter(3)) * m_vel_filter(3);
 
-          m_e_k(0) = m_phi_k(0) * m_theta_k(0) + m_phi_k(1) * m_theta_k(1) + m_phi_k(2) * m_theta_k(2) + m_phi_k(3) * m_theta_k(3) - m_y(3);
+          m_e_k(0) = m_phi_k(0) * m_theta_k(0) +
+          m_phi_k(1) * m_theta_k(1) +
+          m_phi_k(2) * m_theta_k(2) +
+          m_phi_k(3) * m_theta_k(3) -
+          m_y(3);
 
           m_dp_dt_k = -m_p_k * m_phi_k * transpose(m_phi_k) * m_p_k;
 
-          m_cls_p_delta_k = m_delta_cls_p_k.getDelta();
-
-          if (m_cls_p_delta_k == -1)
-            m_cls_p_delta_k = 0.05;
-
-          m_p_k = m_p_k + m_dp_dt_k * m_cls_p_delta_k;
+          m_p_k = m_cls_p_k_integrator->update(m_dp_dt_k);
 
           m_dtheta_dt_k = -m_p_k * m_phi_k * m_e_k;
 
-          m_cls_theta_delta_k = m_delta_cls_theta_k.getDelta();
+          m_theta_k = m_cls_theta_k_integrator->update(m_dtheta_dt_k);
 
-          if (m_cls_theta_delta_k == -1)
-            m_cls_theta_delta_k = 0.05;
-
-          m_theta_k = m_theta_k + m_dtheta_dt_k * m_cls_theta_delta_k;
-
-          std::cout<<m_theta_k<<std::endl;
+          outfile << m_theta_k;
         }
         catch(...){}
       }
