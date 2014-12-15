@@ -320,7 +320,7 @@ namespace Identification
       void
       consume(const IMC::EntityState* msg)
       {
-        if (msg->getSourceEntity() == m_imu_entity_id && msg->state == IMC::EntityState::ESTA_NORMAL)
+        if (msg->getSourceEntity() == m_imu_entity_id)
         {
           if (msg->state == IMC::EntityState::ESTA_NORMAL)
             m_flag_imu_active = true;
@@ -328,7 +328,7 @@ namespace Identification
             m_flag_imu_active = false;
         }
 
-        if (msg->getSourceEntity() == m_ahrs_entity_id && msg->state == IMC::EntityState::ESTA_NORMAL)
+        if (msg->getSourceEntity() == m_ahrs_entity_id)
         {
           if (msg->state == IMC::EntityState::ESTA_NORMAL)
             m_flag_ahrs_active = true;
