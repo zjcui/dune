@@ -104,7 +104,7 @@ namespace DUNE
     Dynamic::getModelCoeff()
     {
       // Inertia
-      double Ixx = m_args.mass / IT_R * ( pow(m_args.b, 2.0) + pow(m_args.c, 2.0) );
+      double Ixx = m_args.mass / IT_R * (pow(m_args.b, 2.0) + pow(m_args.c, 2.0));
       double l_r = 0;
 
       if (m_args.b >= m_args.c)
@@ -117,8 +117,8 @@ namespace DUNE
 
       // Added Mass [Fossen]
       double e = 1 - pow(m_args.b / m_args.a, 2.0);
-      double alpha_0 = (2 * ( 1 - pow(e, 2.0)) / pow(e, 3.0)) * ((1.0 / 2.0) * std::log(( 1 + e ) / ( 1 - e )) - e);
-      double betha_0 = 1.0 / pow(e, 2.0) - (1 - pow(e, 2.0) ) / (2 * pow(e, 3.0)) * std::log(( 1 + e ) / ( 1 - e ));
+      double alpha_0 = (2 * (1 - pow(e, 2.0)) / pow(e, 3.0)) * ((1.0 / 2.0) * std::log(( 1 + e ) / ( 1 - e )) - e);
+      double betha_0 = 1.0 / pow(e, 2.0) - (1 - pow(e, 2.0) ) / (2 * pow(e, 3.0)) * std::log((1 + e ) / (1 - e));
       double X_dudt = - alpha_0 / (2 - alpha_0) * m_args.mass;
       double Y_dvdt = - betha_0 / (2 - betha_0) * m_args.mass;
       double Z_dwdt = Y_dvdt;
@@ -294,11 +294,11 @@ namespace DUNE
       double B = m_model_coeff[10];
 
       Math::Matrix G_tmp(MS_ROWS, MS_MIN_COLUMNS, 0.0);
-      G_tmp(0, 0) = (W - B) * std::sin(theta);
-      G_tmp(1, 0) = -(W - B) * std::cos(theta) * std::sin(phi);
-      G_tmp(2, 0) = -(W - B) * std::cos(theta) * std::cos(phi);
-      G_tmp(3, 0) = m_args.zG * W * std::cos(theta) * std::sin(phi);
-      G_tmp(4, 0) = m_args.zG * W * std::sin(theta);
+      G_tmp(0) = (W - B) * std::sin(theta);
+      G_tmp(1) = -(W - B) * std::cos(theta) * std::sin(phi);
+      G_tmp(2) = -(W - B) * std::cos(theta) * std::cos(phi);
+      G_tmp(3) = m_args.zG * W * std::cos(theta) * std::sin(phi);
+      G_tmp(4) = m_args.zG * W * std::sin(theta);
 
       return G_tmp;
     }
@@ -347,13 +347,13 @@ namespace DUNE
       Nf = m_model_coeff[26];
 
       Matrix tau_tmp(MS_ROWS, MS_MIN_COLUMNS, 0.0);
-      tau_tmp(0, 0) = thruster * m_args.thruster_force;
-      tau_tmp(1, 0) = (servo_pos[SI_ONE] + servo_pos[SI_FOUR]) * Yf / 2 * pow(vel(0), 2.0);
-      tau_tmp(2, 0) = (servo_pos[SI_TWO] + servo_pos[SI_THREE]) * Zf / 2 * pow(vel(0), 2.0);
-      tau_tmp(3, 0) = (servo_pos[SI_FOUR] - servo_pos[SI_ONE] + servo_pos[SI_TWO] - servo_pos[SI_THREE]) * c_roll_fin_force * pow(vel(0),2.0) +
+      tau_tmp(0) = thruster * m_args.thruster_force;
+      tau_tmp(1) = (servo_pos[SI_ONE] + servo_pos[SI_FOUR]) * Yf / 2 * pow(vel(0), 2.0);
+      tau_tmp(2) = (servo_pos[SI_TWO] + servo_pos[SI_THREE]) * Zf / 2 * pow(vel(0), 2.0);
+      tau_tmp(3) = (servo_pos[SI_FOUR] - servo_pos[SI_ONE] + servo_pos[SI_TWO] - servo_pos[SI_THREE]) * c_roll_fin_force * pow(vel(0),2.0) +
       c_roll_torque_motor_force * tau_tmp(0, 0);
-      tau_tmp(4, 0) = (servo_pos[SI_TWO] + servo_pos[SI_THREE]) * Mf / 2  * pow(vel(0), 2.0);
-      tau_tmp(5, 0) = (servo_pos[SI_ONE] + servo_pos[SI_FOUR]) * Nf / 2  * pow(vel(0), 2.0);
+      tau_tmp(4) = (servo_pos[SI_TWO] + servo_pos[SI_THREE]) * Mf / 2  * pow(vel(0), 2.0);
+      tau_tmp(5) = (servo_pos[SI_ONE] + servo_pos[SI_FOUR]) * Nf / 2  * pow(vel(0), 2.0);
 
       return tau_tmp;
     }
@@ -439,20 +439,20 @@ namespace DUNE
     Dynamic::getAcceleration(double velocities[MS_ROWS], Matrix v_bar, double delta_t)
     {
       Matrix T = Matrix(MS_ROWS, MS_MAX_COLUMNS, 0.0);
-      T(0,0) = delta_t;
-      T(1,1) = delta_t;
-      T(2,2) = delta_t;
-      T(3,3) = delta_t;
-      T(4,4) = delta_t;
-      T(5,5) = delta_t;
+      T(0, 0) = delta_t;
+      T(1, 1) = delta_t;
+      T(2, 2) = delta_t;
+      T(3, 3) = delta_t;
+      T(4, 4) = delta_t;
+      T(5, 5) = delta_t;
 
       Matrix v = Matrix(MS_ROWS, MS_MIN_COLUMNS, 0.0);
-      v(0, 0) = velocities[0];
-      v(1, 0) = velocities[1];
-      v(2, 0) = velocities[2];
-      v(3, 0) = velocities[3];
-      v(4, 0) = velocities[4];
-      v(5, 0) = velocities[5];
+      v(0) = velocities[0];
+      v(1) = velocities[1];
+      v(2) = velocities[2];
+      v(3) = velocities[3];
+      v(4) = velocities[4];
+      v(5) = velocities[5];
 
       if (T.isInvertible())
       {
