@@ -34,8 +34,16 @@ namespace Power
   {
     using DUNE_NAMESPACES;
 
-    // PSU packet power identifier.
-    static const unsigned c_pkt_power = 2;
+    //! Packet identifiers.
+    enum
+    {
+      //! State.
+      PKT_ID_STATE       = 1,
+      //! Power.
+      PKT_ID_PWR         = 2,
+      //! Trigger.
+      PKT_ID_TRG         = 3
+    };
 
     //! %Task arguments.
     struct Arguments
@@ -121,7 +129,7 @@ namespace Power
       {
         uint8_t value = on ? 1 : 0;
         UCTK::Frame frame;
-        frame.setId(c_pkt_power);
+        frame.setId(PKT_ID_PWR);
         frame.setPayloadSize(1);
         frame.set(value, 0);
         if (m_psu_ctl->sendFrame(frame, 2.0))
@@ -131,6 +139,27 @@ namespace Power
         }
 
         return false;
+      }
+
+      bool
+      getMonitors(void)
+      {
+        UCTK::Frame frame;
+        frame.setId(PKT_ID_STATE);
+
+        if (!m_psu_ctl->sendFrame(frame))
+          return false;
+
+        if (frame.getPayloadSize() != 2)
+          return false;
+
+        // Voltage.
+        uint16_t tmp_u16 = 0;
+        frame.get(tmp_u16, 0);
+        IMC::Voltage v;
+        v.value = tmp_u16 / 1000.0;
+        dispatch(v);
+        return true;
       }
 
       void
@@ -159,9 +188,17 @@ namespace Power
       void
       onMain(void)
       {
+        Counter<double> m_mon_timer(1.0);
+
         while (!stopping())
         {
           waitForMessages(1.0);
+
+          if (m_mon_timer.overflow())
+          {
+            m_mon_timer.reset();
+            getMonitors();
+          }
         }
       }
     };
