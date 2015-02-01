@@ -34,6 +34,9 @@
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
 
+// Local headers.
+#include "RampLimiter.hpp"
+
 namespace Actuators
 {
   namespace SIMCT01
@@ -62,6 +65,8 @@ namespace Actuators
       double feedback_freq;
       //! Scale factor
       double scale;
+      //! Maximum rate of change in actuation
+      float max_rate;
       //! Watchdog timeout.
       double wdog_tout;
     };
@@ -78,6 +83,8 @@ namespace Actuators
       std::vector<Counter<double> > m_wdogs;
       //! Reply timeout.
       double m_reply_tout;
+      //! Ramp limiters for thruster actuation
+      std::vector<RampLimiter<int8_t>*> m_rl;
       //! Task arguments.
       Arguments m_args;
 
@@ -123,6 +130,12 @@ namespace Actuators
         .minimumValue("0.1")
         .units(Units::Hertz)
         .description("Frequency with which the motors are queried for current and RPMs");
+
+        param("Maximum Rate Of Change", m_args.max_rate)
+        .defaultValue("100.0")
+        .visibility(Tasks::Parameter::VISIBILITY_USER)
+        .scope(Tasks::Parameter::SCOPE_MANEUVER)
+        .description("Maximum rate of change in actuation");
 
         param("Watchdog Timeout", m_args.wdog_tout)
         .units(Units::Second)
@@ -173,6 +186,12 @@ namespace Actuators
         m_uart = new SerialPort(m_args.uart_dev, m_args.uart_baud);
         m_uart->setCanonicalInput(true);
         m_uart->setCanonicalInputTerminator('\r');
+
+        for (unsigned i = 0; i < m_args.addrs_log.size(); ++i)
+        {
+          RampLimiter<int8_t>* rl = new RampLimiter<int8_t>(m_args.max_rate);
+          m_rl.push_back(rl);
+        }
       }
 
       void
@@ -196,12 +215,21 @@ namespace Actuators
       onResourceRelease(void)
       {
         Memory::clear(m_uart);
+
+        for (unsigned i = 0; i < m_rl.size(); ++i)
+          Memory::clear(m_rl[i]);
       }
 
       void
       setReplyTimeout(double timeout)
       {
         m_reply_tout = timeout;
+      }
+
+      int8_t
+      scaleConversion(float value)
+      {
+        return (int8_t)(value * m_args.scale);
       }
 
       void
@@ -211,7 +239,8 @@ namespace Actuators
         {
           if (m_args.addrs_log[i] == msg->id)
           {
-            sendDemand(i, (int8_t)(msg->value * m_args.scale));
+            int8_t filt_value = m_rl[i]->update(msg->value);
+            sendDemand(i, scaleConversion(filt_value));
             break;
           }
         }
@@ -344,6 +373,10 @@ namespace Actuators
         while (!stopping())
         {
           waitForMessages(0.5);
+
+          // Update value from ramp limitation
+          for (unsigned i = 0; i < m_rl.size(); ++i)
+            sendDemand(i, scaleConversion(m_rl[i]->update()));
 
           // Query feedback.
           if (m_feedback_timer.overflow())
