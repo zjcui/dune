@@ -102,6 +102,9 @@ namespace DUNE
                                      | IMC::GroundVelocity::VAL_VEL_Y
                                      | IMC::GroundVelocity::VAL_VEL_Z));
 
+        if (d.valid)
+          m_dvl_flag = true;
+
         // Vector not full.
         if (m_dvl_gnd.size() >= c_dvl_size)
           m_dvl_gnd.erase(m_dvl_gnd.begin());
@@ -122,6 +125,9 @@ namespace DUNE
                                      | IMC::WaterVelocity::VAL_VEL_Y
                                      | IMC::WaterVelocity::VAL_VEL_Z));
 
+        if (d.valid)
+          m_dvl_flag = true;
+
         // Vector not full.
         if (m_dvl_wtr.size() >= c_dvl_size)
           m_dvl_wtr.erase(m_dvl_wtr.begin());
@@ -138,6 +144,9 @@ namespace DUNE
         g.valid = (msg->validity & IMC::GpsFix::GFV_VALID_SOG);
         g.speed = msg->sog;
         g.time = msg->getTimeStamp();
+
+        if (g.valid)
+          m_gps_flag = true;
 
         // Vector not full.
         if (m_gps.size() >= c_gps_size)
@@ -164,6 +173,25 @@ namespace DUNE
         m_rpm.push_back(r);
       }
 
+      //! Get body-fixed reference frame speed estimates.
+      //! @param[out] u forward speed (body-frame x-axis).
+      //! @param[out] v transversal speed (body-frame y-axis).
+      void
+      get(double* u, double* v)
+      {
+        *u = 0.0;
+        *v = 0.0;
+      }
+
+      //! Invalidate flags
+      void
+      invalidate(void)
+      {
+        m_dvl_flag = false;
+        m_gps_flag = false;
+      }
+
+    private:
       //! DVL ground-velocity values.
       std::vector<DvlData> m_dvl_gnd;
       //! DVL water-velocity values.
@@ -172,6 +200,10 @@ namespace DUNE
       std::vector<GpsData> m_gps;
       //! RPM values.
       std::vector<RpmData> m_rpm;
+      //! DVL external validity flag.
+      bool m_dvl_flag;
+      //! GPS external validity flag.
+      bool m_gps_flag;
     };
   }
 }
