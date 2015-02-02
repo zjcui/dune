@@ -42,6 +42,13 @@ namespace Navigation
       //! Constant rpm for rpm to velocity transformation
       static const float c_rpm_to_vel_rpm = 1500.0f;
 
+      enum GPSVariables
+      {
+        GPSV_LAT = 0,
+        GPSV_LON = 1,
+        GPSV_HEIGHT = 2
+      };
+
       struct Arguments
       {
         //! GPS variables
@@ -484,16 +491,16 @@ namespace Navigation
                 std::abs(msg->lat) < DUNE::Math::c_pi &&
                 std::abs(msg->lon) < DUNE::Math::c_half_pi)
             {
-              m_gps_fix[0] = msg->lat;
-              m_gps_fix[1] = msg->lon;
-              m_gps_fix[2] = msg->height;
+              m_gps_fix[GPSV_LAT] = msg->lat;
+              m_gps_fix[GPSV_LON] = msg->lon;
+              m_gps_fix[GPSV_HEIGHT] = msg->height;
               m_flag_valid_pos = true;
 
               if (!m_flag_initial_point)
               {
-                m_gps_initial_point[0] = msg->lat;
-                m_gps_initial_point[1] = msg->lon;
-                m_gps_initial_point[2] = msg->height;
+                m_gps_initial_point[GPSV_LAT] = msg->lat;
+                m_gps_initial_point[GPSV_LON] = msg->lon;
+                m_gps_initial_point[GPSV_HEIGHT] = msg->height;
                 m_flag_initial_point = true;
               }
             }
@@ -525,9 +532,9 @@ namespace Navigation
           if (!m_flag_initial_orientation)
           {
             m_flag_initial_orientation = true;
-            m_nu(3, 0) = msg->phi;
-            m_nu(4, 0) = msg->theta;
-            m_nu(5, 0) = msg->psi;
+            m_nu(DOF_ROLL) = msg->phi;
+            m_nu(DOF_PITCH) = msg->theta;
+            m_nu(DOF_YAW) = msg->psi;
           }
         }
 
@@ -535,13 +542,13 @@ namespace Navigation
         consume(const IMC::GroundVelocity* msg)
         {
           if (msg->validity & IMC::GroundVelocity::VAL_VEL_X)
-            m_velocities[0] = msg->x;
+            m_velocities[DOF_SURGE] = msg->x;
 
           if (msg->validity & IMC::GroundVelocity::VAL_VEL_Y)
-            m_velocities[1] = msg->y;
+            m_velocities[DOF_SWAY] = msg->y;
 
           if (msg->validity & IMC::GroundVelocity::VAL_VEL_Z)
-            m_velocities[2] = msg->z;
+            m_velocities[DOF_HEAVE] = msg->z;
 
           if ((msg->validity & IMC::GroundVelocity::VAL_VEL_X) ||
               (msg->validity & IMC::GroundVelocity::VAL_VEL_Y) ||
@@ -554,16 +561,16 @@ namespace Navigation
         {
           if (m_flag_imu_active && msg->getSourceEntity() == m_imu_entity_id)
           {
-            m_velocities[3] = msg->x;
-            m_velocities[4] = msg->y;
-            m_velocities[5] = msg->z;
+            m_velocities[DOF_ROLL] = msg->x;
+            m_velocities[DOF_PITCH] = msg->y;
+            m_velocities[DOF_YAW] = msg->z;
           }
 
           if (m_flag_ahrs_active && msg->getSourceEntity() == m_ahrs_entity_id && !m_flag_imu_active)
           {
-            m_velocities[3] = msg->x;
-            m_velocities[4] = msg->y;
-            m_velocities[5] = msg->z;
+            m_velocities[DOF_ROLL] = msg->x;
+            m_velocities[DOF_PITCH] = msg->y;
+            m_velocities[DOF_YAW] = msg->z;
           }
           if (msg->getSourceEntity() == m_imu_entity_id)
             m_imu_timeout.reset();
@@ -589,7 +596,7 @@ namespace Navigation
           if(!m_flag_dvl_active)
           {
             m_rpms = msg->value;
-            m_velocities[0] = m_rpms * c_rpm_to_vel_velocity / c_rpm_to_vel_rpm;
+            m_velocities[DOF_SURGE] = m_rpms * c_rpm_to_vel_velocity / c_rpm_to_vel_rpm;
           }
         }
 
@@ -618,7 +625,8 @@ namespace Navigation
         void
         posFromGps(void)
         {
-          Coordinates::WGS84::getNEBearingAndRange(m_gps_initial_point[0], m_gps_initial_point[1], m_gps_fix[0], m_gps_fix[1], &m_bearing, &m_range);
+          Coordinates::WGS84::getNEBearingAndRange(m_gps_initial_point[GPSV_LAT], m_gps_initial_point[GPSV_LON],
+                                                   m_gps_fix[GPSV_LAT], m_gps_fix[GPSV_LON], &m_bearing, &m_range);
 
           m_nu = Aux::posFromBearingAndRange(m_nu, m_range, m_bearing, m_depth);
 
@@ -628,8 +636,8 @@ namespace Navigation
               m_orientation_delta = 0;
 
             m_nu_dot = m_rotation_matrix * m_vel;
-            for (int k = 3; k < 6; k++)
-              m_nu(k, 0) = m_nu(k, 0) + m_nu_dot(k, 0) * m_orientation_delta;
+            for (int k = DOF_ROLL; k <= DOF_YAW; k++)
+              m_nu(k) = m_nu(k) + m_nu_dot(k) * m_orientation_delta;
 
           }
 
@@ -652,7 +660,7 @@ namespace Navigation
           m_nu_dot = m_rotation_matrix * m_vel;
           m_nu = m_nu + m_nu_dot * m_pos_from_dvl_delta;
           // Depth Sensor is always available
-          m_nu(2, 0) = m_depth;
+          m_nu(DOF_HEAVE) = m_depth;
 
           if (!m_flag_imu_active)
             m_nu = Aux::orientationFromEulerAngles(m_nu, m_euler_angles);
@@ -661,25 +669,25 @@ namespace Navigation
         void
         fillAndDispatchEstimatedState(void)
         {
-          m_est.x = m_nu_est(0, 0);
-          m_est.y = m_nu_est(1, 0);
-          m_est.z = m_nu_est(2, 0);
-          m_est.phi = m_nu_est(3, 0);
-          m_est.theta = m_nu_est(4, 0);
-          m_est.psi = m_nu_est(5, 0);
-          m_est.u = m_vel_est(0, 0);
-          m_est.v = m_vel_est(1, 0);
-          m_est.w = m_vel_est(2, 0);
-          m_est.p = m_vel_est(3, 0);
-          m_est.q = m_vel_est(4, 0);
-          m_est.r = m_vel_est(5, 0);
+          m_est.x = m_nu_est(DOF_SURGE);
+          m_est.y = m_nu_est(DOF_SWAY);
+          m_est.z = m_nu_est(DOF_HEAVE);
+          m_est.phi = m_nu_est(DOF_ROLL);
+          m_est.theta = m_nu_est(DOF_PITCH);
+          m_est.psi = m_nu_est(DOF_YAW);
+          m_est.u = m_vel_est(DOF_SURGE);
+          m_est.v = m_vel_est(DOF_SWAY);
+          m_est.w = m_vel_est(DOF_HEAVE);
+          m_est.p = m_vel_est(DOF_ROLL);
+          m_est.q = m_vel_est(DOF_PITCH);
+          m_est.r = m_vel_est(DOF_PITCH);
           Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
                                                        m_est.u,   m_est.v,     m_est.w,
                                                        &m_est.vx, &m_est.vy,   &m_est.vz);
-          m_est.lat = m_gps_initial_point[0];
-          m_est.lon = m_gps_initial_point[1];
-          m_est.height = m_gps_initial_point[2];
-          m_est.depth = m_nu_est(2, 0);
+          m_est.lat = m_gps_initial_point[GPSV_LAT];
+          m_est.lon = m_gps_initial_point[GPSV_LON];
+          m_est.height = m_gps_initial_point[GPSV_HEIGHT];
+          m_est.depth = m_nu_est(DOF_HEAVE);
           m_est.alt = m_altitude;
           dispatch(m_est);
         }

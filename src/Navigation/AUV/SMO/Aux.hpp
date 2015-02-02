@@ -38,6 +38,16 @@ namespace Navigation
     {
       using DUNE_NAMESPACES;
 
+      enum DegreesOfFreedom
+      {
+        DOF_SURGE = 0,
+        DOF_SWAY = 1,
+        DOF_HEAVE = 2,
+        DOF_ROLL = 3,
+        DOF_PITCH = 4,
+        DOF_YAW = 5
+      };
+
       class Aux
       {
       public:
@@ -45,9 +55,9 @@ namespace Navigation
         static Matrix
         posFromBearingAndRange(Matrix nu, double range, double bearing, double depth)
         {
-          nu(0,0) = range * std::cos(bearing);
-          nu(1,0) = range * std::sin(bearing);
-          nu(2,0) = depth;
+          nu(DOF_SURGE) = range * std::cos(bearing);
+          nu(DOF_SWAY) = range * std::sin(bearing);
+          nu(DOF_HEAVE) = depth;
 
           return nu;
         }
@@ -55,8 +65,8 @@ namespace Navigation
         static Matrix
         orientationFromEulerAngles(Matrix nu, double euler_angles[])
         {
-          for (int k = 3; k < 6; k++)
-            nu(k, 0) = euler_angles[k-3];
+          for (int k = DOF_ROLL; k <= DOF_YAW; k++)
+            nu(k) = euler_angles[k - 3];
 
           return nu;
         }
@@ -64,8 +74,8 @@ namespace Navigation
         static Matrix
         normalizeOrientation(Matrix nu)
         {
-          for (int k = 3; k < 6; k++)
-            nu(k, 0) = Math::Angles::normalizeRadian(nu(k, 0));
+          for (int k = DOF_ROLL; k <= DOF_YAW; k++)
+            nu(k) = Math::Angles::normalizeRadian(nu(k));
 
           return nu;
         }
@@ -73,8 +83,8 @@ namespace Navigation
         static Matrix
         normalizePosition(Matrix nu)
         {
-          if (nu(2,0) < 0.0)
-            nu(2,0) = 0;
+          if (nu(DOF_HEAVE) < 0.0)
+            nu(DOF_HEAVE) = 0;
 
           return nu;
         }
