@@ -55,6 +55,30 @@ namespace Identification
       IMS_ROLL = 4
     };
 
+    enum SurgeIdentificationIndexes
+    {
+      SII_LINEAR_DAMPING = 0,
+      SII_QUADRATIC_DAMPING = 1
+    };
+
+    enum RollIdentificationIndexes
+    {
+      RII_LINEAR_DAMPING = 0,
+      RII_QUADRATIC_DAMPING = 1,
+      RII_FIN_COEFFICIENT = 2,
+      RII_MOTOR_COEFFICIENT = 3
+    };
+
+    enum DegreesOfFreedom
+    {
+      DOF_SURGE = 0,
+      DOF_SWAY = 1,
+      DOF_HEAVE = 2,
+      DOF_ROLL = 3,
+      DOF_PITCH = 4,
+      DOF_YAW = 5
+    };
+
     struct Arguments
     {
       //! GPS variables
@@ -346,22 +370,22 @@ namespace Identification
       void
       consume(const IMC::EulerAngles* msg)
       {
-        m_nu(3,0) = msg->phi;
-        m_nu(4,0) = msg->theta;
-        m_nu(5,0) = msg->psi;
+        m_nu(DOF_ROLL) = msg->phi;
+        m_nu(DOF_PITCH) = msg->theta;
+        m_nu(DOF_YAW) = msg->psi;
       }
 
       void
       consume(const IMC::GroundVelocity* msg)
       {
         if (msg->validity & IMC::GroundVelocity::VAL_VEL_X)
-          m_velocities[0] = msg->x;
+          m_velocities[DOF_SURGE] = msg->x;
 
         if (msg->validity & IMC::GroundVelocity::VAL_VEL_Y)
-          m_velocities[1] = msg->y;
+          m_velocities[DOF_SWAY] = msg->y;
 
         if (msg->validity & IMC::GroundVelocity::VAL_VEL_Z)
-          m_velocities[2] = msg->z;
+          m_velocities[DOF_HEAVE] = msg->z;
       }
 
       void
@@ -369,16 +393,16 @@ namespace Identification
       {
         if (m_flag_imu_active && msg->getSourceEntity() == m_imu_entity_id)
         {
-          m_velocities[3] = msg->x;
-          m_velocities[4] = msg->y;
-          m_velocities[5] = msg->z;
+          m_velocities[DOF_ROLL] = msg->x;
+          m_velocities[DOF_PITCH] = msg->y;
+          m_velocities[DOF_YAW] = msg->z;
         }
 
         if (m_flag_ahrs_active && msg->getSourceEntity() == m_ahrs_entity_id && !m_flag_imu_active)
         {
-          m_velocities[3] = msg->x;
-          m_velocities[4] = msg->y;
-          m_velocities[5] = msg->z;
+          m_velocities[DOF_ROLL] = msg->x;
+          m_velocities[DOF_PITCH] = msg->y;
+          m_velocities[DOF_YAW] = msg->z;
         }
       }
 
@@ -398,25 +422,25 @@ namespace Identification
       initIdentification()
       {
         // Initialize surge matrices
-        m_p_x(0, 0) = m_args.surge_cov[0];
-        m_p_x(1, 1) = m_args.surge_cov[1];
+        m_p_x(SII_LINEAR_DAMPING, SII_LINEAR_DAMPING) = m_args.surge_cov[SII_LINEAR_DAMPING];
+        m_p_x(SII_QUADRATIC_DAMPING, SII_QUADRATIC_DAMPING) = m_args.surge_cov[SII_QUADRATIC_DAMPING];
 
-        m_theta_x(0, 0) = m_args.surge_coeff[0];
-        m_theta_x(1, 0) = m_args.surge_coeff[1];
+        m_theta_x(SII_LINEAR_DAMPING) = m_args.surge_coeff[SII_LINEAR_DAMPING];
+        m_theta_x(SII_QUADRATIC_DAMPING) = m_args.surge_coeff[SII_QUADRATIC_DAMPING];
 
         m_cls_p_x_integrator->setInitialCondition(m_p_x);
         m_cls_theta_x_integrator->setInitialCondition(m_theta_x);
 
         // Initialize roll matrices
-        m_p_k(0, 0) = m_args.roll_cov[0];
-        m_p_k(1, 1) = m_args.roll_cov[1];
-        m_p_k(2, 2) = m_args.roll_cov[2];
-        m_p_k(3, 3) = m_args.roll_cov[3];
+        m_p_k(RII_LINEAR_DAMPING, RII_LINEAR_DAMPING) = m_args.roll_cov[RII_LINEAR_DAMPING];
+        m_p_k(RII_QUADRATIC_DAMPING, RII_QUADRATIC_DAMPING) = m_args.roll_cov[RII_QUADRATIC_DAMPING];
+        m_p_k(RII_FIN_COEFFICIENT, RII_FIN_COEFFICIENT) = m_args.roll_cov[RII_FIN_COEFFICIENT];
+        m_p_k(RII_MOTOR_COEFFICIENT, RII_MOTOR_COEFFICIENT) = m_args.roll_cov[RII_MOTOR_COEFFICIENT];
 
-        m_theta_k(0, 0) = m_args.roll_coeff[0];
-        m_theta_k(1, 0) = m_args.roll_coeff[1];
-        m_theta_k(2, 0) = m_args.roll_coeff[2];
-        m_theta_k(3, 0) = m_args.roll_coeff[3];
+        m_theta_k(RII_LINEAR_DAMPING) = m_args.roll_coeff[RII_LINEAR_DAMPING];
+        m_theta_k(RII_QUADRATIC_DAMPING) = m_args.roll_coeff[RII_QUADRATIC_DAMPING];
+        m_theta_k(RII_FIN_COEFFICIENT) = m_args.roll_coeff[RII_FIN_COEFFICIENT];
+        m_theta_k(RII_MOTOR_COEFFICIENT) = m_args.roll_coeff[RII_MOTOR_COEFFICIENT];
 
         m_cls_p_k_integrator->setInitialCondition(m_p_k);
         m_cls_theta_k_integrator->setInitialCondition(m_theta_k);
@@ -454,12 +478,12 @@ namespace Identification
         try{
           outfile << "theta x\n";
 
-          m_phi_x(0, 0) = -m_vel_filter(0);
-          m_phi_x(1, 0) = -std::abs(m_vel_filter(0)) * m_vel_filter(0);
+          m_phi_x(SII_LINEAR_DAMPING) = -m_vel_filter(DOF_SURGE);
+          m_phi_x(SII_QUADRATIC_DAMPING) = -std::abs(m_vel_filter(DOF_SURGE)) * m_vel_filter(DOF_SURGE);
 
-          m_e_x(0) = m_phi_x(0) * m_theta_x(0) +
-          m_phi_x(1) * m_theta_x(1) -
-          m_y(0);
+          m_e_x(0) = m_phi_x(SII_LINEAR_DAMPING) * m_theta_x(SII_LINEAR_DAMPING) +
+                     m_phi_x(SII_QUADRATIC_DAMPING) * m_theta_x(SII_QUADRATIC_DAMPING) -
+                     m_y(DOF_SURGE);
 
           m_dp_dt_x = -m_p_x * m_phi_x * transpose(m_phi_x) * m_p_x;
 
@@ -477,16 +501,16 @@ namespace Identification
         try{
           outfile << "theta k\n";
 
-          m_phi_k(0, 0) = m_thruster * m_args.m_auv_chars.thruster_force;
-          m_phi_k(1, 0) = (m_servo_pos[3] - m_servo_pos[0] + m_servo_pos[1] - m_servo_pos[2]) * pow(m_vel_filter(0), 2.0);
-          m_phi_k(2, 0) = -m_vel_filter(3);
-          m_phi_k(3, 0) = -std::abs(m_vel_filter(3)) * m_vel_filter(3);
+          m_phi_k(RII_LINEAR_DAMPING) = m_thruster * m_args.m_auv_chars.thruster_force;
+          m_phi_k(RII_QUADRATIC_DAMPING) = (m_servo_pos[SI_FOUR] - m_servo_pos[SI_ONE] + m_servo_pos[SI_TWO] - m_servo_pos[SI_THREE]) * pow(m_vel_filter(DOF_SURGE), 2.0);
+          m_phi_k(RII_FIN_COEFFICIENT) = -m_vel_filter(DOF_ROLL);
+          m_phi_k(RII_MOTOR_COEFFICIENT) = -std::abs(m_vel_filter(DOF_ROLL)) * m_vel_filter(DOF_ROLL);
 
-          m_e_k(0) = m_phi_k(0) * m_theta_k(0) +
-          m_phi_k(1) * m_theta_k(1) +
-          m_phi_k(2) * m_theta_k(2) +
-          m_phi_k(3) * m_theta_k(3) -
-          m_y(3);
+          m_e_k(0) = m_phi_k(0) * m_theta_k(RII_LINEAR_DAMPING) +
+                     m_phi_k(1) * m_theta_k(RII_QUADRATIC_DAMPING) +
+                     m_phi_k(2) * m_theta_k(RII_FIN_COEFFICIENT) +
+                     m_phi_k(3) * m_theta_k(RII_MOTOR_COEFFICIENT) -
+                     m_y(DOF_ROLL);
 
           m_dp_dt_k = -m_p_k * m_phi_k * transpose(m_phi_k) * m_p_k;
 
