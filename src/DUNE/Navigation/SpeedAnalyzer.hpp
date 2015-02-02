@@ -33,43 +33,44 @@ namespace DUNE
   namespace Navigation
   {
     //! Number of returns.
-    static const uint8_t c_dvl_stack = 5;
+    static const size_t c_dvl_size = 5;
     //! Number of returns.
-    static const uint8_t c_gps_stack = 5;
+    static const size_t c_gps_size = 5;
     //! Number of returns.
-    static const uint8_t c_rpm_stack = 5;
-
-    //! DVL return echo.
-    struct DvlReturn
-    {
-      // Speed in the x-axis.
-      float x;
-      // Speed in the y-axis.
-      float y;
-      // Measurement time.
-      double time;
-    };
+    static const size_t c_rpm_size = 5;
 
     //! DVL return data.
     struct DvlData
     {
-      DvlReturn* gnd_speed[c_dvl_stack];
-      DvlReturn* wtr_speed[c_dvl_stack];
+      //! If speed is valud or not.
+      bool valid;
+      //! Speed in the x-axis.
+      float x;
+      //! Speed in the y-axis.
+      float y;
+      //! Measurement time.
+      double time;
     };
 
     //! GPS return data.
     struct GpsData
     {
+      //! If speed is valid or not.
       bool valid;
+      //! Speed value.
       float speed;
+      //! Measurement time.
       double time;
     };
 
     //! RPM return data.
     struct RpmData
     {
+      //! Revolution per minute.
       int16_t rpm;
+      //! Speed value.
       float speed;
+      //! Measurement time.
       double time;
     };
 
@@ -82,39 +83,95 @@ namespace DUNE
     public:
       //! Constructor.
       SpeedAnalyzer(void)
-      {
-        for (uint8_t i = 0; i < c_dvl_stack; ++i)
-        {
-          m_dvl.gnd_speed[i] = NULL;
-          m_dvl.wtr_speed[i] = NULL;
-        }
-
-        for (uint8_t i = 0; i < c_gps_stack; ++i)
-          m_gps[i] = NULL;
-
-        for (uint8_t i = 0; i < c_rpm_stack; ++i)
-          m_rpm[i] = NULL;
-      }
+      { }
 
       //! Destructor.
       ~SpeedAnalyzer(void)
+      { }
+
+      //! Received new GroundVelocity reading.
+      //! @param[in] msg new GroundVelocity.
+      void
+      consume(const IMC::GroundVelocity* msg)
       {
-        for (uint8_t i = 0; i < c_dvl_stack; ++i)
-        {
-          Memory::clear(m_dvl.gnd_speed[i]);
-          Memory::clear(m_dvl.wtr_speed[i]);
-        }
+        DvlData d;
+        d.x = msg->x;
+        d.y = msg->y;
+        d.time = msg->getTimeStamp();
+        d.valid = (msg->validity == (IMC::GroundVelocity::VAL_VEL_X
+                                     | IMC::GroundVelocity::VAL_VEL_Y
+                                     | IMC::GroundVelocity::VAL_VEL_Z));
 
-        for (uint8_t i = 0; i < c_gps_stack; ++i)
-          Memory::clear(m_gps[i]);
+        // Vector not full.
+        if (m_dvl_gnd.size() >= c_dvl_size)
+          m_dvl_gnd.erase(m_dvl_gnd.begin());
 
-        for (uint8_t i = 0; i < c_rpm_stack; ++i)
-          Memory::clear(m_rpm[i]);
+        m_dvl_gnd.push_back(d);
       }
 
-      DvlData m_dvl;
-      GpsData* m_gps[c_gps_stack];
-      RpmData* m_rpm[c_rpm_stack];
+      //! Received new WaterVelocity reading.
+      //! @param[in] msg new WaterVelocity.
+      void
+      consume(const IMC::WaterVelocity* msg)
+      {
+        DvlData d;
+        d.x = msg->x;
+        d.y = msg->y;
+        d.time = msg->getTimeStamp();
+        d.valid = (msg->validity == (IMC::WaterVelocity::VAL_VEL_X
+                                     | IMC::WaterVelocity::VAL_VEL_Y
+                                     | IMC::WaterVelocity::VAL_VEL_Z));
+
+        // Vector not full.
+        if (m_dvl_wtr.size() >= c_dvl_size)
+          m_dvl_wtr.erase(m_dvl_wtr.begin());
+
+        m_dvl_wtr.push_back(d);
+      }
+
+      //! Received new GPS fix.
+      //! @param[in] msg new GpsFix.
+      void
+      consume(const IMC::GpsFix* msg)
+      {
+        GpsData g;
+        g.valid = (msg->validity & IMC::GpsFix::GFV_VALID_SOG);
+        g.speed = msg->sog;
+        g.time = msg->getTimeStamp();
+
+        // Vector not full.
+        if (m_gps.size() >= c_gps_size)
+          m_gps.erase(m_gps.begin());
+
+        m_gps.push_back(g);
+      }
+
+      //! Received new RPM reading.
+      //! @param[in] msg new Rpm.
+      //! @param[in] filter_speed speed estimated by the navigation filter.
+      void
+      consume(const IMC::Rpm* msg, double filter_speed)
+      {
+        RpmData r;
+        r.rpm = msg->value;
+        r.speed = filter_speed;
+        r.time = msg->getTimeStamp();
+
+        // Vector not full.
+        if (m_rpm.size() >= c_rpm_size)
+          m_rpm.erase(m_rpm.begin());
+
+        m_rpm.push_back(r);
+      }
+
+      //! DVL ground-velocity values.
+      std::vector<DvlData> m_dvl_gnd;
+      //! DVL water-velocity values.
+      std::vector<DvlData> m_dvl_wtr;
+      //! GPS velocity values.
+      std::vector<GpsData> m_gps;
+      //! RPM values.
+      std::vector<RpmData> m_rpm;
     };
   }
 }
