@@ -25,22 +25,98 @@
 // Author: José Braga                                                       *
 //***************************************************************************
 
-#ifndef DUNE_NAVIGATION_HPP_INCLUDED_
-#define DUNE_NAVIGATION_HPP_INCLUDED_
+#ifndef DUNE_NAVIGATION_SPEED_ANALYZER_HPP_INCLUDED_
+#define DUNE_NAVIGATION_SPEED_ANALYZER_HPP_INCLUDED_
 
 namespace DUNE
 {
-  //! %Navigation related routines and classes.
   namespace Navigation
-  { }
-}
+  {
+    //! Number of returns.
+    static const uint8_t c_dvl_stack = 5;
+    //! Number of returns.
+    static const uint8_t c_gps_stack = 5;
+    //! Number of returns.
+    static const uint8_t c_rpm_stack = 5;
 
-#include <DUNE/Navigation/BasicNavigation.hpp>
-#include <DUNE/Navigation/BeamFilter.hpp>
-#include <DUNE/Navigation/CompassCalibration.hpp>
-#include <DUNE/Navigation/KalmanFilter.hpp>
-#include <DUNE/Navigation/Ranging.hpp>
-#include <DUNE/Navigation/SpeedAnalyzer.hpp>
-#include <DUNE/Navigation/StreamEstimator.hpp>
+    //! DVL return echo.
+    struct DvlReturn
+    {
+      // Speed in the x-axis.
+      float x;
+      // Speed in the y-axis.
+      float y;
+      // Measurement time.
+      double time;
+    };
+
+    //! DVL return data.
+    struct DvlData
+    {
+      DvlReturn* gnd_speed[c_dvl_stack];
+      DvlReturn* wtr_speed[c_dvl_stack];
+    };
+
+    //! GPS return data.
+    struct GpsData
+    {
+      bool valid;
+      float speed;
+      double time;
+    };
+
+    //! RPM return data.
+    struct RpmData
+    {
+      int16_t rpm;
+      float speed;
+      double time;
+    };
+
+    //! %SpeedAnalyzer is responder to gather all system speed
+    //! information and use appropriate filters to estimate it.
+    //!
+    //! @author José Braga.
+    class SpeedAnalyzer
+    {
+    public:
+      //! Constructor.
+      SpeedAnalyzer(void)
+      {
+        for (uint8_t i = 0; i < c_dvl_stack; ++i)
+        {
+          m_dvl.gnd_speed[i] = NULL;
+          m_dvl.wtr_speed[i] = NULL;
+        }
+
+        for (uint8_t i = 0; i < c_gps_stack; ++i)
+          m_gps[i] = NULL;
+
+        for (uint8_t i = 0; i < c_rpm_stack; ++i)
+          m_rpm[i] = NULL;
+      }
+
+      //! Destructor.
+      ~SpeedAnalyzer(void)
+      {
+        for (uint8_t i = 0; i < c_dvl_stack; ++i)
+        {
+          Memory::clear(m_dvl.gnd_speed[i]);
+          Memory::clear(m_dvl.wtr_speed[i]);
+        }
+
+        for (uint8_t i = 0; i < c_gps_stack; ++i)
+          Memory::clear(m_gps[i]);
+
+        for (uint8_t i = 0; i < c_rpm_stack; ++i)
+          Memory::clear(m_rpm[i]);
+      }
+
+      DvlData m_dvl;
+      GpsData* m_gps[c_gps_stack];
+      RpmData* m_rpm[c_rpm_stack];
+    };
+  }
+}
 
 #endif
