@@ -218,6 +218,8 @@ namespace Actuators
 
         for (unsigned i = 0; i < m_rl.size(); ++i)
           Memory::clear(m_rl[i]);
+
+        m_rl.clear();
       }
 
       void
