@@ -234,6 +234,21 @@ namespace Actuators
         return (int8_t)(value * m_args.scale);
       }
 
+      float
+      reverseScaleConversion(int8_t value)
+      {
+        return (float)value / m_args.scale;
+      }
+
+      void
+      logFilteredActuation(float value, unsigned id)
+      {
+        IMC::SetThrusterActuation sta;
+        sta.id = id;
+        sta.value = value;
+        dispatch(sta);
+      }
+
       void
       consume(const IMC::SetThrusterActuation* msg)
       {
@@ -243,6 +258,7 @@ namespace Actuators
           {
             int8_t filt_value = m_rl[i]->update(scaleConversion(msg->value));
             sendDemand(i, filt_value);
+            logFilteredActuation(reverseScaleConversion(filt_value), msg->id);
             break;
           }
         }
@@ -378,7 +394,11 @@ namespace Actuators
 
           // Update value from ramp limitation
           for (unsigned i = 0; i < m_rl.size(); ++i)
-            sendDemand(i, m_rl[i]->update());
+          {
+            int8_t filt_value = m_rl[i]->update();
+            sendDemand(i, filt_value);
+            logFilteredActuation(reverseScaleConversion(filt_value), m_args.addrs_log[i]);
+          }
 
           // Query feedback.
           if (m_feedback_timer.overflow())
