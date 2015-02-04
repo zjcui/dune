@@ -79,7 +79,10 @@ namespace Actuators
         double tstep = m_delta.getDelta();
 
         if (tstep <= 0.0)
+        {
+          m_last_value = m_req_value;
           return (Type)0;
+        }
 
         float max_change = tstep * m_max_der;
 
