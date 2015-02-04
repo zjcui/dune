@@ -47,11 +47,22 @@ namespace Actuators
     public:
       //! Constructor
       //! @param[in] max_derivative maximum derivative (increasing or decreasing)
+      //! @param[in] min_value minimum value to apply ramp
+      RampLimiter(float max_derivative, Type min_value):
+        m_max_der(max_derivative),
+        m_min_value(min_value)
+      {
+        m_got_min = true;
+        clear();
+      }
+
+      //! Constructor
+      //! @param[in] max_derivative maximum derivative (increasing or decreasing)
       RampLimiter(float max_derivative):
         m_max_der(max_derivative)
       {
-        m_last_value = (Type)0;
-        m_req_value = (Type)0;
+        m_got_min = false;
+        clear();
       }
 
       ~RampLimiter(void)
@@ -62,6 +73,8 @@ namespace Actuators
       void
       clear(void)
       {
+        m_last_value = (Type)0;
+        m_req_value = (Type)0;
         m_delta.clear();
       }
 
@@ -84,6 +97,20 @@ namespace Actuators
           return (Type)0;
         }
 
+        // Check if there is a minimum value
+        if (m_got_min)
+        {
+          // If below the minimum value, do not apply ramp
+          if (m_req_value <= m_min_value &&
+              m_req_value >= -m_min_value)
+          {
+            return m_req_value;
+          }
+
+          // Check if transiting through the min value
+          borderConditions();
+        }
+
         float max_change = tstep * m_max_der;
 
         Type value;
@@ -99,8 +126,21 @@ namespace Actuators
       }
 
     private:
+      void
+      borderConditions(void)
+      {
+        if (m_req_value > (Type)0 && m_last_value < m_min_value)
+          m_last_value = m_min_value;
+        else if (m_req_value < (Type)0 && m_last_value > -m_min_value)
+          m_last_value = -m_min_value;
+      }
+
       //! Maximum admissible value for derivative
       float m_max_der;
+      //! Minimum value to apply ramp
+      Type m_min_value;
+      //! Has minimum value
+      bool m_got_min;
       //! Time window between values
       DUNE::Time::Delta m_delta;
       //! Last output value from this object
