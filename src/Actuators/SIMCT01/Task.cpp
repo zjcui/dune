@@ -241,8 +241,8 @@ namespace Actuators
         {
           if (m_args.addrs_log[i] == msg->id)
           {
-            int8_t filt_value = m_rl[i]->update(msg->value);
-            sendDemand(i, scaleConversion(filt_value));
+            int8_t filt_value = m_rl[i]->update(scaleConversion(msg->value));
+            sendDemand(i, filt_value);
             break;
           }
         }
@@ -378,7 +378,7 @@ namespace Actuators
 
           // Update value from ramp limitation
           for (unsigned i = 0; i < m_rl.size(); ++i)
-            sendDemand(i, scaleConversion(m_rl[i]->update()));
+            sendDemand(i, m_rl[i]->update());
 
           // Query feedback.
           if (m_feedback_timer.overflow())
