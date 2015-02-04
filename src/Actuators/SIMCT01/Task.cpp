@@ -67,6 +67,8 @@ namespace Actuators
       double scale;
       //! Maximum rate of change in actuation
       float max_rate;
+      //! Minimum value to apply ramp
+      int ramp_min;
       //! Watchdog timeout.
       double wdog_tout;
     };
@@ -135,7 +137,16 @@ namespace Actuators
         .defaultValue("100.0")
         .visibility(Tasks::Parameter::VISIBILITY_USER)
         .scope(Tasks::Parameter::SCOPE_MANEUVER)
-        .description("Maximum rate of change in actuation");
+        .description("Maximum rate of change in actuation used by ramp limiter");
+
+        param("Minimum Value For Ramp Limiting", m_args.ramp_min)
+        .defaultValue("30")
+        .minimumValue("1")
+        .maximumValue("100")
+        .visibility(Tasks::Parameter::VISIBILITY_USER)
+        .scope(Tasks::Parameter::SCOPE_MANEUVER)
+        .units(Units::Percentage)
+        .description("Minimum value to apply ramp");
 
         param("Watchdog Timeout", m_args.wdog_tout)
         .units(Units::Second)
@@ -178,6 +189,9 @@ namespace Actuators
 
         if (paramChanged(m_args.uart_baud) && m_uart)
           throw RestartNeeded("changing serial port baud rate", 5);
+
+        if (paramChanged(m_args.max_rate) || paramChanged(m_args.ramp_min))
+          createRampLimiters();
       }
 
       void
@@ -187,11 +201,7 @@ namespace Actuators
         m_uart->setCanonicalInput(true);
         m_uart->setCanonicalInputTerminator('\r');
 
-        for (unsigned i = 0; i < m_args.addrs_log.size(); ++i)
-        {
-          RampLimiter<int8_t>* rl = new RampLimiter<int8_t>(m_args.max_rate);
-          m_rl.push_back(rl);
-        }
+        createRampLimiters();
       }
 
       void
@@ -220,6 +230,21 @@ namespace Actuators
           Memory::clear(m_rl[i]);
 
         m_rl.clear();
+      }
+
+      void
+      createRampLimiters(void)
+      {
+        for (unsigned i = 0; i < m_rl.size(); ++i)
+          Memory::clear(m_rl[i]);
+
+        m_rl.clear();
+
+        for (unsigned i = 0; i < m_args.addrs_log.size(); ++i)
+        {
+          RampLimiter<int8_t>* rl = new RampLimiter<int8_t>(m_args.max_rate, m_args.ramp_min);
+          m_rl.push_back(rl);
+        }
       }
 
       void
