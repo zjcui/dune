@@ -681,7 +681,7 @@ namespace Navigation
           m_est.w = m_vel_est(DOF_HEAVE);
           m_est.p = m_vel_est(DOF_ROLL);
           m_est.q = m_vel_est(DOF_PITCH);
-          m_est.r = m_vel_est(DOF_PITCH);
+          m_est.r = m_vel_est(DOF_YAW);
           Coordinates::BodyFixedFrame::toInertialFrame(m_est.phi, m_est.theta, m_est.psi,
                                                        m_est.u,   m_est.v,     m_est.w,
                                                        &m_est.vx, &m_est.vy,   &m_est.vz);
