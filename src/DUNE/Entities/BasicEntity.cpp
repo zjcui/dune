@@ -22,68 +22,64 @@
 // language governing permissions and limitations at                        *
 // https://www.lsts.pt/dune/licence.                                        *
 //***************************************************************************
-// Author: Pedro Calado                                                     *
+// Author: Renato Caldas                                                    *
 //***************************************************************************
 
-#ifndef SUPERVISORS_AUV_ASSIST_ASCENTRATE_HPP_INCLUDED_
-#define SUPERVISORS_AUV_ASSIST_ASCENTRATE_HPP_INCLUDED_
+// ISO C++ 98 headers.
+#include <stdexcept>
 
 // DUNE headers.
-#include <DUNE/Math.hpp>
-#include <DUNE/Time.hpp>
+#include <DUNE/Entities/BasicEntity.hpp>
 
-namespace Supervisors
+namespace DUNE
 {
-  namespace AUV
+  namespace Entities
   {
-    namespace Assist
+    void
+    BasicEntity::setLabel(const std::string& label)
     {
-      using DUNE_NAMESPACES;
-
-      class AscentRate
+      // Throw exception to prevent relabeling after reservation
+      if (m_id != DUNE_IMC_CONST_UNK_EID)
       {
-      public:
-        //! Constructor
-        //! @param[in] window_size number of samples in the moving average
-        //! @param[in] period interval of time between samples
-        AscentRate(unsigned window_size, float period):
-          m_timer(period)
-        {
-          m_avg = new Math::MovingAverage<float>(window_size);
-        }
+        std::string prevlabel = m_ctx.entities.resolve(m_id);
+        if (prevlabel != label)
+          throw std::runtime_error(DTR("entity label already set: ") + prevlabel + " -> " + label);
+      }
 
-        ~AscentRate(void)
-        {
-          delete m_avg;
-        }
-
-        //! Update the ascent rate computation
-        //! @param[in] vz speed in the z axis from EstimatedState message
-        //! @return newly computed value for the ascent rate
-        float
-        update(float vz)
-        {
-          if (!m_timer.overflow())
-            return mean();
-
-          return m_avg->update(vz);
-        }
-
-        //! Output the mean ascent rate
-        //! @return most recently computed value for the ascent rate
-        float
-        mean(void) const
-        {
-          return m_avg->mean();
-        }
-
-      private:
-        //! Moving average for the ascent rate
-        Math::MovingAverage<float>* m_avg;
-        //! Counter for the time between updates
-        Time::Counter<float> m_timer;
-      };
+      m_label = label;
+      m_ent_info.label = label;
+      m_ent_info.component = m_owner->getName();
     }
+
+    void
+    BasicEntity::reportInfo(void)
+    {
+      dispatch(m_ent_info);
+    }
+
+    void
+    BasicEntity::consume(const IMC::QueryEntityInfo* msg)
+    {
+      if (msg->getDestinationEntity() == getId())
+        dispatchReply(*msg, m_ent_info, DF_LOOP_BACK);
+      else if (msg->getDestinationEntity() == DUNE_IMC_CONST_UNK_EID)
+        dispatch(m_ent_info, DF_LOOP_BACK);
+    }
+
+    void
+    BasicEntity::dispatch(IMC::Message* msg, unsigned int flags)
+    {
+      msg->setSource(m_ctx.resolver.id());
+      msg->setSourceEntity(getId());
+
+      if ((flags & DF_KEEP_TIME) == 0)
+        msg->setTimeStamp();
+
+      if ((flags & DF_LOOP_BACK) == 0)
+        m_ctx.mbus.dispatch(msg, m_owner);
+      else
+        m_ctx.mbus.dispatch(msg);
+    }
+
   }
 }
-#endif

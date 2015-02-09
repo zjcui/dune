@@ -101,19 +101,20 @@ namespace Plan
       m_progress = -1.0;
       m_beyond_dur = false;
       m_started_maneuver = false;
+      m_est_cal_time = m_min_cal_time;
 
       if (m_profiles != NULL)
         m_profiles->clear();
 
+      if (m_calib != NULL)
+        m_calib->clear();
+
       m_cat.clear();
       m_properties = 0;
-
-      if (m_rt_stat != NULL)
-        m_rt_stat->clear();
     }
 
     void
-    Plan::parse(const std::set<uint16_t>* supported_maneuvers, bool plan_startup,
+    Plan::parse(const std::set<uint16_t>* supported_maneuvers,
                 const std::map<std::string, IMC::EntityInfo>& cinfo,
                 IMC::PlanStatistics& ps, bool imu_enabled,
                 const IMC::EstimatedState* state)
@@ -123,7 +124,7 @@ namespace Plan
       // Build Graph of maneuvers and transitions, if this fails, parse fails
       buildGraph(supported_maneuvers);
 
-      secondaryParse(plan_startup, cinfo, ps, imu_enabled, state);
+      secondaryParse(cinfo, ps, imu_enabled, state);
 
       m_last_id = m_spec->start_man_id;
 
@@ -133,6 +134,11 @@ namespace Plan
     void
     Plan::planStarted(void)
     {
+      // Post statistics
+      if (m_rt_stat != NULL)
+        m_rt_stat->clear();
+
+      m_post_stat.plan_id = m_spec->plan_id;
       m_rt_stat->planStarted();
 
       if (m_sched == NULL)
@@ -435,19 +441,15 @@ namespace Plan
     }
 
     void
-    Plan::secondaryParse(bool plan_startup,
-                         const std::map<std::string, IMC::EntityInfo>& cinfo,
+    Plan::secondaryParse(const std::map<std::string, IMC::EntityInfo>& cinfo,
                          IMC::PlanStatistics& ps, bool imu_enabled,
                          const IMC::EstimatedState* state)
     {
-      // Post statistics
-      m_post_stat.plan_id = m_spec->plan_id;
-
       // Pre statistics
       ps.plan_id = m_spec->plan_id;
       PreStatistics pre_stat(&ps);
 
-      if (m_compute_progress && plan_startup)
+      if (m_compute_progress)
       {
         sequenceNodes();
 

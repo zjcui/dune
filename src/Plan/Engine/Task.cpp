@@ -111,6 +111,8 @@ namespace Plan
       unsigned m_eid_imu;
       //! IMU is enabled or not
       bool m_imu_enabled;
+      //! Queue of PlanControl messages
+      std::queue<IMC::PlanControl> m_requests;
       //! Task arguments.
       Arguments m_args;
 
@@ -240,7 +242,7 @@ namespace Plan
       {
         m_mcs = *msg;
 
-        if (msg->state & IMC::ManeuverControlState::MCS_DONE)
+        if (msg->state == IMC::ManeuverControlState::MCS_DONE)
           m_plan->maneuverDone();
       }
 
@@ -309,6 +311,14 @@ namespace Plan
             if (m_args.actfail_abort)
             {
               onFailure(error);
+
+              // stop calibration if any is running
+              if (initMode() && !pendingReply())
+              {
+                vehicleRequest(IMC::VehicleCommand::VC_STOP_CALIBRATION);
+                m_reply.plan_id = m_spec.plan_id;
+              }
+
               changeMode(IMC::PlanControlState::PCS_READY, error, false);
             }
             else
@@ -388,7 +398,7 @@ namespace Plan
         bool error = vc->type == IMC::VehicleCommand::VC_FAILURE;
 
         // Ignore failure if it failed to stop calibration
-        if (vc->command == IMC::VehicleCommand::VC_STOP_CALIBRATION)
+        if (error && (vc->command == IMC::VehicleCommand::VC_STOP_CALIBRATION))
         {
           debug("%s", vc->info.c_str());
           error = false;
@@ -524,11 +534,13 @@ namespace Plan
         }
 
         // there are new error entities
-        if (edesc != m_last_event)
+        if (edesc != m_last_event && !pendingReply())
         {
           if (initMode())
           {
             onFailure(edesc);
+            // stop calibration if any is running
+            vehicleRequest(IMC::VehicleCommand::VC_STOP_CALIBRATION);
             m_reply.plan_id = m_spec.plan_id;
           }
 
@@ -569,6 +581,27 @@ namespace Plan
         if (pc->type != IMC::PlanControl::PC_REQUEST)
           return;
 
+        if (pendingReply())
+        {
+          m_requests.push(*pc);
+          debug("saved request %u", pc->request_id);
+          return;
+        }
+        else if (m_requests.size())
+        {
+          m_requests.push(*pc);
+          processRequest(&m_requests.front());
+          m_requests.pop();
+        }
+        else
+        {
+          processRequest(pc);
+        }
+      }
+
+      void
+      processRequest(const IMC::PlanControl* pc)
+      {
         m_reply.setDestination(pc->getSource());
         m_reply.setDestinationEntity(pc->getSourceEntity());
         m_reply.request_id = pc->request_id;
@@ -594,6 +627,9 @@ namespace Plan
           case IMC::PlanControl::PC_STOP:
             stopPlan();
             break;
+          case IMC::PlanControl::PC_LOAD:
+            loadPlan(pc->plan_id, pc->arg.isNull() ? 0 : pc->arg.get(), false);
+            break;
           case IMC::PlanControl::PC_GET:
             getPlan();
             break;
@@ -618,50 +654,12 @@ namespace Plan
           return false;
         }
 
-        if (arg)
+        std::string info;
+        if (!parseArg(plan_id, arg, info))
         {
-          if (arg->getId() == DUNE_IMC_PLANSPECIFICATION)
-          {
-            const IMC::PlanSpecification* given_plan = static_cast<const IMC::PlanSpecification*>(arg);
-
-            m_spec = *given_plan;
-            m_spec.setSourceEntity(getEntityId());
-          }
-          else
-          {
-            // Quick plan
-            IMC::PlanManeuver spec_man;
-            const IMC::Maneuver* man = static_cast<const IMC::Maneuver*>(arg);
-
-            if (man)
-            {
-              spec_man.maneuver_id = arg->getName();
-              spec_man.data.set(*man);
-              m_spec.clear();
-              m_spec.maneuvers.setParent(&m_spec);
-              m_spec.plan_id = plan_id;
-              m_spec.start_man_id = arg->getName();
-              m_spec.maneuvers.push_back(spec_man);
-            }
-            else
-            {
-              changeMode(IMC::PlanControlState::PCS_READY,
-                         DTR("plan load failed: undefined maneuver or plan"));
-              return false;
-            }
-          }
-        }
-        else
-        {
-          // Search DB
-          m_spec.clear();
-
-          if (!lookForPlan(plan_id, m_spec))
-          {
-            changeMode(IMC::PlanControlState::PCS_READY,
-                       DTR("plan load failed: ") + m_reply.info);
-            return false;
-          }
+          changeMode(IMC::PlanControlState::PCS_READY,
+                     DTR("plan load failed: ") + info);
+          return false;
         }
 
         IMC::PlanStatistics ps;
@@ -669,7 +667,7 @@ namespace Plan
         if (!parsePlan(plan_startup, ps))
         {
           changeMode(IMC::PlanControlState::PCS_READY,
-                     DTR("plan validation failed: ") + m_reply.info);
+                     DTR("plan parse failed: ") + m_reply.info);
           return false;
         }
 
@@ -679,10 +677,7 @@ namespace Plan
 
         m_pcs.plan_id = m_spec.plan_id;
 
-        if (plan_startup)
-          onSuccess(DTR("plan loaded"), false);
-        else
-          changeMode(IMC::PlanControlState::PCS_READY, DTR("plan loaded"));
+        onSuccess(DTR("plan loaded"), false);
 
         return true;
       }
@@ -747,14 +742,19 @@ namespace Plan
       {
         try
         {
-          m_plan->parse(&m_supported_maneuvers, plan_startup, m_cinfo,
+          m_plan->parse(&m_supported_maneuvers, m_cinfo,
                         ps, m_imu_enabled, &m_state);
         }
         catch (Plan::ParseError& pe)
         {
           onFailure(pe.what());
+          m_plan->clear();
           return false;
         }
+
+        // if a plan is not gonna start after this, clear plan object
+        if (!plan_startup)
+          m_plan->clear();
 
         return true;
       }
@@ -794,6 +794,63 @@ namespace Plan
         catch (std::runtime_error& e)
         {
           onFailure(DTR("failed loading from DB: %s"), e.what());
+          return false;
+        }
+
+        return true;
+      }
+
+      //! Get the PlanSpecification from IMC::Message
+      //! @param[in] plan_id ID of the plan
+      //! @param[in] arg pointer to arg message
+      //! @param[out] info string with the error in case of failure
+      //! @return false if unable to get the spec
+      bool
+      parseArg(const std::string& plan_id, const IMC::Message* arg,
+               std::string& info)
+      {
+        if (arg)
+        {
+          if (arg->getId() == DUNE_IMC_PLANSPECIFICATION)
+          {
+            const IMC::PlanSpecification* given_plan = static_cast<const IMC::PlanSpecification*>(arg);
+
+            m_spec = *given_plan;
+            m_spec.setSourceEntity(getEntityId());
+          }
+          else
+          {
+            // Quick plan
+            IMC::PlanManeuver spec_man;
+            const IMC::Maneuver* man = static_cast<const IMC::Maneuver*>(arg);
+
+            if (man)
+            {
+              spec_man.maneuver_id = arg->getName();
+              spec_man.data.set(*man);
+              m_spec.clear();
+              m_spec.maneuvers.setParent(&m_spec);
+              m_spec.plan_id = plan_id;
+              m_spec.start_man_id = arg->getName();
+              m_spec.maneuvers.push_back(spec_man);
+            }
+            else
+            {
+              info = "undefined maneuver or plan";
+              return false;
+            }
+          }
+        }
+        else
+        {
+          // Search DB
+          m_spec.clear();
+
+          if (!lookForPlan(plan_id, m_spec))
+          {
+            info = m_reply.info;
+            return false;
+          }
         }
 
         return true;
@@ -1070,6 +1127,13 @@ namespace Plan
             m_last_vstate = now;
           }
 
+          // got requests to process
+          if (!pendingReply() && m_requests.size())
+          {
+            processRequest(&m_requests.front());
+            m_requests.pop();
+          }
+
           double delta = m_vc_reply_deadline < 0 ? 1 : m_vc_reply_deadline - now;
 
           if (delta > 0)
@@ -1082,6 +1146,15 @@ namespace Plan
           m_vc_reply_deadline = -1;
 
           changeMode(IMC::PlanControlState::PCS_READY, DTR("vehicle reply timeout"));
+
+          // Popping all requests
+          while (m_requests.size())
+            m_requests.pop();
+
+          // Increment local request id to prevent old replies from being processed
+          ++m_vreq_ctr;
+
+          err(DTR("cleared all requests"));
         }
       }
 
@@ -1099,7 +1172,6 @@ namespace Plan
         if (command == IMC::VehicleCommand::VC_START_CALIBRATION)
         {
           m_plan->calibrationStarted();
-          // one second of tolerance for the vehicle supervisor
           m_vc.calib_time = (uint16_t)m_plan->getEstimatedCalibrationTime();
         }
         else

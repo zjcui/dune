@@ -25,8 +25,8 @@
 // Author: Pedro Calado                                                     *
 //***************************************************************************
 
-#ifndef DUNE_PLANS_POWERMODEL_HPP_INCLUDED_
-#define DUNE_PLANS_POWERMODEL_HPP_INCLUDED_
+#ifndef DUNE_PLANS_POWER_MODEL_HPP_INCLUDED_
+#define DUNE_PLANS_POWER_MODEL_HPP_INCLUDED_
 
 //! ISO C++ headers.
 #include <vector>
@@ -162,7 +162,7 @@ namespace DUNE
       inline float
       toWh(float power, float duration) const
       {
-        return power * duration / 3600.0;
+        return (float)(power * duration / 3600.0);
       }
 
       //! Conversion values for power (Watt)

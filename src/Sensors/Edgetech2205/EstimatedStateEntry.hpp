@@ -25,69 +25,47 @@
 // Author: Ricardo Martins                                                  *
 //***************************************************************************
 
-// ISO C++ 9 headers.
-#include <cstdlib>
-#include <cstdio>
+#ifndef SENSORS_EDGETECH_2205_ESTIMATED_STATE_ENTRY_HPP_INCLUDED_
+#define SENSORS_EDGETECH_2205_ESTIMATED_STATE_ENTRY_HPP_INCLUDED_
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
 
-using DUNE_NAMESPACES;
-
-int
-main(int argc, char** argv)
+namespace Sensors
 {
-  if (argc < 4)
+  namespace Edgetech2205
   {
-    std::fprintf(stderr, "Usage: %s <destination host> <destination port> <entity> <true|false>\n", argv[0]);
-    return 1;
+    using DUNE_NAMESPACES;
+
+    class EstimatedStateEntry
+    {
+    public:
+      EstimatedStateEntry(const IMC::EstimatedState& state):
+        m_state(state)
+      {
+        m_time = state.getTimeStamp();
+        int millisecond = (state.getTimeStamp() - m_time) * 1000;
+        m_time *= 1000;
+        m_time += millisecond;
+      }
+
+      const IMC::EstimatedState*
+      getEstimatedState(void) const
+      {
+        return &m_state;
+      }
+
+      int64_t
+      getTime(void) const
+      {
+        return m_time;
+      }
+
+    private:
+      IMC::EstimatedState m_state;
+      int64_t m_time;
+    };
   }
-
-  Address dest(argv[1]);
-
-  // Parse port.
-  unsigned port = 0;
-  if (!castLexical(argv[2], port))
-  {
-    fprintf(stderr, "ERROR: invalid port '%s'\n", argv[2]);
-    return 1;
-  }
-
-  if (port > 65535)
-  {
-    fprintf(stderr, "ERROR: invalid port '%s'\n", argv[2]);
-    return 1;
-  }
-
-  IMC::EntityParameter p;
-  p.name = "Active";
-  p.value = argv[4];
-
-  IMC::SetEntityParameters msg;
-  msg.name = argv[3];
-  msg.params.push_back(p);
-  msg.setTimeStamp();
-
-  uint8_t bfr[1024] = {0};
-  uint16_t rv = IMC::Packet::serialize(&msg, bfr, sizeof(bfr));
-
-  UDPSocket sock;
-  try
-  {
-    sock.write(bfr, rv, dest, port);
-
-    fprintf(stderr, "Raw:");
-    for (int i = 0; i < rv; ++i)
-      fprintf(stderr, " %02X", bfr[i]);
-    fprintf(stderr, "\n");
-
-    msg.toText(std::cerr);
-  }
-  catch (std::runtime_error& e)
-  {
-    std::cerr << "ERROR: " << e.what() << std::endl;
-    return 1;
-  }
-
-  return 0;
 }
+
+#endif

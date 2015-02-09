@@ -24,63 +24,118 @@
 //***************************************************************************
 // Author: Ricardo Martins                                                  *
 //***************************************************************************
-// Utility program to extract U-Blox proprietary messages from LSF logs.    *
-//***************************************************************************
+
+#ifndef SENSORS_EDGETECH_2205_LOG_HPP_INCLUDED_
+#define SENSORS_EDGETECH_2205_LOG_HPP_INCLUDED_
 
 // ISO C++ 98 headers.
-#include <iostream>
+#include <queue>
 #include <fstream>
-#include <iomanip>
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
-using DUNE_NAMESPACES;
 
-const static uint8_t c_ubx_sync0 = 0xb5;
-const static uint8_t c_ubx_sync1 = 0x62;
+// Local headers.
+#include "Packet.hpp"
 
-int
-main(int argc, char** argv)
+namespace Sensors
 {
-  if (argc != 3)
+  namespace Edgetech2205
   {
-    std::cerr << "Usage: " << argv[0] << "FILE.lsf[.gz]" << "FILE.ubx" << std::endl;
-    return 1;
-  }
+    using DUNE_NAMESPACES;
 
-  std::istream* is = 0;
-  Compression::Methods method = Compression::Factory::detect(argv[1]);
-  if (method == METHOD_UNKNOWN)
-    is = new std::ifstream(argv[1], std::ios::binary);
-  else
-    is = new Compression::FileInput(argv[1], method);
-
-  std::ofstream ofs(argv[2], std::ios::binary);
-
-  DUNE::IMC::Message* msg = 0;
-
-  try
-  {
-    while ((msg = DUNE::IMC::Packet::deserialize(*is)) != 0)
+    class Log: public Concurrency::Thread
     {
-      if (msg->getId() == DUNE_IMC_DEVDATABINARY)
+    public:
+      Log(Tasks::Task* parent, const Path& path, size_t buffer_count = 10):
+        m_parent(parent)
       {
-        DUNE::IMC::DevDataBinary* ddb = (DUNE::IMC::DevDataBinary*)msg;
+        for (size_t i = 0; i < buffer_count; ++i)
+          m_clean.push(new Packet());
 
-        if (ddb->value.size() < 2)
-          continue;
-
-        if ((uint8_t)ddb->value[0] == c_ubx_sync0 && (uint8_t)ddb->value[1] == c_ubx_sync1)
-          ofs.write(&ddb->value[0], ddb->value.size());
+        m_stream.open(path.c_str(), std::ofstream::app | std::ios::binary);
+        m_path = path;
       }
-    }
-  }
-  catch (std::runtime_error& e)
-  {
-    std::cerr << "ERROR: " << e.what() << std::endl;
-  }
 
-  delete is;
+      ~Log(void)
+      {
+        processDirtyQueue();
+        m_stream.close();
+        clearCleanQueue();
+      }
 
-  return 0;
+      Path
+      getPath(void)
+      {
+        return m_path;
+      }
+
+      void
+      put(Packet* packet)
+      {
+        m_dirty.push(packet);
+      }
+
+      Packet*
+      get(void)
+      {
+        Packet* packet = m_clean.pop();
+        if (packet == NULL)
+          packet = new Packet();
+
+        return packet;
+      }
+
+    private:
+      //! Parent task.
+      Tasks::Task* m_parent;
+      //! Dirty packet queue.
+      Concurrency::TSQueue<Packet*> m_dirty;
+      //! Clean packet queue.
+      Concurrency::TSQueue<Packet*> m_clean;
+      //! Log path.
+      Path m_path;
+      //! Log output stream.
+      std::ofstream m_stream;
+
+      void
+      processDirtyQueue(void)
+      {
+        while (!m_dirty.empty())
+        {
+          Packet* packet = m_dirty.pop();
+          if (packet != NULL)
+          {
+            m_stream.write((const char*)packet->getData(), packet->getSize());
+            m_clean.push(packet);
+          }
+        }
+      }
+
+      void
+      clearCleanQueue(void)
+      {
+        while (!m_clean.empty())
+        {
+          Packet* packet = m_clean.pop();
+          if (packet != NULL)
+            delete packet;
+        }
+      }
+
+      void
+      run(void)
+      {
+        while (isRunning())
+        {
+          if (m_dirty.waitForItems(1.0))
+          {
+            processDirtyQueue();
+          }
+        }
+      }
+    };
+  }
 }
+
+#endif

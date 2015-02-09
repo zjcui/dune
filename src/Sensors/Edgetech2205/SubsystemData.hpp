@@ -25,110 +25,84 @@
 // Author: Ricardo Martins                                                  *
 //***************************************************************************
 
+#ifndef SENSORS_EDGETECH_2205_SUBSYSTEM_DATA_HPP_INCLUDED_
+#define SENSORS_EDGETECH_2205_SUBSYSTEM_DATA_HPP_INCLUDED_
+
 // ISO C++ 98 headers.
-#include <memory>
-#include <cstring>
-#include <algorithm>
-#include <cerrno>
-#include <cstdlib>
+#include <vector>
 
 // DUNE headers.
 #include <DUNE/DUNE.hpp>
 
 // Local headers.
-#include "Command.hpp"
+#include "EstimatedStateList.hpp"
 
-namespace Supervisors
+namespace Sensors
 {
-  namespace MobileInternet
+  namespace Edgetech2205
   {
     using DUNE_NAMESPACES;
 
-    struct Arguments
+    //! Subsystem specific data used to rewrite the header of each ping.
+    struct SubsystemData
     {
-      //! GSM username.
-      std::string gsm_user;
-      //! GSM password.
-      std::string gsm_pass;
-      //! GSM APN.
-      std::string gsm_apn;
-      //! GSM pin.
-      std::string gsm_pin;
-      //! GSM mode.
-      std::string gsm_mode;
-    };
+      //! Ping count.
+      unsigned ping_count;
+      //! Ping number.
+      uint32_t ping_number;
+      //! Seconds since Unix Epoch from local CPU.
+      int64_t msec_cpu;
+      //! Seconds since Unix Epoch from sidescan CPU.
+      uint32_t time_epoch;
+      //! Milliseconds today.
+      uint32_t time_msec_today;
+      //! Brokendown time.
+      Time::BrokenDown time_bdt;
+      //! Navigation data validity.
+      uint16_t validity;
+      //! Latitude.
+      int32_t latitude;
+      //! Latitude in radian.
+      double latitude_rad;
+      //! Longitude.
+      int32_t longitude;
+      //! Longitude in radian;
+      double longitude_rad;
+      //! Course.
+      int16_t course;
+      //! Speed.
+      int16_t speed;
+      //! Heading.
+      uint16_t heading;
+      //! Roll.
+      int16_t roll;
+      //! Pitch.
+      int16_t pitch;
+      //! Altitude.
+      int32_t altitude;
+      //! Depth.
+      int32_t depth;
+      //! Estimated state list.
+      EstimatedStateList estates;
+      //! True if subsystem is active.
+      bool active;
 
-    struct Task: public Tasks::Task
-    {
-      //! Task arguments.
-      Arguments m_args;
-      //! Command.
-      Command m_cmd;
-
-      Task(const std::string& name, Tasks::Context& ctx):
-        Tasks::Task(name, ctx)
+      SubsystemData(void)
       {
-        // Define configuration parameters.
-        param("GSM - User", m_args.gsm_user)
-        .defaultValue("vodafone")
-        .description("GSM/GPRS username");
-
-        param("GSM - Password", m_args.gsm_pass)
-        .defaultValue("vodafone")
-        .description("GSM/GPRS password");
-
-        param("GSM - APN", m_args.gsm_apn)
-        .defaultValue("internet.vodafone.pt")
-        .description("GSM/GPRS Access Point Name (APN)");
-
-        param("GSM - Pin", m_args.gsm_pin)
-        .defaultValue("")
-        .description("GSM/GPRS pin.");
-
-        param("GSM - Mode", m_args.gsm_mode)
-        .defaultValue("AT\\^SYSCFG=2,2,3fffffff,0,1")
-        .description("GSM/GPRS mode.");
-      }
-
-      ~Task(void)
-      {
-        m_cmd.stop();
+        clear();
       }
 
       void
-      connect(void)
+      clear(void)
       {
-        std::string pin("AT");
-        if (m_args.gsm_pin.size() == 4)
-        {
-          pin.append("+CPIN=");
-          pin.append(m_args.gsm_pin);
-        }
-
-        Environment::set("GSM_USER", m_args.gsm_user);
-        Environment::set("GSM_PASS", m_args.gsm_pass);
-        Environment::set("GSM_APN", m_args.gsm_apn);
-        Environment::set("GSM_PIN", pin);
-        Environment::set("GSM_MODE", m_args.gsm_mode);
-
-        m_cmd.start();
-      }
-
-      void
-      onMain(void)
-      {
-        connect();
-
-        while (!stopping())
-        {
-          waitForMessages(1.0);
-
-          if (m_cmd.ended())
-            m_cmd.start();
-        }
+        estates.clear();
+        msec_cpu = 0;
+        ping_count = 0;
+        ping_number = 0;
+        active = false;
       }
     };
   }
 }
 
-DUNE_TASK
+#endif

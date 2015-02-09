@@ -22,74 +22,85 @@
 // language governing permissions and limitations at                        *
 // https://www.lsts.pt/dune/licence.                                        *
 //***************************************************************************
-// Author: Ricardo Martins                                                  *
+// Author: Pedro Calado                                                     *
 //***************************************************************************
 
-#ifndef SUPERVISORS_MOBILE_INTERNET_COMMAND_HPP_INCLUDED_
-#define SUPERVISORS_MOBILE_INTERNET_COMMAND_HPP_INCLUDED_
-
-// ISO C++ 98 headers.
-#include <cstdlib>
-#include <string>
-
-// POSIX headers.
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
+#ifndef DUNE_MONITORS_VERTICAL_MONITOR_HPP_INCLUDED_
+#define DUNE_MONITORS_VERTICAL_MONITOR_HPP_INCLUDED_
 
 // DUNE headers.
-#include <DUNE/DUNE.hpp>
+#include <DUNE/IMC/Definitions.hpp>
+#include <DUNE/Math/MovingAverage.hpp>
+#include <DUNE/Time/Counter.hpp>
+#include <DUNE/Memory.hpp>
 
-namespace Supervisors
+namespace DUNE
 {
-  namespace MobileInternet
+  namespace Monitors
   {
-    using DUNE_NAMESPACES;
+    // Export DLL Symbol.
+    class DUNE_DLL_SYM VerticalMonitor;
 
-    class Command
+    //! Number of samples for vertical monitor moving average in elevator
+    static const unsigned c_vsamples = 10;
+
+    //! %VerticalMonitor monitors the vehicle's progress in the z direction
+    //! @author Pedro Calado.
+    class VerticalMonitor
     {
     public:
-      Command(void):
-        m_pid(-1)
+      //! Constructor.
+      //! @param[in] timeout amount of time before triggering condition as met
+      //! @param[in] min_speed minimum speed for triggering condition
+      VerticalMonitor(float timeout, float min_speed):
+        m_min_speed(min_speed),
+        m_slow_progress(false),
+        m_mave(NULL)
       {
+        m_timer.setTop(timeout);
+        m_mave = new Math::MovingAverage<float>(c_vsamples);
       }
 
-      void
-      stop(void)
+      ~VerticalMonitor(void)
       {
-        if (m_pid != -1)
-          kill(m_pid, SIGKILL);
+        Memory::clear(m_mave);
       }
 
-      void
-      start(void)
+      //! Test if progress is slow
+      //! @param[in] z_speed current vz speed
+      //! @return true if progress is slow
+      bool
+      isProgressSlow(float z_speed)
       {
-        m_pid = fork();
-        if (m_pid == 0)
+        if (m_min_speed > m_mave->update(z_speed))
         {
-          close(STDIN_FILENO);
-          close(STDOUT_FILENO);
-          close(STDERR_FILENO);
-          execl("/bin/sh", "/bin/sh", "/sbin/mobile-internet", "start", NULL);
+          if (m_slow_progress)
+          {
+            return m_timer.overflow();
+          }
+          else
+          {
+            m_slow_progress = true;
+            m_timer.reset();
+          }
         }
-      }
+        else
+        {
+          m_slow_progress = false;
+        }
 
-      bool
-      started(void)
-      {
-        return m_pid != -1;
-      }
-
-      bool
-      ended(void)
-      {
-        int status = 0;
-        return waitpid(m_pid, &status, WNOHANG) > 0;
+        return false;
       }
 
     private:
-      pid_t m_pid;
+      //! Timer counter for timeout
+      Time::Counter<float> m_timer;
+      //! Minimum speed
+      float m_min_speed;
+      //! Progress below minimum
+      bool m_slow_progress;
+      //! Moving average for progress samples
+      Math::MovingAverage<float>* m_mave;
     };
   }
 }

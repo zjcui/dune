@@ -105,6 +105,9 @@ namespace Monitors
         m_gndspeed(0),
         m_altitude(0)
       {
+        paramActive(Tasks::Parameter::SCOPE_IDLE,
+                    Tasks::Parameter::VISIBILITY_DEVELOPER, true);
+
         param("Initialization Time", m_args.init_time)
         .units(Units::Second)
         .defaultValue("30.0")
@@ -192,7 +195,6 @@ namespace Monitors
       void
       onResourceInitialization(void)
       {
-        // Initialize timers.
         m_init.setTop(m_args.init_time);
         m_water_status.setTop(m_args.water_timeout);
         m_gps_status.setTop(m_args.gps_timeout);
@@ -349,21 +351,29 @@ namespace Monitors
             }
           }
 
-
-          setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
-          dispatch(m_vm);
+          if (isActive())
+          {
+            setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
+            dispatch(m_vm);
+          }
+          else
+          {
+            setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_IDLE);
+          }
 
           return;
         }
 
         // No way to detect medium properly.
-        if (m_water_presence.overflow() && m_args.vtype != "UAV")
+        if (m_water_presence.overflow() && m_args.vtype != "UAV" && isActive())
           setEntityState(IMC::EntityState::ESTA_ERROR, Status::CODE_MISSING_DATA);
 
         if (getEntityState() == IMC::EntityState::ESTA_ERROR)
         {
-          if (!m_water_presence.overflow() && m_args.vtype != "UAV")
+          if (!m_water_presence.overflow() && m_args.vtype != "UAV" && isActive())
             setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
+          else
+            setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_IDLE);
         }
 
         // Task state machine.
@@ -413,7 +423,15 @@ namespace Monitors
             break;
         }
 
-        dispatch(m_vm);
+        if (isActive())
+        {
+          setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
+          dispatch(m_vm);
+        }
+        else
+        {
+          setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_IDLE);
+        }
       }
     };
   }
