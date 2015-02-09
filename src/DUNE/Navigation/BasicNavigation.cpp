@@ -1,5 +1,5 @@
 //***************************************************************************
-// Copyright 2007-2014 Universidade do Porto - Faculdade de Engenharia      *
+// Copyright 2007-2015 Universidade do Porto - Faculdade de Engenharia      *
 // Laboratório de Sistemas e Tecnologia Subaquática (LSTS)                  *
 //***************************************************************************
 // This file is part of DUNE: Unified Navigation Environment.               *
@@ -20,7 +20,7 @@
 // distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF     *
 // ANY KIND, either express or implied. See the Licence for the specific    *
 // language governing permissions and limitations at                        *
-// https://www.lsts.pt/dune/licence.                                        *
+// http://ec.europa.eu/idabc/eupl.html.                                     *
 //***************************************************************************
 // Author: José Braga                                                       *
 // Author: Pedro Calado (Altitude filter)                                   *
@@ -533,6 +533,11 @@ namespace DUNE
                                        msg->lat, msg->lon, msg->height,
                                        &x, &y, &m_last_z);
 
+      // Stream Estimator.
+      IMC::EstimatedStreamVelocity stream;
+      if (m_stream_filter.consume(msg, stream))
+        dispatch(stream);
+
       // Correct for roll angle.
       y += std::sin(getEuler(AXIS_X)) * m_dist_gps_cg;
 
@@ -700,6 +705,7 @@ namespace DUNE
     BasicNavigation::consume(const IMC::Rpm* msg)
     {
       m_rpm = msg->value;
+      m_stream_filter.consume(msg);
     }
 
     void
@@ -977,12 +983,10 @@ namespace DUNE
       m_estate.setTimeStamp(tstamp);
       m_uncertainty.setTimeStamp(tstamp);
       m_navdata.setTimeStamp(tstamp);
-      m_ewvel.setTimeStamp(tstamp);
 
       dispatch(m_estate, DF_KEEP_TIME);
       dispatch(m_uncertainty, DF_KEEP_TIME);
       dispatch(m_navdata, DF_KEEP_TIME);
-      dispatch(m_ewvel, DF_KEEP_TIME);
     }
 
     void

@@ -1,5 +1,5 @@
 //***************************************************************************
-// Copyright 2007-2014 Universidade do Porto - Faculdade de Engenharia      *
+// Copyright 2007-2015 Universidade do Porto - Faculdade de Engenharia      *
 // Laboratório de Sistemas e Tecnologia Subaquática (LSTS)                  *
 //***************************************************************************
 // This file is part of DUNE: Unified Navigation Environment.               *
@@ -20,7 +20,7 @@
 // distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF     *
 // ANY KIND, either express or implied. See the Licence for the specific    *
 // language governing permissions and limitations at                        *
-// https://www.lsts.pt/dune/licence.                                        *
+// http://ec.europa.eu/idabc/eupl.html.                                     *
 //***************************************************************************
 // Author: José Braga                                                       *
 //***************************************************************************
@@ -42,6 +42,7 @@
 #include <DUNE/Math/MovingAverage.hpp>
 #include <DUNE/Navigation/KalmanFilter.hpp>
 #include <DUNE/Navigation/Ranging.hpp>
+#include <DUNE/Navigation/StreamEstimator.hpp>
 #include <DUNE/Time/Clock.hpp>
 #include <DUNE/Time/Counter.hpp>
 #include <DUNE/Time/Delta.hpp>
@@ -506,6 +507,8 @@ namespace DUNE
       Navigation::KalmanFilter m_kal;
       //! Ranging data.
       Navigation::Ranging m_ranging;
+      //! Stream Estimator.
+      Navigation::StreamEstimator m_stream_filter;
       //! Propeller speed (RPM)
       int16_t m_rpm;
       //! Kalman Filter process noise covariance matrix parameters.
@@ -516,8 +519,6 @@ namespace DUNE
       std::vector<double> m_state_cov;
       //! Estimated state message.
       IMC::EstimatedState m_estate;
-      //! Estimated water velocity message.
-      IMC::EstimatedStreamVelocity m_ewvel;
       //! LBL range acceptance.
       IMC::LblRangeAcceptance m_lbl_ac;
       //! GPS fix rejection.
