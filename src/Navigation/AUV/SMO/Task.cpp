@@ -222,7 +222,7 @@ namespace Navigation
           .description("Label of the DVL message");
 
           param("Entity Label Altitude", m_args.altitude_entity_name)
-          .defaultValue("DVL")
+          .defaultValue("Altimeter")
           .description("Label of the m_altitude message");
 
           // Vehicle physical properties
@@ -470,12 +470,13 @@ namespace Navigation
                                   m_ahrs_timeout.overflow() == 0);
 
           if (msg->getSourceEntity() == m_dvl_entity_id)
+          {
             m_flag_dvl_active = (msg->state == IMC::EntityState::ESTA_NORMAL &&
                                  m_dvl_timeout.overflow() == 0);
 
-          if (msg->getSourceEntity() == m_altitude_entity_id)
             m_flag_altitude_active =  (msg->state == IMC::EntityState::ESTA_NORMAL &&
                                        m_altitude_timeout.overflow() == 0);
+          }
         }
 
         void
