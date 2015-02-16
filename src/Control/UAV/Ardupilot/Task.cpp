@@ -135,6 +135,8 @@ namespace Control
         std::string form_fl_ent;
         //! Convert MSL to WGS84 height
         bool convert_msl;
+        //! Motor stop timeout
+        float motor_tout;
       };
 
       struct Task: public DUNE::Tasks::Task
@@ -201,7 +203,7 @@ namespace Control
         //! Vehicle is on ground
         bool m_ground;
         //! Desired control
-        float m_droll, m_dclimb, m_dspeed;
+        float m_droll, m_dclimb, m_dspeed, m_dspeed_saved;
         //! Type of system to be controlled
         APM_Vehicle m_vehicle_type;
         //! Check if is in service
@@ -210,6 +212,9 @@ namespace Control
         float m_last_wp;
         //! Mission items queue
         std::queue<mavlink_message_t> m_mission_items;
+        //! Stop motor timeout.
+        Time::Counter<double> m_motor_stop_tout;
+        bool m_motor_stop;
 
         Task(const std::string& name, Tasks::Context& ctx):
           Tasks::Task(name, ctx),
@@ -237,9 +242,11 @@ namespace Control
           m_droll(0),
           m_dclimb(0),
           m_dspeed(20),
+          m_dspeed_saved(20),
           m_vehicle_type(VEHICLE_UNKNOWN),
           m_service(false),
-          m_last_wp(0)
+          m_last_wp(0),
+          m_motor_stop(false)
         {
           param("Communications Timeout", m_args.comm_timeout)
           .minimumValue("1")
@@ -376,6 +383,11 @@ namespace Control
           .defaultValue("false")
           .description("Convert altitude extracted from the Ardupilot to WGS84 height");
 
+          param("Motor Stop Timeout", m_args.motor_tout)
+          .defaultValue("3.0")
+          .units(Units::Second)
+          .description("Timeout to re-enable motor if no command is received");
+
           // Setup packet handlers
           // IMPORTANT: set up function to handle each type of MAVLINK packet here
           m_mlh[MAVLINK_MSG_ID_ATTITUDE] = &Task::handleAttitudePacket;
@@ -411,6 +423,7 @@ namespace Control
           bind<SimulatedState>(this);
           bind<DevCalibrationControl>(this);
           bind<AutopilotMode>(this);
+          bind<Brake>(this);
 
           //! Misc. initialization
           m_last_pkt_time = 0; //! time of last packet from Ardupilot
@@ -436,6 +449,8 @@ namespace Control
           //! are simetrical to maximum values, no need to input them manually
           m_args.rc1.val_min = -m_args.rc1.val_max;
           m_args.rc2.val_min = -m_args.rc2.val_max;
+
+          m_motor_stop_tout.setTop(m_args.motor_tout);
         }
 
         void
@@ -725,6 +740,9 @@ namespace Control
         void
         consume(const IMC::DesiredSpeed* d_speed)
         {
+          //! Used in case the motor is stopped
+          m_dspeed_saved = d_speed->value;
+
           if (!(m_cloops & IMC::CL_SPEED))
           {
             inf(DTR("speed control is NOT active"));
@@ -805,21 +823,11 @@ namespace Control
           //! Setting airspeed parameter
           if (m_vehicle_type == VEHICLE_COPTER)
           {
-            mavlink_msg_param_set_pack(255, 0, &msg,
-                                                 m_sysid, //! target_system System ID
-                                                 0, //! target_component Component ID
-                                                 "WPNAV_SPEED", //! Parameter name
-                                                 (int)(path->speed * 100), //! Parameter value
-                                                 MAV_PARAM_TYPE_INT16); //! Parameter type
+            setArdupilotParameter("WPNAV_SPEED", (int)(path->speed * 100));
           }
           else
           {
-            mavlink_msg_param_set_pack(255, 0, &msg,
-                                     m_sysid, //! target_system System ID
-                                     0, //! target_component Component ID
-                                     "TRIM_ARSPD_CM", //! Parameter name
-                                     (int)(path->speed * 100), //! Parameter value
-                                     MAV_PARAM_TYPE_INT16); //! Parameter type
+            setArdupilotParameter("TRIM_ARSPD_CM", (int)(path->speed * 100));
           }
           int n = mavlink_msg_to_send_buffer(buf, &msg);
           sendData(buf, n);
@@ -827,12 +835,8 @@ namespace Control
           //! Setting loiter radius parameter
           if (m_vehicle_type != VEHICLE_COPTER)
           {
-            mavlink_msg_param_set_pack(255, 0, &msg,
-                                       m_sysid, //! target_system System ID
-                                       0, //! target_component Component ID
-                                       "WP_LOITER_RAD", //! Parameter name
-                                       path->flags & DesiredPath::FL_CCLOCKW ? (-1 * path->lradius) : (path->lradius), //! Parameter value
-                                       MAV_PARAM_TYPE_INT16); //! Parameter type
+            float radius = path->flags & DesiredPath::FL_CCLOCKW ? (-1 * path->lradius) : (path->lradius);
+            setArdupilotParameter("WP_LOITER_RAD", radius);
 
             n = mavlink_msg_to_send_buffer(buf, &msg);
             sendData(buf, n);
@@ -942,27 +946,19 @@ namespace Control
         void
         takeoff_plane(const IMC::DesiredPath* dpath)
         {
+          float radius = dpath->flags & DesiredPath::FL_CCLOCKW ? (-1 * dpath->lradius) : (dpath->lradius);
+          setArdupilotParameter("WP_LOITER_RAD", radius);
+
           uint8_t buf[512];
           int seq = 1;
-
           mavlink_message_t msg;
-
-          mavlink_msg_param_set_pack(255, 0, &msg,
-                                     m_sysid, //! target_system System ID
-                                     0, //! target_component Component ID
-                                     "WP_LOITER_RAD", //! Parameter name
-                                     dpath->flags & DesiredPath::FL_CCLOCKW ? (-1 * dpath->lradius) : (dpath->lradius), //! Parameter value
-                                     MAV_PARAM_TYPE_INT16); //! Parameter type
-
-          uint16_t n = mavlink_msg_to_send_buffer(buf, &msg);
-          sendData(buf, n);
 
           mavlink_msg_mission_count_pack(255, 0, &msg,
                                          m_sysid, //! target_system System ID
                                          0, //! target_component Component ID
                                          4); //! size of Mission
 
-          n = mavlink_msg_to_send_buffer(buf, &msg);
+          uint16_t n = mavlink_msg_to_send_buffer(buf, &msg);
           sendData(buf, n);
 
           mavlink_msg_mission_write_partial_list_pack(255, 0, &msg,
@@ -1069,19 +1065,7 @@ namespace Control
           if ((getEntityState() != IMC::EntityState::ESTA_NORMAL) || m_external || m_ground)
             return;
 
-          mavlink_message_t msg;
-          uint8_t buf[512];
-
-          mavlink_msg_param_set_pack(255, 0, &msg,
-                                     m_sysid, //! target_system System ID
-                                     0, //! target_component Component ID
-                                     "WP_LOITER_RAD", //! Parameter name
-                                     m_args.lradius, //! Parameter value
-                                     MAV_PARAM_TYPE_INT16); //! Parameter type
-
-          uint16_t n = mavlink_msg_to_send_buffer(buf, &msg);
-          sendData(buf, n);
-
+          setArdupilotParameter("WP_LOITER_RAD", m_args.lradius);
           sendCommandPacket(MAV_CMD_NAV_LOITER_UNLIM);
 
           debug("Sent LOITER packet to Ardupilot");
@@ -1218,6 +1202,33 @@ namespace Control
         }
 
         void
+        consume(const IMC::Brake* msg)
+        {
+          if (!(m_cloops & IMC::CL_ROLL))
+          {
+            war(DTR("Cannot stop motor in current control mode."));
+            return;
+          }
+
+          if (msg->op == IMC::Brake::OP_START)
+          {
+            setArdupilotParameter("ARSPD_ENABLE", 0);
+            m_cloops &= ~IMC::CL_SPEED;
+            m_dspeed = m_args.rc3.val_min;
+            m_motor_stop = true;
+            m_motor_stop_tout.reset();
+          }
+
+          if (msg->op == IMC::Brake::OP_STOP)
+          {
+            setArdupilotParameter("ARSPD_ENABLE", 1);
+            m_cloops |= IMC::CL_SPEED;
+            m_dspeed = m_dspeed_saved;
+            m_motor_stop = false;
+          }
+        }
+
+        void
         sendCommandPacket(uint16_t cmd, float arg1=0, float arg2=0, float arg3=0, float arg4=0, float arg5=0, float arg6=0, float arg7=0)
         {
           uint8_t buf[512];
@@ -1227,6 +1238,22 @@ namespace Control
           trace("%0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f", arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 
           mavlink_msg_command_long_pack(255, 0, &msg, m_sysid, 0, cmd, 0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+
+          uint16_t n = mavlink_msg_to_send_buffer(buf, &msg);
+          sendData(buf, n);
+        }
+
+        void
+        setArdupilotParameter(const char *param_id, float param_value)
+        {
+          uint8_t buf[512];
+          mavlink_message_t msg;
+          mavlink_msg_param_set_pack(255, 0, &msg,
+                                     m_sysid, //! target_system System ID
+                                     0, //! target_component Component ID
+                                     param_id, //! Parameter name
+                                     param_value, //! Parameter value
+                                     0); //! Not used
 
           uint16_t n = mavlink_msg_to_send_buffer(buf, &msg);
           sendData(buf, n);
@@ -1281,6 +1308,14 @@ namespace Control
                 setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
                 m_esta_ext = false;
               }
+            }
+
+            if (m_motor_stop && m_motor_stop_tout.overflow())
+            {
+              IMC::Brake brake;
+              brake.op = IMC::Brake::OP_STOP;
+              receive(&brake);
+              war(DTR("Motor stop timeout. Restarting!"));
             }
 
             // Handle IMC messages from bus
