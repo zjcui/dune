@@ -308,11 +308,13 @@ y_mouse - (TPL_HEIGHT / 2) < 0)
         m_args.rep_tpl=10;
 
         CvCapture *capture;
+        //capture=cvCaptureFromCam(0);//for laptop cam
         //capture=cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg");
         capture=cvCaptureFromFile("http://10.0.3.31:8080/video.wmv");
         while( capture==0 && cnt<4)
         {
           inf("\n\tERROR OPEN CAM\n");
+          //capture=cvCaptureFromCam(0);//for laptop cam
           capture=cvCaptureFromFile("http://10.0.3.31:8080/video.wmv");
           //capture=cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg");
           cnt++;
@@ -391,7 +393,6 @@ y_mouse - (TPL_HEIGHT / 2) < 0)
         }
         cvDestroyWindow( "Live Video" );
         cvReleaseCapture(&capture);
-        inf("\n\n\t\tEXIT GRAB IMAGE\n");
       }
     };
   }
