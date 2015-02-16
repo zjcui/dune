@@ -83,7 +83,10 @@ namespace DUNE
     public:
       //! Constructor.
       SpeedAnalyzer(void)
-      { }
+      {
+        // Initialize distances.
+        invalidate();
+      }
 
       //! Destructor.
       ~SpeedAnalyzer(void)
@@ -91,19 +94,20 @@ namespace DUNE
 
       //! Received new GroundVelocity reading.
       //! @param[in] msg new GroundVelocity.
+      //! @param[in] yaw current system heading.
       void
-      consume(const IMC::GroundVelocity* msg)
+      consume(const IMC::GroundVelocity* msg, double yaw)
       {
         DvlData d;
         d.x = msg->x;
-        d.y = msg->y;
+        d.y = msg->y - m_dist_dvl_cg * yaw;;
         d.time = msg->getTimeStamp();
         d.valid = (msg->validity == (IMC::GroundVelocity::VAL_VEL_X
                                      | IMC::GroundVelocity::VAL_VEL_Y
                                      | IMC::GroundVelocity::VAL_VEL_Z));
 
         if (d.valid)
-          m_dvl_flag = true;
+          m_valid_gv = true;
 
         // Vector not full.
         if (m_dvl_gnd.size() >= c_dvl_size)
@@ -114,19 +118,20 @@ namespace DUNE
 
       //! Received new WaterVelocity reading.
       //! @param[in] msg new WaterVelocity.
+      //! @param[in] yaw current system heading.
       void
-      consume(const IMC::WaterVelocity* msg)
+      consume(const IMC::WaterVelocity* msg, double yaw)
       {
         DvlData d;
         d.x = msg->x;
-        d.y = msg->y;
+        d.y = msg->y - m_dist_dvl_cg * yaw;
         d.time = msg->getTimeStamp();
         d.valid = (msg->validity == (IMC::WaterVelocity::VAL_VEL_X
                                      | IMC::WaterVelocity::VAL_VEL_Y
                                      | IMC::WaterVelocity::VAL_VEL_Z));
 
         if (d.valid)
-          m_dvl_flag = true;
+          m_valid_wv = true;
 
         // Vector not full.
         if (m_dvl_wtr.size() >= c_dvl_size)
@@ -146,7 +151,7 @@ namespace DUNE
         g.time = msg->getTimeStamp();
 
         if (g.valid)
-          m_gps_flag = true;
+          m_valid_gps = true;
 
         // Vector not full.
         if (m_gps.size() >= c_gps_size)
@@ -187,8 +192,9 @@ namespace DUNE
       void
       invalidate(void)
       {
-        m_dvl_flag = false;
-        m_gps_flag = false;
+        m_valid_gv = false;
+        m_valid_wv = false;
+        m_valid_gps = false;
       }
 
     private:
@@ -200,10 +206,13 @@ namespace DUNE
       std::vector<GpsData> m_gps;
       //! RPM values.
       std::vector<RpmData> m_rpm;
-      //! DVL external validity flag.
-      bool m_dvl_flag;
+      //! DVL external validity flags.
+      bool m_valid_gv;
+      bool m_valid_wv;
       //! GPS external validity flag.
-      bool m_gps_flag;
+      bool m_valid_gps;
+      //! Displacement between DVL and vehicle center of gravity.
+      float m_dist_dvl_cg;
     };
   }
 }
