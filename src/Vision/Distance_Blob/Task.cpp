@@ -662,8 +662,8 @@ IPL_DEPTH_32F, 1 );
           //Showm Image - Result
           cvShowImage( "Live Video", back);
           cvCreateTrackbar("Refresh TPL in:", "Live Video", &m_args.rep_tpl, 12, 0);
-          cvCreateTrackbar("TPL Size", "Live Video", &m_args.tpl_size, frame_width-100, 0);
-          cvCreateTrackbar("WINDOW  Search Size", "Live Video", &m_args.window_search_size, frame_width-50, 0);
+          cvCreateTrackbar("Tpl Size", "Live Video", &m_args.tpl_size, frame_width-100, 0);
+          cvCreateTrackbar("Window  Search Size", "Live Video", &m_args.window_search_size, frame_width-50, 0);
           cvCreateTrackbar("Color Interval", "Live Video", &m_args.color_int, 120, 0);
             
           //if size of window change
