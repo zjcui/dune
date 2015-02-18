@@ -49,6 +49,8 @@ namespace Vision
       int window_search_size;
       //template size
       int tpl_size;
+      //Blob Area Size
+      int area_size;
       //number of repetitions before the tpl refresh
       int rep_tpl;
       //Color interval - search
@@ -120,6 +122,8 @@ namespace Vision
       IplImage* frame;
       //IplImage Backup of main for debug
       IplImage* back;
+      //Buffer for video frame
+      CvVideoWriter *writer;
       //Main frame width
       int  frame_width;
       //Main frame height
@@ -152,6 +156,12 @@ namespace Vision
       int button;
       //Global counter
       int cnt;
+      //Flag - Showm image tresh
+      bool flag_tresh;
+      //Flag - stat of video record
+      bool flag_stat_video;
+      //Flag - start record
+      bool flag_start;
       //Position of Pixel blob - X
       double moment10;
       //Position of Pixel blob - Y
@@ -189,6 +199,12 @@ namespace Vision
         .minimumValue("0")
         .maximumValue("480")
         .description("Template Size");
+        
+        param("Blob Area", m_args.area_size)
+        .defaultValue("5000")
+        .minimumValue("1")
+        .maximumValue("10000")
+        .description("Blob Area");
         
         param("Number of repetitions before the tpl refresh", m_args.rep_tpl)
         .defaultValue("6")
@@ -245,11 +261,44 @@ namespace Vision
       {
       }
       
-      /* Save Image Resut*/
+      /* Save Video Frame Result */
+      void save_video(IplImage* image, bool parameter)
+      {
+        if (flag_stat_video == 0 && parameter == 1)
+        {
+          #ifdef linux
+          sprintf(local_dir,"mkdir /home/$USER/%d_%d_%d_log_video -p",day,mon,year);
+          button = system(local_dir);
+          user_name = getenv ("USER");
+          sprintf(local_dir,"/home/%s/%d_%d_%d_log_video", user_name, day, mon, year);
+          sprintf(text,"%s/%d_%d_%d___%d_%d_%d.avi",local_dir,hour,min,sec,day,mon,year);
+          #endif
+          
+          #ifdef _WIN32
+          button = system("cd C:\ ");
+          sprintf(local_dir,"mkdir %d_%d_%d_log_video",day,mon,year);
+          button = system(local_dir);
+          sprintf(local_dir,"C:\%d_%d_%d_log_video",day,mon,year);
+          sprintf(text,"%s\%d_%d_%d___%d_%d_%d.avi",local_dir,hour,min,sec,day,mon,year);
+          #endif
+          
+          writer = cvCreateVideoWriter(text, CV_FOURCC('M','J','P','G'), 8, cvGetSize(image), 1);
+          flag_stat_video = 1;
+        }
+        
+        if (flag_stat_video == 1 && parameter == 1)
+          cvWriteFrame(writer, image);      // add the frame to the file
+        else if (flag_stat_video == 1 && parameter == 0)
+        {
+          cvReleaseVideoWriter( &writer );
+          flag_stat_video=0;
+        }
+      }
+      
+      /* Save Image Result*/
       void
       save_image(IplImage* image)
       {
-        
         #ifdef linux
         sprintf(local_dir,"mkdir /home/$USER/%d_%d_%d_log_image -p",day,mon,year);
         button = system(local_dir);
@@ -284,6 +333,7 @@ namespace Vision
         mon = local -> tm_mon+1;
         year = local -> tm_year+1900;
       }
+      
       /* mouse handler */
       void 
       MouseHandler( int event, int x, int y, int flags, void *)
@@ -312,8 +362,7 @@ IPL_DEPTH_32F, 1 );
           tpl1.red = tpl1.data[y*tpl1.step + x*tpl1.channels+2];
           
           if ( (tpl_width  / 2) + x_mouse > frame_width || (tpl_height / 2) + y_mouse > frame_height || x_mouse - (tpl_width / 2) < 0 
-|| 
-y_mouse - (tpl_height / 2) < 0)
+|| y_mouse - (tpl_height / 2) < 0)
             inf(DTR("\nSmall space\n"));
           else
           {
@@ -346,7 +395,7 @@ IPL_DEPTH_32F, 1);
           tpl2.red = tpl2.data[y*tpl2.step + x*tpl2.channels+2];
           
           if ( (tpl_width  / 2) + x_mouse > frame_width || (tpl_height / 2) + y_mouse > frame_height || x_mouse - (tpl_width / 2) < 0 
-            || y_mouse - (tpl_height / 2) < 0)
+|| y_mouse - (tpl_height / 2) < 0)
             inf(DTR("\nSmall space\n"));
           else
           {
@@ -448,6 +497,10 @@ IPL_DEPTH_32F, 1);
           //Filtering the frame
           cvSmooth(tpl1.threshy,tpl1.threshy,CV_MEDIAN,7,7);
           cvShowImage("tresh 1",tpl1.threshy);
+          if (flag_tresh == 1)
+            cvMoveWindow("tresh 1",780,50);
+          else
+            cvDestroyWindow("tresh 1");
           //Finding the blobs
           cvLabel(tpl1.threshy,tpl1.labelImg,tpl1.blobs);
           //Filter by size of blob
@@ -505,6 +558,10 @@ cvScalar(tpl2.blue + m_args.color_int, tpl2.green + m_args.color_int, tpl2.red +
           //Filtering the frame
           cvSmooth(tpl2.threshy,tpl2.threshy,CV_MEDIAN,7,7);
           cvShowImage("tresh 2",tpl2.threshy);
+          if (flag_tresh == 1)
+            cvMoveWindow("tresh 2",780,250);
+          else
+            cvDestroyWindow("tresh 2");
           //Finding the blobs
           cvLabel(tpl2.threshy,tpl2.labelImg,tpl2.blobs);
           //Filter by size of blob
@@ -590,11 +647,14 @@ IPL_DEPTH_32F, 1 );
         tpl1.flag_track=0;
         tpl2.flag_track=0;
         m_args.rep_tpl=1;
-        tpl1.max_area=4000;
+        tpl1.max_area=10000;
         tpl1.min_area=30;
-        tpl2.max_area=4000;
+        tpl2.max_area=10000;
         tpl2.min_area=30;
         m_args.color_int=20;
+        flag_tresh=0;
+        flag_start=0;
+        flag_stat_video=0;
         
         CvCapture *capture;
         //capture = cvCaptureFromCAM( 0 );
@@ -626,10 +686,10 @@ IPL_DEPTH_32F, 1 );
 IPL_DEPTH_32F, 1 );      
         //Window Name
         cvNamedWindow( "Live Video" , 0);
-        cvResizeWindow( "Live Video" , 640, 540);
+        cvResizeWindow( "Live Video" , 640, 480);
         //Calback for mouse click
         cvSetMouseCallback( "Live Video", MouseWrapper, this);
-        
+
         //Define Font Letter OpenCV
         CvFont font;
         cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.75, 0.75, 0, 2, CV_AA);
@@ -651,21 +711,37 @@ IPL_DEPTH_32F, 1 );
             
           //Add information in frame
           time_acquisition();
-          sprintf(text,"DIST = %d PIXEL",abs(tpl1.object_x + (tpl_width/2) - tpl2.object_x + (tpl_width/2)));
+          sprintf(text,"Dist. = %d px",abs(tpl1.object_x + (tpl_width/2) - tpl2.object_x + (tpl_width/2)));
           cvPutText(back, text, cvPoint(10, 20), &font, cvScalar(0, 255, 0, 0));
           sprintf(text,"Hour: %d:%d:%d",hour,min,sec);
           cvPutText(back, text, cvPoint(10, 42), &font, cvScalar(255, 255, 100, 0));
           sprintf(text,"Data: %d-%d-%d",day,mon,year);
           cvPutText(back, text, cvPoint(10, 64), &font, cvScalar(255, 255, 100, 0));
           text[0]='\0';
-                   
+         
+          //Save video
+          if (flag_start == 1)
+          {
+            save_video( back, 1);
+            cvCircle(back, cvPoint( frame_width - 20, 20 ), 4, cvScalar( 0, 255, 0, 0 ), 5, 8, 0);
+          }
+          else
+          {
+            save_video( back, 0);
+            cvCircle(back, cvPoint( frame_width - 20, 20 ), 4, cvScalar( 0, 0, 255, 0 ), 5, 8, 0);
+          }
+         
           //Showm Image - Result
           cvShowImage( "Live Video", back);
           cvCreateTrackbar("Refresh TPL in:", "Live Video", &m_args.rep_tpl, 12, 0);
           cvCreateTrackbar("Tpl Size", "Live Video", &m_args.tpl_size, frame_width-100, 0);
           cvCreateTrackbar("Window  Search Size", "Live Video", &m_args.window_search_size, frame_width-50, 0);
           cvCreateTrackbar("Color Interval", "Live Video", &m_args.color_int, 120, 0);
-            
+          cvCreateTrackbar("Blob Area", "Live Video", &m_args.area_size, 10000, 0);          
+          
+          tpl1.max_area = m_args.area_size;
+          tpl2.max_area = m_args.area_size;
+          
           //if size of window change
           if (window_search_height != m_args.window_search_size)
           {
@@ -688,8 +764,12 @@ IPL_DEPTH_32F, 1);
           tpl_width = m_args.tpl_size;
             
           key=cvWaitKey(10);
-            if ( key == 's')
+            if ( key == 's' || key == 'S')
               save_image( back );
+            if ( key == 't' || key == 'T')
+              flag_tresh = !flag_tresh;
+            if ( key == 'r' || key == 'R')
+              flag_start = !flag_start;
           cvReleaseImage(&back);
           //waitForMessages(1.0);
         }
