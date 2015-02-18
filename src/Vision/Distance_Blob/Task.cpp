@@ -39,7 +39,7 @@
 
 namespace Vision
 {
-  namespace Dist_Blob_OpenCV
+  namespace Distance_Blob
   {
     using DUNE_NAMESPACES;
 
@@ -60,13 +60,13 @@ namespace Vision
       struct IMAGE
       {
         //IplImage template match
-        IplImage *tpl;
+        IplImage* tpl;
         //IplImage of results
-        IplImage *tm_result;
+        IplImage* tm_result;
         //Threshold buffer
-        IplImage *threshy;
+        IplImage* threshy;
         //Image Variable for blobs
-        IplImage *labelImg;
+        IplImage* labelImg;
         //minimum shift of TPL Track
         CvPoint minloc;
         //maximum shift of TPL Track
@@ -114,12 +114,12 @@ namespace Vision
       };
       
       //Read time and data
-      struct tm *local;
+      struct tm* local;
       //!Variables
       //IplImage main frame
-      IplImage *frame;
+      IplImage* frame;
       //IplImage Backup of main for debug
-      IplImage *back;
+      IplImage* back;
       //Main frame width
       int  frame_width;
       //Main frame height
@@ -141,7 +141,7 @@ namespace Vision
       //Buffer text for directory for log
       char local_dir[80];
       //User Name
-      char *user_name;
+      const char* user_name;
       //counter refresh TPL
       int cnt_refresh;
       //coordinate x of mouse
@@ -247,14 +247,26 @@ namespace Vision
       
       /* Save Image Resut*/
       void
-      save_image(IplImage *image)
+      save_image(IplImage* image)
       {
+        
+        #ifdef linux
         sprintf(local_dir,"mkdir /home/$USER/%d_%d_%d_log_image -p",day,mon,year);
         button = system(local_dir);
         user_name = getenv ("USER");
         sprintf(local_dir,"/home/%s/%d_%d_%d_log_image", user_name, day, mon, year);
-        sprintf(text,"%s/%d_%d_%d---%d_%d_%d.jpg",local_dir,hour,min,sec,day,mon,year);
-        cvSaveImage(text, image);       
+        sprintf(text,"%s/%d_%d_%d___%d_%d_%d.jpg",local_dir,hour,min,sec,day,mon,year);
+        #endif
+        
+        #ifdef _WIN32
+        button = system("cd C:\ ");
+        sprintf(local_dir,"mkdir %d_%d_%d_log_image",day,mon,year);
+        button = system(local_dir);
+        sprintf(local_dir,"C:\%d_%d_%d_log_image",day,mon,year);
+        sprintf(text,"%s\%d_%d_%d___%d_%d_%d.jpg",local_dir,hour,min,sec,day,mon,year);
+        #endif
+        
+        cvSaveImage(text, image);
       }
       
       /*Time acquisition */
@@ -313,8 +325,8 @@ y_mouse - (tpl_height / 2) < 0)
             //inf( ">>> Tracking Start <<<\n");
           }
         }
-        //RIGHT CLICK
-        else if  ( event == CV_EVENT_RBUTTONUP || event == CV_EVENT_MBUTTONUP )
+        //RIGHT CLICK or middle button
+        else if ( event == CV_EVENT_RBUTTONUP || event == CV_EVENT_MBUTTONUP )
         {
           cvReleaseImage( &tpl2.tpl );
           tpl2.tpl = cvCreateImage( cvSize( tpl_width, tpl_height ), frame->depth, frame->nChannels );
@@ -335,7 +347,7 @@ IPL_DEPTH_32F, 1);
           
           if ( (tpl_width  / 2) + x_mouse > frame_width || (tpl_height / 2) + y_mouse > frame_height || x_mouse - (tpl_width / 2) < 0 
             || y_mouse - (tpl_height / 2) < 0)
-            inf("\nSmall space\n");
+            inf(DTR("\nSmall space\n"));
           else
           {
             cvSetImageROI( frame, cvRect( tpl2.object_x, tpl2.object_y, tpl_width, tpl_height ) );
@@ -350,16 +362,16 @@ IPL_DEPTH_32F, 1);
       
       /* mouse handler - STATIC */
       static void 
-      MouseWrapper(int event, int x, int y, int flags, void *opt) 
+      MouseWrapper(int event, int x, int y, int flags, void* opt) 
       {
-        Task * cal = (Task*)opt; // cast back to 'this'
+        Task* cal = (Task*)opt; // cast back to 'this'
         // now call your member-function.
         cal->MouseHandler(event, x, y,flags, 0);
       } 
       
       /* track object in frame image */
       void 
-      TrackObject()
+      TrackObject(void)
       {
         /* setup position of search window */
         tpl1.win_x = tpl1.object_x - ( ( window_search_width  - tpl_width  ) / 2 );
@@ -369,25 +381,25 @@ IPL_DEPTH_32F, 1);
 
         /****************************** Window margins of tracking *******************************/
         // TPL 1
-        if( (tpl1.win_x+(window_search_width/2) - (window_search_width/2)) <= 1)
+        if ( (tpl1.win_x+(window_search_width/2) - (window_search_width/2)) <= 1)
           tpl1.flag_track=11;
-        else if( (tpl1.win_x + window_search_width) >= frame_width )
+        else if ( (tpl1.win_x + window_search_width) >= frame_width )
           tpl1.flag_track=12;
-        else if( (tpl1.win_y + (window_search_height/2)) - (window_search_height/2) <= 1 )
+        else if ( (tpl1.win_y + (window_search_height/2)) - (window_search_height/2) <= 1 )
           tpl1.flag_track=13;
-        else if( (tpl1.win_y + window_search_height) >= frame_height )
+        else if ( (tpl1.win_y + window_search_height) >= frame_height )
           tpl1.flag_track=14;
         else
           tpl1.flag_track=0;
         
         // TPL 2
-        if( (tpl2.win_x+(window_search_width/2) - (window_search_width/2)) <= 1)
+        if ( (tpl2.win_x+(window_search_width/2) - (window_search_width/2)) <= 1)
           tpl2.flag_track=21;
-        else if( (tpl2.win_x + window_search_width) >= frame_width )
+        else if ( (tpl2.win_x + window_search_width) >= frame_width )
           tpl2.flag_track=22;
-        else if( (tpl2.win_y + (window_search_height/2)) - (window_search_height/2) <= 1 )
+        else if ( (tpl2.win_y + (window_search_height/2)) - (window_search_height/2) <= 1 )
           tpl2.flag_track=23;
-        else if( (tpl2.win_y + window_search_height) >= frame_height )
+        else if ( (tpl2.win_y + window_search_height) >= frame_height )
           tpl2.flag_track=24;
         else
           tpl2.flag_track=0;
@@ -395,7 +407,7 @@ IPL_DEPTH_32F, 1);
         /***************************************************************************/
         /* search object in search window */
         //TPL1
-        if(tpl1.flag_track==0)
+        if (tpl1.flag_track==0)
         {
           cvSetImageROI( frame, cvRect( tpl1.win_x, tpl1.win_y, window_search_width, window_search_height ) );
           //cvShowImage("tpl",tpl);
@@ -405,7 +417,7 @@ IPL_DEPTH_32F, 1);
           cvResetImageROI( frame );
         }
         //TPL2
-        if(tpl2.flag_track==0)
+        if (tpl2.flag_track==0)
         {
           cvSetImageROI( frame, cvRect( tpl2.win_x, tpl2.win_y, window_search_width, window_search_height ) );
           //cvShowImage("tpl",tpl);
@@ -417,7 +429,7 @@ IPL_DEPTH_32F, 1);
         
         /* if object found... */
         //TPL1
-        if(tpl1.flag_track==0 && tpl1.minval>0 && tpl1.minval <= threshold)
+        if (tpl1.flag_track==0 && tpl1.minval>0 && tpl1.minval <= threshold)
         {
           //inf("\nminval = %f\n",minval);
           /* save object's current location by template match */
@@ -425,9 +437,9 @@ IPL_DEPTH_32F, 1);
           tpl1.object_y = tpl1.win_y + tpl1.minloc.y;
           
           /* location by blob */
-          if(tpl1.threshy == NULL)
+          if (tpl1.threshy == NULL)
             tpl1.threshy=cvCreateImage(cvGetSize(tpl1.tpl),8,1); //Threshold image
-          if(tpl1.labelImg == NULL)
+          if (tpl1.labelImg == NULL)
               tpl1.labelImg=cvCreateImage(cvGetSize(tpl1.tpl),IPL_DEPTH_LABEL,1);//Image Variable for blobs
           
           //Thresholding the frame for color
@@ -448,7 +460,7 @@ IPL_DEPTH_32F, 1);
           }
          
           //Calculating the current position of blob
-          if( (tpl1.moment10/tpl1.area) > 0  && (tpl1.moment01/tpl1.area) > 0 && (tpl1.moment10/tpl1.area) < frame_width  && 
+          if ( (tpl1.moment10/tpl1.area) > 0  && (tpl1.moment01/tpl1.area) > 0 && (tpl1.moment10/tpl1.area) < frame_width  && 
 (tpl1.moment01/tpl1.area) < frame_height )
           {
             tpl1.object_x = (tpl1.object_x + (tpl1.moment10/tpl1.area)) - (tpl_width/2);
@@ -474,7 +486,7 @@ window_search_height ), cvScalar( 255, 0, 0, 0 ), 4, 0, 0 );
           tpl1.flag_track=0;
         }
         //TPL2
-        if(tpl2.flag_track==0 && tpl2.minval>0 && tpl2.minval <= threshold)
+        if (tpl2.flag_track==0 && tpl2.minval>0 && tpl2.minval <= threshold)
         {
           //inf("\nminval = %f\n",minval);
           /* save object's current location */
@@ -482,9 +494,9 @@ window_search_height ), cvScalar( 255, 0, 0, 0 ), 4, 0, 0 );
           tpl2.object_y = tpl2.win_y + tpl2.minloc.y;
           
           /* location by blob */
-          if(tpl2.threshy == NULL)
+          if (tpl2.threshy == NULL)
             tpl2.threshy=cvCreateImage(cvGetSize(tpl2.tpl),8,1); //Threshold image
-          if(tpl2.labelImg == NULL)
+          if (tpl2.labelImg == NULL)
             tpl2.labelImg=cvCreateImage(cvGetSize(tpl2.tpl),IPL_DEPTH_LABEL,1);//Image Variable for blobs
               
           //Thresholding the frame for color
@@ -504,7 +516,7 @@ cvScalar(tpl2.blue + m_args.color_int, tpl2.green + m_args.color_int, tpl2.red +
             tpl2.area = it->second->area;
           }
           
-          if( (tpl2.moment10/tpl2.area) > 0  && (tpl2.moment01/tpl2.area) > 0 && (tpl2.moment10/tpl2.area) < frame_width  && 
+          if ( (tpl2.moment10/tpl2.area) > 0  && (tpl2.moment01/tpl2.area) > 0 && (tpl2.moment10/tpl2.area) < frame_width  && 
             (tpl2.moment01/tpl2.area) < frame_height )
           {
             tpl2.object_x = (tpl2.object_x + (tpl2.moment10/tpl2.area)) - (tpl_width/2);
@@ -533,7 +545,7 @@ window_search_height ), cvScalar( 0, 0, 255, 0 ), 4, 0, 0 );
         
         /*Refresh TPL*/
         cnt_refresh++;
-        if(cnt_refresh > m_args.rep_tpl)
+        if (cnt_refresh > m_args.rep_tpl)
         {
           //TPL1
           cvSetImageROI( frame, cvRect( tpl1.object_x, tpl1.object_y, tpl_width, tpl_height ) );
@@ -585,13 +597,15 @@ IPL_DEPTH_32F, 1 );
         m_args.color_int=20;
         
         CvCapture *capture;
-        //capture=cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg");
+        //capture = cvCaptureFromCAM( 0 );
+        //capture = cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg");
         capture=cvCaptureFromFile("http://10.0.3.31:8080/video.wmv");
-        while( capture==0 && cnt<4)
+        while ( capture==0 && cnt<4)
         {
           inf("\n\tERROR OPEN CAM\n");
-          capture=cvCaptureFromFile("http://10.0.3.31:8080/video.wmv");
-          //capture=cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg");
+          //capture = cvCaptureFromCAM( 0 );
+          capture = cvCaptureFromFile("http://10.0.3.31:8080/video.wmv");
+          //capture = cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg");
           cnt++;
           waitForMessages(1.0);
         }
@@ -632,17 +646,17 @@ IPL_DEPTH_32F, 1 );
           back=cvCloneImage(frame);
             
           /* perform tracking if template is available */
-          if( tpl1.is_tracking == 1 || tpl2.is_tracking == 1 ) 
+          if ( tpl1.is_tracking == 1 || tpl2.is_tracking == 1 ) 
             TrackObject();
             
           //Add information in frame
           time_acquisition();
           sprintf(text,"DIST = %d PIXEL",abs(tpl1.object_x + (tpl_width/2) - tpl2.object_x + (tpl_width/2)));
           cvPutText(back, text, cvPoint(10, 20), &font, cvScalar(0, 255, 0, 0));
-          sprintf(text,"Hora: %d:%d:%d",hour,min,sec);
-          cvPutText(back, text, cvPoint(10, 40), &font, cvScalar(255, 255, 100, 0));
+          sprintf(text,"Hour: %d:%d:%d",hour,min,sec);
+          cvPutText(back, text, cvPoint(10, 42), &font, cvScalar(255, 255, 100, 0));
           sprintf(text,"Data: %d-%d-%d",day,mon,year);
-          cvPutText(back, text, cvPoint(10, 60), &font, cvScalar(255, 255, 100, 0));
+          cvPutText(back, text, cvPoint(10, 64), &font, cvScalar(255, 255, 100, 0));
           text[0]='\0';
                    
           //Showm Image - Result
@@ -653,7 +667,7 @@ IPL_DEPTH_32F, 1 );
           cvCreateTrackbar("Color Interval", "Live Video", &m_args.color_int, 120, 0);
             
           //if size of window change
-          if(window_search_height != m_args.window_search_size)
+          if (window_search_height != m_args.window_search_size)
           {
             window_search_height = m_args.window_search_size;
             window_search_width = m_args.window_search_size;
@@ -665,7 +679,7 @@ IPL_DEPTH_32F, 1);
 IPL_DEPTH_32F, 1);
           }
           
-          if( m_args.window_search_size <= m_args.tpl_size)
+          if ( m_args.window_search_size <= m_args.tpl_size)
             m_args.window_search_size = m_args.tpl_size+10;
           
           window_search_height = m_args.window_search_size;
@@ -674,7 +688,7 @@ IPL_DEPTH_32F, 1);
           tpl_width = m_args.tpl_size;
             
           key=cvWaitKey(10);
-            if( key == 's')
+            if ( key == 's')
               save_image( back );
           cvReleaseImage(&back);
           //waitForMessages(1.0);
