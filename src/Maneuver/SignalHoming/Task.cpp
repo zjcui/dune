@@ -1,6 +1,6 @@
 //***************************************************************************
-// Copyright 2007-2014 Universidade do Porto - Faculdade de Engenharia      *
-// Laboratório de Sistemas e Tecnologia Subaquática (LSTS)                  *
+// Copyright 2007-2014 University of Michigan                               *
+// Aerospace, Robotics, and Controls laboratory (ARC Lab)                   *
 //***************************************************************************
 // This file is part of DUNE: Unified Navigation Environment.               *
 //                                                                          *
@@ -22,7 +22,16 @@
 // language governing permissions and limitations at                        *
 // https://www.lsts.pt/dune/licence.                                        *
 //***************************************************************************
-// Author: Zhengjie_Cui                                                     *
+// Author: Dave Oyler                                                       *
+// Author: Ricardo Bencatel                                                 *
+// Author: Zhengjie Cui                                                     *
+//***************************************************************************
+
+//***************************************************************************
+// Original reference:
+// "A Homing Guidance Law for Binary Range-Rate Measurements",
+// by Oyler, D.W., Kabamba, P.T. ; Girard, A.R.,
+// 2013 IEEE 52nd Annual Conference on Decision and Control (CDC), 2013
 //***************************************************************************
 
 // DUNE headers.
@@ -83,24 +92,24 @@ namespace Maneuver
       //! @param[in] ctx context.
       Task(const std::string& name, Tasks::Context& ctx):
         DUNE::Tasks::Periodic(name, ctx),
-        m_psi(0.0),
-		m_es_valid(false),
-		m_speed(-1.0),
-		m_xb_estim(0.0),
-		m_yb_estim(0.0),
-        m_range_rate(0.0),
-        m_rssi_prev(0.0),
-        m_bank_lim(0.0),
-		m_last_time_spew(std::min(-1.0, Clock::get())),
-		m_last_time_trace(std::min(-1.0, Clock::get())),
-		m_last_time_debug(std::min(-1.0, Clock::get())),
-		m_src_id(UINT16_MAX)
+        m_psi( 0.0 ),
+        m_es_valid( false ),
+        m_speed( - 1.0 ),
+        m_xb_estim( 0.0 ),
+        m_yb_estim( 0.0 ),
+        m_range_rate( 0.0 ),
+        m_rssi_prev( 0.0 ),
+        m_bank_lim( 0.0   ),
+        m_last_time_spew( std::min( - 1.0, Clock::get() ) ),
+        m_last_time_trace( std::min( - 1.0, Clock::get() ) ),
+        m_last_time_debug( std::min( - 1.0, Clock::get() ) ),
+        m_src_id(UINT16_MAX)
       {
-		param("Initial Guess X", m_args.xb_estimate)
+        param("Initial Guess X", m_args.xb_estimate)
         .description("Initial guess of X position of Signal Source")
         .defaultValue("1000.0");
 
-		param("Initial Guess Y", m_args.yb_estimate)
+        param("Initial Guess Y", m_args.yb_estimate)
         .description("Initial guess of X position of Signal Source")
         .defaultValue("-200.0");
 
@@ -153,9 +162,9 @@ namespace Maneuver
         .defaultValue("spot-01")
         .description("Signal source id name.");
 
-		bind<IMC::RSSI>(this);
-		bind<IMC::EstimatedState>(this);
-		bind<IMC::IndicatedSpeed>(this);
+        bind<IMC::RSSI>(this);
+        bind<IMC::EstimatedState>(this);
+        bind<IMC::IndicatedSpeed>(this);
       }
 
       //! Update internal state with new parameter values.
@@ -163,17 +172,17 @@ namespace Maneuver
       onUpdateParameters(void)
       {
         // Vehicle maneuverability constraints
-      	if (paramChanged(m_args.bank_lim))
+        if ( paramChanged( m_args.bank_lim ) )
           m_bank_lim = Angles::radians(m_args.bank_lim);
 
-    	if (paramChanged(m_args.xb_estimate))
-    	{
+        if ( paramChanged( m_args.xb_estimate ) )
+        {
           m_xb_estim = m_args.xb_estimate;
           m_yb_estim = m_args.yb_estimate;
-    	}
+        }
 
-    	if (paramChanged(m_args.src_id))
-          m_src_id = resolveSystemName(m_args.src_id);
+        if ( paramChanged( m_args.src_id ) )
+          m_src_id = resolveSystemName( m_args.src_id );
       }
 
       //! Reserve entity identifiers.
@@ -206,143 +215,148 @@ namespace Maneuver
       {
       }
 
-      //When getting the RSSI signal, adjust the angle
       void
-	  consume(const IMC::RSSI* msg)
+      consume(const IMC::RSSI* msg)
       {
+        // Adjust the target angle as a function of the RSSI signal variation
+
+        // Determine if the signal is getting stronger or weaker
         double time_current = Clock::get();
-	    if (msg->value < m_rssi_prev)
+        if ( msg->value < m_rssi_prev )
         {
-           m_range_rate = 1;
-           if (time_current >= m_last_time_debug + 2.0)
-           {
-        	 debug("Get Further");
-        	 m_last_time_debug = time_current;
-           }
+          m_range_rate = 1;
+          if ( time_current >= m_last_time_debug + 2.0 )
+          {
+            debug("Get Further");
+            m_last_time_debug = time_current;
+          }
         }
         else
         {
-           m_range_rate = -1;
-           if (time_current >= m_last_time_debug + 2.0)
-           {
-             debug("Get Closer");
-        	 m_last_time_debug = time_current;
-           }
+          m_range_rate = -1;
+          if ( time_current >= m_last_time_debug + 2.0 )
+          {
+            debug("Get Closer");
+            m_last_time_debug = time_current;
+          }
         }
-
         m_rssi_prev = msg->value;
 
+        // Update target position estimate
         Observer();
-        if (m_speed > 0.0)
+
+        // Adjust the vehicle direction to home-in on the signal source
+        if ( m_speed > 0.0 )
         {
           double yaw_rate = Controller();
           // Bank command
           IMC::DesiredRoll cmd_roll;
-          cmd_roll.value = Math::trimValue(std::atan(yaw_rate * m_speed / Math::c_gravity),
-                                           -m_bank_lim, m_bank_lim);
+          cmd_roll.value = Math::trimValue( std::atan( yaw_rate * m_speed / Math::c_gravity ),
+              - m_bank_lim, m_bank_lim );
           dispatch(cmd_roll);
         }
-	  }
+      }
 
-      // Get the vehicle estimated state
       void
-	  consume(const IMC::EstimatedState* msg)
+      consume(const IMC::EstimatedState* msg)
       {
-    	m_es_valid = true;
-    	m_vehicle = *msg;
-		m_psi = msg->psi;
-    	double global_lon = m_vehicle.lon;
-    	double global_lat = m_vehicle.lat;
-    	double global_height = m_vehicle.height;
+        // Save the vehicle estimated state
 
-    	m_beacon_es.lat = msg->lat;
-    	m_beacon_es.lon = msg->lon;
-    	m_beacon_es.height = msg->height;
+        m_es_valid = true;
+        m_vehicle = *msg;
+        m_psi = msg->psi;
+        double global_lon = m_vehicle.lon;
+        double global_lat = m_vehicle.lat;
+        double global_height = m_vehicle.height;
 
-    	DUNE::Coordinates::WGS84::displace(m_vehicle.x, m_vehicle.y, m_vehicle.z, &global_lon, &global_lat, &global_height);
+        m_beacon_es.lat = msg->lat;
+        m_beacon_es.lon = msg->lon;
+        m_beacon_es.height = msg->height;
 
-    	// Debug printouts
-    	double time_current = Clock::get();
-    	if (time_current >= m_last_time_spew + 1.0)
-    	{
+        DUNE::Coordinates::WGS84::displace(m_vehicle.x, m_vehicle.y, m_vehicle.z, &global_lon, &global_lat, &global_height);
+
+        // Debug printouts
+        double time_current = Clock::get();
+        if (time_current >= m_last_time_spew + 1.0)
+        {
           spew("--------------------------------------------------------------------------------------");
           spew("Current UAV position:x = %.10f, y = %.10f w.r.t longitude = %.10f, latitude = %.10f",
-        		  m_vehicle.x, m_vehicle.y, m_vehicle.lon, m_vehicle.lat);
+              m_vehicle.x, m_vehicle.y, m_vehicle.lon, m_vehicle.lat);
           spew("Current UAV Global position: longitude = %.10f, latitude = %.10f height = %.5f", global_lon, global_lat, global_height);
           m_last_time_spew = time_current;
-    	}
-	  }
+        }
+      }
 
       // Get the vehicle speed
       void
-	  consume(const IMC::IndicatedSpeed* msg)
+      consume(const IMC::IndicatedSpeed* msg)
       {
-    	m_speed = msg->value;
+        m_speed = msg->value;
       }
 
       void
-	  Observer(void)
+      Observer(void)
       {
-    	double alpha = m_xb_estim * cos(m_psi) + m_yb_estim * sin(m_psi);
-    	double range_rate_estimate = -alpha / sqrt(alpha * alpha + m_args.eps * m_args.eps); // * m_speed * m_speed);
-    	double range_rate_eps = m_range_rate - range_rate_estimate;
-    	double xb_dot = - m_speed * cos(m_psi) * (m_args.g_obs_k1 * m_range_rate + m_args.g_obs_k2 * range_rate_eps);
-    	double yb_dot = - m_speed * sin(m_psi) * (m_args.g_obs_k1 * m_range_rate + m_args.g_obs_k2 * range_rate_eps);
-    	m_xb_estim += xb_dot;
-    	m_yb_estim += yb_dot;
+        // Update of the target position estimate
+        double alpha = m_xb_estim * cos(m_psi) + m_yb_estim * sin(m_psi);
+        double range_rate_estimate = -alpha / sqrt(alpha * alpha + m_args.eps * m_args.eps); // * m_speed * m_speed);
+        double range_rate_eps = m_range_rate - range_rate_estimate;
+        double xb_dot = - m_speed * cos(m_psi) * (m_args.g_obs_k1 * m_range_rate + m_args.g_obs_k2 * range_rate_eps);
+        double yb_dot = - m_speed * sin(m_psi) * (m_args.g_obs_k1 * m_range_rate + m_args.g_obs_k2 * range_rate_eps);
+        m_xb_estim += xb_dot;
+        m_yb_estim += yb_dot;
 
-    	// Debug printouts
-    	double time_current = Clock::get();
-    	if (time_current >= m_last_time_trace + 1.2)
-    	{
-          trace("Estimated beacon position: x = %.10f, y = %.10f", m_xb_estim, m_yb_estim);
+        // Debug printouts
+        double time_current = Clock::get();
+        if ( time_current >= m_last_time_trace + 1.2 )
+        {
+          trace( "Estimated beacon position: x = %.10f, y = %.10f", m_xb_estim, m_yb_estim );
           m_last_time_trace = time_current;
-          if (m_es_valid)
+          if ( m_es_valid )
           {
             m_beacon_es.x = m_vehicle.x + m_xb_estim;
             m_beacon_es.y = m_vehicle.y + m_yb_estim;
-            m_beacon_es.setSource(m_src_id);
-            dispatch(m_beacon_es);
+            m_beacon_es.setSource( m_src_id );
+            dispatch( m_beacon_es );
           }
-    	}
+        }
       }
 
       double
-	  Controller(void)
+      Controller(void)
       {
+        // Compute the desired turn rate to home-in on the target
+        double r = std::sqrt( m_xb_estim * m_xb_estim + m_yb_estim * m_yb_estim );
+        double theta = std::atan2( - m_yb_estim, - m_xb_estim );
 
-    	  double r = std::sqrt(m_xb_estim * m_xb_estim + m_yb_estim * m_yb_estim);
-    	  double theta = std::atan2(- m_yb_estim, - m_xb_estim);
+        double r_dot = m_speed * std::cos(m_psi - theta);
 
-    	  double r_dot = m_speed * std::cos(m_psi - theta);
+        double r_des_dot = - m_args.g_conv_spd * m_speed;
+        double r_des = (r_dot - r_des_dot) / m_args.lambda1 + r;
+        double r_des_dbldot = 0;
 
-    	  double r_des_dot = - m_args.g_conv_spd * m_speed;
-    	  double r_des = (r_dot - r_des_dot) / m_args.lambda1 + r;
-    	  double r_des_dbldot = 0;
+        double a = m_psi - theta;
 
-    	  double a = m_psi - theta;
+        double a_des = std::acos((- m_args.lambda1 * (r - r_des) + r_des_dot) / m_speed);
 
-    	  double a_des = std::acos((- m_args.lambda1 * (r - r_des) + r_des_dot) / m_speed);
+        if (a < 0)
+          a_des = - a_des;
 
-		  if (a < 0)
-	        a_des = -a_des;
+        double a_des_dot = ( - 1 / std::sqrt(1 - std::pow(((m_args.lambda1 * (r - r_des) - r_des_dot) / m_speed), 2))* (- m_args.lambda1 * (r_dot - r_des_dot) - r_des_dbldot) / m_speed);
 
-		  double a_des_dot = (-1/ std::sqrt(1 - std::pow(((m_args.lambda1 * (r - r_des) - r_des_dot) / m_speed), 2))* (- m_args.lambda1 * (r_dot - r_des_dot) - r_des_dbldot) / m_speed);
+        if (a < 0)
+          a_des_dot = - a_des_dot;
 
-		  if (a < 0)
-	        a_des_dot = -a_des_dot;
+        if (std::abs(a_des_dot) > m_args.yaw_rate_lim)
+          a_des_dot = a_des_dot / std::abs( a_des_dot ) * m_args.yaw_rate_lim;
 
-		  if (std::abs(a_des_dot) > m_args.yaw_rate_lim)
-	        a_des_dot = a_des_dot / std::abs(a_des_dot)*m_args.yaw_rate_lim;
-
-		  return -m_args.lambda2 * (a - a_des) + m_speed / r * std::sin(a) + a_des_dot;
+        return - m_args.lambda2 * (a - a_des) + m_speed / r * std::sin(a) + a_des_dot;
       }
 
-      //! Main loop. Move the UAV
       void
       task(void)
       {
-    	  consumeMessages();
+        consumeMessages();
       }
     };
   }
