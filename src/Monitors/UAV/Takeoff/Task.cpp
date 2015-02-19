@@ -1,5 +1,5 @@
 //***************************************************************************
-// Copyright 2007-2014 Universidade do Porto - Faculdade de Engenharia      *
+// Copyright 2007-2015 Universidade do Porto - Faculdade de Engenharia      *
 // Laboratório de Sistemas e Tecnologia Subaquática (LSTS)                  *
 //***************************************************************************
 // This file is part of DUNE: Unified Navigation Environment.               *
@@ -205,8 +205,7 @@ namespace Monitors
         void
         consume(const IMC::DesiredPath* msg)
         {
-//          TODO: Add Takeoff and Land flags to DesiredPath
-//          m_tkoff_req = (msg->flags && DesiredPath::FL_TAKEOFF);
+          m_tkoff_req = (msg->flags && DesiredPath::FL_TAKEOFF);
         }
 
         void
