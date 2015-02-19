@@ -1,6 +1,6 @@
 //***************************************************************************
-// Copyright 2007-2014 Universidade do Porto - Faculdade de Engenharia      *
-// Laboratório de Sistemas e Tecnologia Subaquática (LSTS)                  *
+// Copyright 2007-2014 University of Michigan                               *
+// Aerospace, Robotics, and Controls laboratory (ARC Lab)                   *
 //***************************************************************************
 // This file is part of DUNE: Unified Navigation Environment.               *
 //                                                                          *
@@ -22,7 +22,8 @@
 // language governing permissions and limitations at                        *
 // https://www.lsts.pt/dune/licence.                                        *
 //***************************************************************************
-// Author: Zhengjie_Cui                                                     *
+// Author: Ricardo Bencatel                                                 *
+// Author: Zhengjie Cui                                                     *
 //***************************************************************************
 
 // DUNE headers.
@@ -107,15 +108,15 @@ namespace Simulators
       void
       onUpdateParameters(void)
       {
-    	if (paramChanged(m_args.sgn_src_lat))
-    	{
-    	  m_src_es.lat = Math::Angles::radians(m_args.sgn_src_lat);
-    	  m_src_es.lon = Math::Angles::radians(m_args.sgn_src_lon);
-    	  m_src_es.height = m_args.sgn_src_hei;
-    	  m_src_es.x = m_args.sgn_src_x;
-    	  m_src_es.y = m_args.sgn_src_y;
-    	  m_src_es.z = m_args.sgn_src_z;
-    	}
+        if (paramChanged(m_args.sgn_src_lat))
+        {
+          m_src_es.lat = Math::Angles::radians(m_args.sgn_src_lat);
+          m_src_es.lon = Math::Angles::radians(m_args.sgn_src_lon);
+          m_src_es.height = m_args.sgn_src_hei;
+          m_src_es.x = m_args.sgn_src_x;
+          m_src_es.y = m_args.sgn_src_y;
+          m_src_es.z = m_args.sgn_src_z;
+        }
       }
 
       //! Reserve entity identifiers.
@@ -149,7 +150,7 @@ namespace Simulators
       }
 
       void
-	  consume(const IMC::EstimatedState* msg)
+      consume(const IMC::EstimatedState* msg)
       {
         if (m_args.vehicle_name == resolveSystemId(msg->getSource()))
         {
@@ -157,9 +158,9 @@ namespace Simulators
 
           // Signal strength computation
           Coordinates::WGS84::displace(vehicle_es.x, vehicle_es.y, vehicle_es.z,
-                                       &vehicle_es.lon, &vehicle_es.lat, &vehicle_es.height);
+              &vehicle_es.lon, &vehicle_es.lat, &vehicle_es.height);
           double distance = Coordinates::WGS84::distance(m_src_es.lon, m_src_es.lat, m_src_es.height,
-                                                         vehicle_es.lon, vehicle_es.lat, vehicle_es.height);
+              vehicle_es.lon, vehicle_es.lat, vehicle_es.height);
           m_rssi.value = m_args.sgn_gain/distance;
           dispatch(m_rssi);
 
@@ -167,27 +168,27 @@ namespace Simulators
           double time_current  = Clock::get();
           if (time_current >= m_last_time_trace + 1.5)
           {
-        	trace("Current RSSI = %.10f, w.r.t %s", m_rssi.value,
-        	      resolveEntity(msg->getSourceEntity()).c_str());
-        	m_last_time_trace = time_current;
+            trace("Current RSSI = %.10f, w.r.t %s", m_rssi.value,
+                  resolveEntity(msg->getSourceEntity()).c_str());
+            m_last_time_trace = time_current;
           }
           if (time_current >= m_last_time_spew + 0.5)
           {
-        	spew("Signal source position: longitude = %.10f, latitude = %.10f",
+            spew("Signal source position: longitude = %.10f, latitude = %.10f",
                  Math::Angles::degrees(m_src_es.lon), Math::Angles::degrees(m_src_es.lat));
-          	spew("Vehicle position:       longitude = %.10f, latitude = %.10f",
-                 Math::Angles::degrees(vehicle_es.lon), Math::Angles::degrees(vehicle_es.lat));
-        	spew("Distance to source: %.10f", distance);
-        	m_last_time_spew = time_current;
+            spew("Vehicle position:       longitude = %.10f, latitude = %.10f",
+                Math::Angles::degrees(vehicle_es.lon), Math::Angles::degrees(vehicle_es.lat));
+            spew("Distance to source: %.10f", distance);
+            m_last_time_spew = time_current;
           }
         }
-	  }
+      }
 
       //! Main loop.
       void
       task(void)
       {
-    	  consumeMessages();
+        consumeMessages();
       }
     };
   }
