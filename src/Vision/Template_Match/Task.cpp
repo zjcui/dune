@@ -36,7 +36,7 @@
 
 namespace Vision
 {
-  namespace Template_Match_OpenCV
+  namespace Template_Match
   {
     using DUNE_NAMESPACES;
 
@@ -54,31 +54,35 @@ namespace Vision
     {
       //!Variables
       //IplImage main
-      IplImage *frame;
+      IplImage* frame;
       //IplImage template match
-      IplImage *tpl;
+      IplImage* tpl;
       //IplImage of results
-      IplImage *tm;
+      IplImage* tm;
       //IplImage Backup of main for debug
-      IplImage *back;
+      IplImage* back;
+      //Capture struct - OpenCV
+      CvCapture* capture;
+      //Define Font Letter OpenCV
+      CvFont font;
       //minimum shift of TPL Track
       CvPoint minloc;
       //maximum shift of TPL Track
       CvPoint maxloc;
       //Main frame width
-      int  frame_width;
+      int frame_width;
       //Main frame height
-      int  frame_height;
+      int frame_height;
       // template width
-      int  tpl_width;
+      int tpl_width;
       //template height
-      int  tpl_height;
+      int tpl_height;
       //search window width
-      int  window_search_width;
+      int window_search_width;
       //search window height
-      int  window_search_height;
+      int window_search_height;
       //sensibility of detection of tpl
-      float  threshold;
+      double threshold;
       //key press
       char key;
       //Buffer text for frame result
@@ -106,7 +110,7 @@ namespace Vision
       //Flag tracking(0=false,1=true)
       bool is_tracking;
       //minimum value - match
-      double  minval;
+      double minval;
       //maximum value - match
       double maxval;
     
@@ -169,6 +173,8 @@ namespace Vision
         object_y = frame_height/2;
         x_mouse = frame_width/2;
         y_mouse = frame_height/2;
+        m_args.window_search_size = 100;
+        m_args.tpl_size = 40;
       }
 
       //! Release resources.
@@ -176,48 +182,83 @@ namespace Vision
       onResourceRelease(void)
       {
       }
-
+      
+      //!Draw a dashed line
+      void
+      DashedLine( IplImage* image, CvPoint p1, CvPoint p2, CvScalar color, int interval, bool axis)
+      {
+        cnt = 0;
+        //Vertical
+        if (!axis)
+        {
+          while (cnt < p2.y)
+          {
+            cvLine(image, cvPoint(p1.x, p1.y + cnt), cvPoint(p2.x, cnt + interval), color, 1, 8, 0);
+            cnt = cnt + interval*2;
+          }
+        }
+        //Horizontal
+        else
+        {
+          while (cnt < p2.x)
+          {
+            cvLine(image, cvPoint(p1.x + cnt, p1.y), cvPoint(cnt + interval, p2.y), color, 1, 8, 0);
+            cnt = cnt + interval*2;
+          }
+        }
+      }
+      //! Initialize Values
+      void 
+      InicValues(void)
+      {
+        tpl_width = 40;
+        tpl_height = 40;
+        window_search_width = 100;
+        window_search_height = 100;
+        m_args.window_search_size = 100;
+        m_args.tpl_size = 40;
+        threshold = 0.5;
+        cnt = 0;
+        flag_track = 0;
+        m_args.rep_tpl = 10;
+      }
+      
       /* mouse handler */
       void 
-      MouseHandler( int event, int x, int y, int flags, void *)
+      MouseHandler( int event, int x, int y, int flags, void*)
       {
-        button=flags;
-
+        button = flags;
         /* user clicked the image, save subimage as template */
         if ( event == CV_EVENT_LBUTTONUP )
         {
           cvReleaseImage( &tpl );
           tpl = cvCreateImage( cvSize( tpl_width, tpl_height ), frame->depth, frame->nChannels );
           cvReleaseImage( &tm );
-          tm = cvCreateImage( cvSize( window_search_width  - tpl_width  + 1, window_search_height - tpl_height + 1 ), IPL_DEPTH_32F, 1 
-);
+          tm = cvCreateImage( cvSize( window_search_width - tpl_width + 1, window_search_height - tpl_height + 1 ), IPL_DEPTH_32F, 1);
           x_mouse=x;
           y_mouse=y;
           object_x = x_mouse - ( tpl_width  / 2 );
           object_y = y_mouse - ( tpl_height / 2 );        
           
           if ( (tpl_width  / 2) + x_mouse > frame_width || (tpl_height / 2) + y_mouse > frame_height || x_mouse - (tpl_width / 2) < 0 
-|| 
-y_mouse - (tpl_height / 2) < 0)
+|| y_mouse - (tpl_height / 2) < 0)
             inf("\nSmall space\n");
           else
           {
-            cvSetImageROI( frame, cvRect( object_x, object_y, tpl_width, tpl_height ) );
+            cvSetImageROI( frame, cvRect( object_x, object_y, tpl_width, tpl_height) );
             cvCopy( frame, tpl, NULL );
-            //cvShowImage("Inic",tpl);
             cvResetImageROI( frame );
             is_tracking = 1;
-            //inf( ">>> Tracking Start <<<\n");
           }
         }
       }
       /* mouse handler - STATIC */
       static void 
-      MouseWrapper(int event, int x, int y, int flags, void *opt) 
+      MouseWrapper(int event, int x, int y, int flags, void* opt) 
       {
-        Task * cal = (Task*)opt; // cast back to 'this'
+        Task* cal = (Task*)opt; // cast back to 'this'
         // now call your member-function.
-        cal->MouseHandler(event, x, y,flags, 0);
+        cal->MouseHandler(event, x, y, flags, 0);
       } 
       
       /* track object in frame image */
@@ -225,61 +266,56 @@ y_mouse - (tpl_height / 2) < 0)
       TrackObject()
       {
         /* setup position of search window */
-        win_x = object_x - ( ( window_search_width  - tpl_width  ) / 2 );
-        win_y = object_y - ( ( window_search_height - tpl_height ) / 2 );
+        win_x = object_x - ( (window_search_width  - tpl_width) / 2 );
+        win_y = object_y - ( (window_search_height - tpl_height) / 2 );
 
         /****************************** Window margins of tracking *******************************/
                 
-        if( (win_x+(window_search_width/2) - (window_search_width/2)) <= 1)
-          flag_track=1;
-        else if( (win_x + window_search_width) >= frame_width )
-          flag_track=2;
-        else if( (win_y + (window_search_height/2)) - (window_search_height/2) <= 1 )
-          flag_track=3;
-        else if( (win_y + window_search_height) >= frame_height )
-          flag_track=4;
+        if ( (win_x+(window_search_width/2) - (window_search_width/2)) <= 1)
+          flag_track = 1;
+        else if ( (win_x + window_search_width) >= frame_width)
+          flag_track = 2;
+        else if ( (win_y + (window_search_height/2)) - (window_search_height/2) <= 1 )
+          flag_track = 3;
+        else if ( (win_y + window_search_height) >= frame_height)
+          flag_track = 4;
         else
-          flag_track=0;
+          flag_track = 0;
 
         /***************************************************************************/
         /* search object in search window */
-        if(flag_track==0)
+        if (flag_track == 0)
         {
           cvSetImageROI( frame, cvRect( win_x, win_y, window_search_width, window_search_height ) );
-          //cvShowImage("tpl",tpl);
-          cvMatchTemplate( frame, tpl, tm, CV_TM_SQDIFF_NORMED );
-          //cvShowImage("1",tm);
+          cvMatchTemplate( frame, tpl, tm, CV_TM_CCOEFF_NORMED );
+          cvErode(tm, tm, 0, 1);
           cvMinMaxLoc( tm, &minval, &maxval, &minloc, &maxloc, 0 );
           cvResetImageROI( frame );
         }
         /* if object found... */
-        if(flag_track==0 && minval>0 && minval <= threshold)
+        if (flag_track == 0 && maxval >= threshold)
         {
-          //inf("\nminval = %f\n",minval);
           /* save object's current location */
-          object_x = win_x + minloc.x;
-          object_y = win_y + minloc.y;
+          object_x = win_x + maxloc.x;
+          object_y = win_y + maxloc.y;
           
           /* draw a box there */
           cvRectangle( back, cvPoint( object_x, object_y ), cvPoint( object_x + tpl_width, object_y + tpl_height ), cvScalar( 0, 255, 
-0, 
-0 ), 2, 0, 0 );
+0, 0 ), 2, 0, 0 );
           cvRectangle( back, cvPoint( win_x, win_y ), cvPoint( win_x + window_search_width, win_y + window_search_height ), cvScalar( 
-255, 0, 0, 0 ), 4, 0, 0 );
-          cvCircle(back, cvPoint( object_x + tpl_width/2, object_y + tpl_height/2 ),3,cvScalar( 0, 255, 0, 0 ),1,8,0);
+255, 0, 0, 0 ), 2, 0, 0 );
+          cvCircle(back, cvPoint( object_x + tpl_width/2, object_y + tpl_height/2 ),3,cvScalar( 0, 255, 0, 0 ), 1, 8, 0);
             
           /*Refresh TPL*/
           cnt_refresh++;
-          if(cnt_refresh > m_args.rep_tpl)
+          if (cnt_refresh > m_args.rep_tpl && m_args.rep_tpl != 0)
           {
-            cvSetImageROI( frame, cvRect( object_x, object_y, tpl_width, tpl_height ) );
-            //cvShowImage("Act",frame);
+            cvSetImageROI( frame, cvRect( object_x, object_y, tpl_width, tpl_height) );
             cvReleaseImage( &tpl );
             cvReleaseImage( &tm );
-            tm = cvCreateImage( cvSize( window_search_width  - tpl_width  + 1, window_search_height - tpl_height + 1 ), IPL_DEPTH_32F, 
-1 );
-            tpl=cvCreateImage( cvSize( tpl_width, tpl_height ), frame->depth, frame->nChannels );
-            cvCopy(frame,tpl);
+            tm = cvCreateImage( cvSize( window_search_width - tpl_width  + 1, window_search_height - tpl_height + 1), IPL_DEPTH_32F, 1);
+            tpl = cvCreateImage( cvSize( tpl_width, tpl_height ), frame->depth, frame->nChannels );
+            cvCopy( frame, tpl);
             cvResetImageROI( frame );
             cnt_refresh=0;
           }
@@ -287,9 +323,9 @@ y_mouse - (tpl_height / 2) < 0)
         else
         {
           /* if not found... */
-          inf("\nObjecto Perdido.\nDefinir novo template ERRO:%d\n", flag_track);
+          inf("\nObject Lost.\nDefine new template - ERRO:%d\n", flag_track);
           is_tracking = 0;
-          flag_track=0;
+          flag_track = 0;
         }
       }
 
@@ -297,28 +333,20 @@ y_mouse - (tpl_height / 2) < 0)
       void
       onMain(void)
       {
-
-        tpl_width = 100;      /* template width       */
-        tpl_height = 100;      /* template height      */
-        window_search_width = 180;      /* search window width  */
-        window_search_height = 180;      /* search window height */
-        m_args.window_search_size = 180;
-        m_args.tpl_size = 100;
-        threshold = 1;
-        cnt=0;
-        flag_track=0;
-        m_args.rep_tpl=10;
-
-        CvCapture *capture;
-        //capture=cvCaptureFromCam(0);//for laptop cam
-        //capture=cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg");
-        capture=cvCaptureFromFile("http://10.0.3.31:8080/video.wmv");
-        while( capture==0 && cnt<4)
+        //Initialize Values
+        InicValues();
+       
+        //capture = cvCaptureFromCam(0);//for webcam
+        //capture = cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg"); //for axis cam
+        //capture = cvCaptureFromFile("http://10.0.3.31:8080/video.wmv"); //for stream video
+        capture = cvCaptureFromFile("rtsp://10.0.20.207:554/live/ch00_0"); //for airvision mini SENS-11
+        while ( capture  == 0 && cnt < 4)
         {
           inf("\n\tERROR OPEN CAM\n");
-          //capture=cvCaptureFromCam(0);//for laptop cam
-          capture=cvCaptureFromFile("http://10.0.3.31:8080/video.wmv");
-          //capture=cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg");
+          capture = cvCaptureFromFile("rtsp://10.0.20.207:554/live/ch00_0");
+          //capture = cvCaptureFromCam(0);//for laptop cam
+          //capture = cvCaptureFromFile("http://10.0.3.31:8080/video.wmv");
+          //capture = cvCaptureFromFile("http://10.0.20.112/axis-cgi/mjpg/video.cgi?.mjpg");
           cnt++;
           waitForMessages(1.0);
         }
@@ -330,68 +358,73 @@ y_mouse - (tpl_height / 2) < 0)
         frame_height = frame -> height;
 
         /* create template image */
-        tpl = cvCreateImage( cvSize( tpl_width, tpl_height ), frame->depth, frame->nChannels );
+        tpl = cvCreateImage( cvSize( tpl_width, tpl_height), frame->depth, frame->nChannels );
         /* create image for template matching result */
-        tm = cvCreateImage( cvSize( window_search_width  - tpl_width  + 1, window_search_height - tpl_height + 1 ), IPL_DEPTH_32F, 1 );
+        tm = cvCreateImage( cvSize( window_search_width - tpl_width + 1, window_search_height - tpl_height + 1), IPL_DEPTH_32F, 1 );
 
         //Window Name
         cvNamedWindow( "Live Video" , 0);
-        cvResizeWindow( "Live Video" , 800, 600);
+        cvResizeWindow( "Live Video" , 640, 480);
         //Calback for mouse click
         cvSetMouseCallback( "Live Video", MouseWrapper, this);
-        
-        //Define Font Letter OpenCV
-        CvFont font;
-        cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.75, 0.75, 0, 2, CV_AA);
+       
+        cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1.5, CV_AA);
 
         while (!stopping())
         {
           frame = cvQueryFrame( capture );
-          if( !capture )
+          if ( !capture )
           {
             inf("\n\tERROR GRAB IMAGE\n");
           }
           
           /*clone Image for debud */
-          back=cvCloneImage(frame);
+          back = cvCloneImage( frame );
             
           /* perform tracking if template is available */
-          if( is_tracking ) TrackObject();
+          if ( is_tracking ) TrackObject();
             
-          //Add information in frame
+          //Add information in frame result
           sprintf(text,"X = %d",object_x + tpl_width/2);
           cvPutText(back, text, cvPoint(10, 20), &font, cvScalar(255, 255, 255, 0));
           sprintf(text,"Y = %d",object_y + tpl_height/2);
           cvPutText(back, text, cvPoint(10, 40), &font, cvScalar(255, 255, 255, 0));
+          sprintf(text,"%d",frame_width/2);
+          cvPutText(back, text, cvPoint(frame_width/2 + 2, 13), &font, cvScalar(255, 255, 255, 0));
+          sprintf(text,"%d",frame_height/2);
+          cvPutText(back, text, cvPoint(frame_width - 34, frame_height/2 -2), &font, cvScalar(255, 255, 255, 0));
           text[0]='\0';
+          
+          //Draw axis in frame result; 0 -> vertical, 1 -> horizontal
+          DashedLine(back, cvPoint(frame_width/2, 0), cvPoint(frame_width/2, frame_height), cvScalar(255, 255, 255, 0), 20, 0);
+          DashedLine(back, cvPoint(0, frame_height/2), cvPoint(frame_width, frame_height/2), cvScalar(255, 255, 255, 0), 20, 1);
             
           //Showm Image - Result
           cvShowImage( "Live Video", back);
           cvCreateTrackbar("Refresh TPL in:", "Live Video", &m_args.rep_tpl, 12, 0);
-          cvCreateTrackbar("TPL Size", "Live Video", &m_args.tpl_size, frame_width-100, 0);
-          cvCreateTrackbar("WINDOW  Search Size", "Live Video", &m_args.window_search_size, frame_width-50, 0);
+          cvCreateTrackbar("TPL Size", "Live Video", &m_args.tpl_size, frame_width - 100, 0);
+          cvCreateTrackbar("WINDOW  Search Size", "Live Video", &m_args.window_search_size, frame_width - 50, 0);
             
           //if size of window change
-          if(window_search_height != m_args.window_search_size)
+          if (window_search_height != m_args.window_search_size)
           {
             window_search_height = m_args.window_search_size;
             window_search_width = m_args.window_search_size;
             cvReleaseImage( &tm );
-            tm = cvCreateImage( cvSize( window_search_width - tpl_width  + 1, window_search_height - tpl_height+ 1 ), IPL_DEPTH_32F, 1);
+            tm = cvCreateImage( cvSize( window_search_width - tpl_width + 1, window_search_height - tpl_height + 1), IPL_DEPTH_32F, 1);
           }
           
-          if( m_args.window_search_size <= m_args.tpl_size)
-            m_args.window_search_size = m_args.tpl_size+10;
+          if ( m_args.window_search_size <= m_args.tpl_size)
+            m_args.window_search_size = m_args.tpl_size + 10;
           
           window_search_height = m_args.window_search_size;
           window_search_width = m_args.window_search_size;
           tpl_height = m_args.tpl_size;
           tpl_width = m_args.tpl_size;
             
-          key=cvWaitKey(10);
+          key = cvWaitKey(10);
                 
-          cvReleaseImage(&back);
-          //waitForMessages(1.0);
+          cvReleaseImage( &back );
         }
         cvDestroyWindow( "Live Video" );
         cvReleaseCapture(&capture);
