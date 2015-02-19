@@ -1,5 +1,5 @@
 //***************************************************************************
-// Copyright 2007-2014 Universidade do Porto - Faculdade de Engenharia      *
+// Copyright 2007-2015 Universidade do Porto - Faculdade de Engenharia      *
 // Laboratório de Sistemas e Tecnologia Subaquática (LSTS)                  *
 //***************************************************************************
 // This file is part of DUNE: Unified Navigation Environment.               *
@@ -40,15 +40,17 @@ namespace Monitors
     struct Arguments
     {
       //! Heartbeat timeout.
-      float hrtbeat_tout;
+      float tout_heartbeat;
       //! Timeout if executing plan
-      float mission_tout;
+      float tout_mission;
     };
 
     struct Task: public DUNE::Tasks::Periodic
     {
-      //! Time of last heartbeat.
-      double m_hrtbeat_last;
+    	//! Heartbeat timeout.
+    	Time::Counter<double> m_tout_heartbeat;
+    	//! Mission timeout.
+    	Time::Counter<double> m_tout_mission;
       //! True if executing plan
       bool m_in_mission;
       //! Task arguments.
@@ -56,17 +58,20 @@ namespace Monitors
 
       Task(const std::string& name, Tasks::Context& ctx):
         Tasks::Periodic(name, ctx),
-        m_hrtbeat_last(0),
         m_in_mission(false)
       {
-        param("Heartbeat Timeout", m_args.hrtbeat_tout)
-        .units(Units::Second)
-        .defaultValue("5.0")
-        .description("Heartbeat Timeout");
-
-        param("In Mission Timeout", m_args.mission_tout)
+        param("Heartbeat Timeout", m_args.tout_heartbeat)
         .units(Units::Second)
         .defaultValue("10.0")
+        .minimumValue("0.0")
+        .maximumValue("60.0")
+        .description("Heartbeat Timeout");
+
+        param("In Mission Timeout", m_args.tout_mission)
+        .units(Units::Second)
+        .defaultValue("20.0")
+        .minimumValue("0.0")
+        .maximumValue("60.0")
         .description("Timeout if executing plan");
 
         bind<IMC::Heartbeat>(this);
@@ -74,12 +79,13 @@ namespace Monitors
       }
 
       void
-      onResourceInitialization(void)
+      onUpdateParameters(void)
       {
-        // Initialize entity state.
-        setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
+        if (paramChanged(m_args.tout_heartbeat))
+          m_tout_heartbeat.setTop(m_args.tout_heartbeat);
 
-        m_hrtbeat_last = Clock::get();
+        if (paramChanged(m_args.tout_mission))
+          m_tout_mission.setTop(m_args.tout_mission);
       }
 
       void
@@ -88,22 +94,31 @@ namespace Monitors
         if (msg->getSource() == getSystemId())
           return;
 
-        m_hrtbeat_last = Clock::get();
+        // Use only console Heartbeats.
+        if ((msg->getSource() & 0x4000) == 0)
+          return;
+
+        resetTimers();
+      }
+
+      void
+      resetTimers(void)
+      {
+        m_tout_heartbeat.reset();
+        m_tout_mission.reset();
       }
 
       void
       consume(const IMC::PlanControlState* msg)
       {
-        m_in_mission = (msg->state & IMC::PlanControlState::PCS_EXECUTING) != 0;
+        m_in_mission = (msg->state == IMC::PlanControlState::PCS_EXECUTING);
       }
 
       void
       task(void)
       {
-        double now = Clock::get();
-
-        if ((now > (m_hrtbeat_last + m_args.mission_tout) &&  m_in_mission) ||
-            (now > (m_hrtbeat_last + m_args.hrtbeat_tout) && !m_in_mission))
+        if ((m_in_mission && m_tout_mission.overflow()) ||
+            (!m_in_mission && m_tout_heartbeat.overflow()))
           setEntityState(IMC::EntityState::ESTA_FAULT, Status::CODE_COM_ERROR);
         else
           setEntityState(IMC::EntityState::ESTA_NORMAL, Status::CODE_ACTIVE);
