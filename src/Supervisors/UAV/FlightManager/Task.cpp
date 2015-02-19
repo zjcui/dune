@@ -1,5 +1,5 @@
 //***************************************************************************
-// Copyright 2007-2014 Universidade do Porto - Faculdade de Engenharia      *
+// Copyright 2007-2015 Universidade do Porto - Faculdade de Engenharia      *
 // Laboratório de Sistemas e Tecnologia Subaquática (LSTS)                  *
 //***************************************************************************
 // This file is part of DUNE: Unified Navigation Environment.               *
@@ -160,6 +160,7 @@ namespace Supervisors
           catch (...)
           {
             m_comms = UINT_MAX;
+            war("Communications Monitor not found.");
           }
 
           try
@@ -169,6 +170,7 @@ namespace Supervisors
           catch (...)
           {
             m_takeoff = UINT_MAX;
+            war("Take-off Monitor not found");
           }
 
           try
@@ -178,6 +180,7 @@ namespace Supervisors
           catch (...)
           {
             m_land = UINT_MAX;
+            war("Landing Monitor not found");
           }
         }
 
@@ -253,7 +256,8 @@ namespace Supervisors
             p_control.type = IMC::PlanControl::PC_REQUEST;
             p_control.flags = IMC::PlanControl::FLG_IGNORE_ERRORS;
 
-            dispatch(p_control);
+            war("Comm error!");
+//            dispatch(p_control);
           }
           (void) msg;
         }
