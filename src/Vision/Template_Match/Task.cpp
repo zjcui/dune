@@ -53,6 +53,8 @@ namespace Vision
     struct Task: public DUNE::Tasks::Task
     {
       //!Variables
+      //Read time and data
+      struct tm* local;
       //IplImage main
       IplImage* frame;
       //IplImage template match
@@ -63,6 +65,8 @@ namespace Vision
       IplImage* back;
       //Capture struct - OpenCV
       CvCapture* capture;
+      //Buffer for video frame
+      CvVideoWriter *writer;
       //Define Font Letter OpenCV
       CvFont font;
       //minimum shift of TPL Track
@@ -87,6 +91,10 @@ namespace Vision
       char key;
       //Buffer text for frame result
       char text[80];
+      //Buffer text for directory for log
+      char local_dir[80];
+      //User Name
+      const char* user_name;
       //counter refresh TPL
       int cnt_refresh;
       //Position of 1º Pixel of TPL in width
@@ -107,12 +115,25 @@ namespace Vision
       int win_y;
       //Flag track(0=off,1=on)
       int flag_track;
+      //Flag - Showm options
+      bool flag_options;
+      //Flag - stat of video record
+      bool flag_stat_video;
+      //Flag - start record
+      bool flag_start;
       //Flag tracking(0=false,1=true)
       bool is_tracking;
       //minimum value - match
       double minval;
       //maximum value - match
       double maxval;
+      //!Variables Time
+      int hour;
+      int min;
+      int sec;
+      int day;
+      int mon;
+      int year;
     
       //! Task arguments.
       Arguments m_args;
@@ -211,18 +232,93 @@ namespace Vision
       void 
       InicValues(void)
       {
-        tpl_width = 40;
-        tpl_height = 40;
-        window_search_width = 100;
-        window_search_height = 100;
+        tpl_width = 60;
+        tpl_height = 60;
+        window_search_width = 110;
+        window_search_height = 110;
         m_args.window_search_size = 100;
         m_args.tpl_size = 40;
-        threshold = 0.5;
+        threshold = 0.3;
         cnt = 0;
         flag_track = 0;
         m_args.rep_tpl = 10;
+        flag_start = 0;
+        flag_stat_video = 0;
+        flag_options = 0;
       }
       
+      /* Save Video Frame Result */
+      void save_video(IplImage* image, bool parameter)
+      {
+        if (flag_stat_video == 0 && parameter == 1)
+        {
+          #ifdef linux
+          sprintf(local_dir,"mkdir /home/$USER/%d_%d_%d_log_video -p",day,mon,year);
+          button = system(local_dir);
+          user_name = getenv ("USER");
+          sprintf(local_dir,"/home/%s/%d_%d_%d_log_video", user_name, day, mon, year);
+          sprintf(text,"%s/%d_%d_%d___%d_%d_%d.avi",local_dir,hour,min,sec,day,mon,year);
+          #endif
+          
+          #ifdef _WIN32
+          button = system("cd C:\ ");
+          sprintf(local_dir,"mkdir %d_%d_%d_log_video",day,mon,year);
+          button = system(local_dir);
+          sprintf(local_dir,"C:\%d_%d_%d_log_video",day,mon,year);
+          sprintf(text,"%s\%d_%d_%d___%d_%d_%d.avi",local_dir,hour,min,sec,day,mon,year);
+          #endif
+          
+          writer = cvCreateVideoWriter(text, CV_FOURCC('M','J','P','G'), 8, cvGetSize(image), 1);
+          flag_stat_video = 1;
+        }
+        
+        if (flag_stat_video == 1 && parameter == 1)
+          cvWriteFrame(writer, image);      // add the frame to the file
+          else if (flag_stat_video == 1 && parameter == 0)
+          {
+            cvReleaseVideoWriter( &writer );
+            flag_stat_video = 0;
+          }
+      }
+      
+      /* Save Image Result*/
+      void
+      save_image(IplImage* image)
+      {
+        #ifdef linux
+        sprintf(local_dir,"mkdir /home/$USER/%d_%d_%d_log_image -p",day,mon,year);
+        button = system(local_dir);
+        user_name = getenv ("USER");
+        sprintf(local_dir,"/home/%s/%d_%d_%d_log_image", user_name, day, mon, year);
+        sprintf(text,"%s/%d_%d_%d___%d_%d_%d.jpg",local_dir,hour,min,sec,day,mon,year);
+        #endif
+        
+        #ifdef _WIN32
+        button = system("cd C:\ ");
+        sprintf(local_dir,"mkdir %d_%d_%d_log_image",day,mon,year);
+        button = system(local_dir);
+        sprintf(local_dir,"C:\%d_%d_%d_log_image",day,mon,year);
+        sprintf(text,"%s\%d_%d_%d___%d_%d_%d.jpg",local_dir,hour,min,sec,day,mon,year);
+        #endif
+        
+        cvSaveImage(text, image);
+      }
+      
+      /*Time acquisition */
+      void
+      time_acquisition(void)
+      {
+        time_t t;
+        t = time(NULL);
+        local = localtime(&t);
+        
+        hour = local -> tm_hour;
+        min = local -> tm_min;
+        sec = local -> tm_sec;
+        day = local -> tm_mday;
+        mon = local -> tm_mon+1;
+        year = local -> tm_year+1900;
+      }
       /* mouse handler */
       void 
       MouseHandler( int event, int x, int y, int flags, void*)
@@ -385,6 +481,7 @@ namespace Vision
           if ( is_tracking ) TrackObject();
             
           //Add information in frame result
+          time_acquisition();
           sprintf(text,"X = %d",object_x + tpl_width/2);
           cvPutText(back, text, cvPoint(10, 20), &font, cvScalar(255, 255, 255, 0));
           sprintf(text,"Y = %d",object_y + tpl_height/2);
@@ -393,17 +490,44 @@ namespace Vision
           cvPutText(back, text, cvPoint(frame_width/2 + 2, 13), &font, cvScalar(255, 255, 255, 0));
           sprintf(text,"%d",frame_height/2);
           cvPutText(back, text, cvPoint(frame_width - 34, frame_height/2 -2), &font, cvScalar(255, 255, 255, 0));
+          sprintf(text,"Hour: %d:%d:%d",hour,min,sec);
+          cvPutText(back, text, cvPoint(10, 60), &font, cvScalar(255, 255, 100, 0));
+          sprintf(text,"Data: %d-%d-%d",day,mon,year);
+          cvPutText(back, text, cvPoint(10, 80), &font, cvScalar(255, 255, 100, 0));
           text[0]='\0';
           
           //Draw axis in frame result; 0 -> vertical, 1 -> horizontal
           DashedLine(back, cvPoint(frame_width/2, 0), cvPoint(frame_width/2, frame_height), cvScalar(255, 255, 255, 0), 20, 0);
           DashedLine(back, cvPoint(0, frame_height/2), cvPoint(frame_width, frame_height/2), cvScalar(255, 255, 255, 0), 20, 1);
             
+          //Save video
+          if ( flag_start )
+          {
+            save_video( back, 1);
+            cvCircle(back, cvPoint( frame_width - 20, 20 ), 4, cvScalar( 0, 255, 0, 0 ), 5, 8, 0);
+          }
+          else
+          {
+            save_video( back, 0);
+            cvCircle(back, cvPoint( frame_width - 20, 20 ), 4, cvScalar( 0, 0, 255, 0 ), 5, 8, 0);
+          }
+          
           //Showm Image - Result
           cvShowImage( "Live Video", back);
-          cvCreateTrackbar("Refresh TPL in:", "Live Video", &m_args.rep_tpl, 12, 0);
-          cvCreateTrackbar("TPL Size", "Live Video", &m_args.tpl_size, frame_width - 100, 0);
-          cvCreateTrackbar("WINDOW  Search Size", "Live Video", &m_args.window_search_size, frame_width - 50, 0);
+          if ( flag_options )
+          {
+            cvCreateTrackbar("Refresh TPL in:", "Live Video", &m_args.rep_tpl, 12, 0);
+            cvCreateTrackbar("TPL Size", "Live Video", &m_args.tpl_size, frame_width - 100, 0);
+            cvCreateTrackbar("WINDOW  Search Size", "Live Video", &m_args.window_search_size, frame_width - 50, 0);
+          }
+          else if ( !flag_options && key == 'm' )
+          {
+            cvDestroyWindow( "Live Video" );
+            cvNamedWindow( "Live Video" , 0);
+            cvResizeWindow( "Live Video" , 640, 480);
+            cvSetMouseCallback( "Live Video", MouseWrapper, this);
+            key = 'l';
+          }
             
           //if size of window change
           if (window_search_height != m_args.window_search_size)
@@ -423,6 +547,15 @@ namespace Vision
           tpl_width = m_args.tpl_size;
             
           key = cvWaitKey(10);
+          // Save Snapshot
+          if ( key == 's' || key == 'S')
+            save_image( back );
+          // Start/Stop record of video
+          if ( key == 'r' || key == 'R')
+            flag_start = !flag_start;
+          // Show/hide Menu parameters
+          if ( key == 'm' || key == 'M')
+            flag_options = !flag_options;
                 
           cvReleaseImage( &back );
         }
