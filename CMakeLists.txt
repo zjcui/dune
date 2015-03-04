@@ -414,3 +414,9 @@ endif(TESTS)
 #                                CDash                                   #
 ##########################################################################
 include(Dart)
+
+##########################################################################
+#		            MYSQL CONNECTOR				 #
+##########################################################################
+ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/vendor/libraries/mysql)
+ TARGET_LINK_LIBRARIES(dune ${PROJECT_SOURCE_DIR}/vendor/libraries/mysql/libmysqlcppconn.so)
