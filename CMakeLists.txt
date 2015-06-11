@@ -343,17 +343,12 @@ if(DUNE_OS_WINDOWS AND DUNE_CLIB_MINGW)
     DESTINATION bin)
 endif(DUNE_OS_WINDOWS AND DUNE_CLIB_MINGW)
 
-# LAUV Simulator link.
+# Seacon simulator link.
 if(DUNE_OS_WINDOWS)
-  set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL 1)
-
-  set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortCut          \\\\
-    '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\LAUV Simulator.lnk' \\\\
-    '$INSTDIR\\\\bin\\\\dune.exe'                            \\\\
-    '-c lauv-simulator-1 -p Simulation'")
-
-  set(CPACK_NSIS_DELETE_ICONS_EXTRA "Delete                  \\\\
-    '$SMPROGRAMS\\\\$MUI_TEMP\\\\LAUV Simulator.lnk'")
+  set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "CreateShortCut \\\\
+    \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Seacon Simulator.lnk\\\" \\\\
+    \\\"$INSTDIR\\\\bin\\\\dune.exe\\\" \\\\
+    \\\"-c lauv-seacon-1 -p Simulation\\\"")
 endif(DUNE_OS_WINDOWS)
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${PROJECT_NAME})
@@ -419,3 +414,11 @@ endif(TESTS)
 #                                CDash                                   #
 ##########################################################################
 include(Dart)
+
+# Edited by Zhengjie
+##########################################################################
+#		            MYSQL CONNECTOR				 #
+##########################################################################
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/vendor/libraries/mysql)
+TARGET_LINK_LIBRARIES(dune ${PROJECT_SOURCE_DIR}/vendor/libraries/mysql/libmysqlcppconn.so)
+
