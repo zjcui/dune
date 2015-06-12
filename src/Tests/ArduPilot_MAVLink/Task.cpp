@@ -130,16 +130,21 @@ namespace Tests
       // Previous smooth info
       fp32_t last_2steps_velocity_x;
       fp32_t last_2steps_velocity_y;
+      fp32_t last_2steps_velocity_z;
       fp32_t last_1steps_velocity_x;
       fp32_t last_1steps_velocity_y;
+      fp32_t last_1steps_velocity_z;
+
 
       // Last step estated x, y
       fp32_t last_estate_x;
       fp32_t last_estate_y;
+      fp32_t last_estate_z;
 
       // Current info
       fp32_t current_velocity_x;
       fp32_t current_velocity_y;
+      fp32_t current_velocity_z;
 
       // Last time stamp
       uint64_t last_time_stamp;
@@ -152,6 +157,7 @@ namespace Tests
       // Smooth values
       fp32_t smooth_velocity_x;
       fp32_t smooth_velocity_y;
+      fp32_t smooth_velocity_z;
       fp32_t smooth_velocity;
       fp32_t smooth_course;
 
@@ -377,87 +383,87 @@ namespace Tests
           {
             switch ((int)m_msg.msgid)
             {
-              case MAVLINK_MSG_ID_HEARTBEAT:
-                trace("HEARTBEAT");
-                break;
-              case MAVLINK_MSG_ID_SYS_STATUS:
-                trace("SYS_STATUS");
-                break;
-              case MAVLINK_MSG_ID_SYSTEM_TIME:
-                trace("SYSTEM_TIME");
-                break;
-              case 22:
-                trace("PARAM_VALUE");
-                break;
+              // case MAVLINK_MSG_ID_HEARTBEAT:
+              //   trace("HEARTBEAT");
+              //   break;
+              // case MAVLINK_MSG_ID_SYS_STATUS:
+              //   trace("SYS_STATUS");
+              //   break;
+              // case MAVLINK_MSG_ID_SYSTEM_TIME:
+              //   trace("SYSTEM_TIME");
+              //   break;
+              // case 22:
+              //   trace("PARAM_VALUE");
+              //   break;
               case MAVLINK_MSG_ID_GPS_RAW_INT:
                 trace("GPS_RAW");
                 break;
-              case 27:
-                trace("IMU_RAW");
-                break;
-              case MAVLINK_MSG_ID_SCALED_PRESSURE:
-                trace("SCALED_PRESSURE");
-                break;
-              case MAVLINK_MSG_ID_ATTITUDE:
-                trace("ATTITUDE");
-                break;
-              case MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
-                trace("GLOBAL_POSITION_INT");
-                break;
-              case 34:
-                trace("RC_CHANNELS_SCALED");
-                break;
-              case 35:
-                trace("RC_CHANNELS_RAW");
-                break;
-              case MAVLINK_MSG_ID_MISSION_ITEM:
-                trace("MISSION_ITEM");
-                break;
-              case MAVLINK_MSG_ID_MISSION_REQUEST:
-                trace("MISSION_REQUEST");
-                break;
-              case MAVLINK_MSG_ID_MISSION_CURRENT:
-                trace("MISSION_CURRENT");
-                break;
-              case MAVLINK_MSG_ID_MISSION_ACK:
-                trace("MISSION_ACK");
-                break;
-              case MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT:
-                trace("NAV_CONTROLLER_OUTPUT");
-                break;
-              case MAVLINK_MSG_ID_VFR_HUD:
-                trace("VFR_HUD");
-                break;
-              case MAVLINK_MSG_ID_COMMAND_ACK:
-                trace("CMD_ACK");
-                break;
-              case MAVLINK_MSG_ID_BATTERY_STATUS:
-                trace("BATTERY_STAT");
-                break;
-              case 150:
-                trace("SENSOR_OFFSETS");
-                break;
-              case 152:
-                trace("MEMtraceO");
-                break;
-              case 162:
-                trace("FENCE_STATUS");
-                break;
-              case 163:
-                trace("AHRS");
-                break;
-              case 164:
-                trace("SIM_STATE");
-                break;
-              case MAVLINK_MSG_ID_HWSTATUS:
-                trace("HW_STATUS");
-                break;
-              case MAVLINK_MSG_ID_WIND:
-                trace("WIND");
-                break;
-              case MAVLINK_MSG_ID_STATUSTEXT:
-                trace("STATUSTEXT");
-                break;
+              // case 27:
+              //   trace("IMU_RAW");
+              //   break;
+              // case MAVLINK_MSG_ID_SCALED_PRESSURE:
+              //   trace("SCALED_PRESSURE");
+              //   break;
+              // case MAVLINK_MSG_ID_ATTITUDE:
+              //   trace("ATTITUDE");
+              //   break;
+              // case MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
+              //   trace("GLOBAL_POSITION_INT");
+              //   break;
+              // case 34:
+              //   trace("RC_CHANNELS_SCALED");
+              //   break;
+              // case 35:
+              //   trace("RC_CHANNELS_RAW");
+              //   break;
+              // case MAVLINK_MSG_ID_MISSION_ITEM:
+              //   trace("MISSION_ITEM");
+              //   break;
+              // case MAVLINK_MSG_ID_MISSION_REQUEST:
+              //   trace("MISSION_REQUEST");
+              //   break;
+              // case MAVLINK_MSG_ID_MISSION_CURRENT:
+              //   trace("MISSION_CURRENT");
+              //   break;
+              // case MAVLINK_MSG_ID_MISSION_ACK:
+              //   trace("MISSION_ACK");
+              //   break;
+              // case MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT:
+              //   trace("NAV_CONTROLLER_OUTPUT");
+              //   break;
+              // case MAVLINK_MSG_ID_VFR_HUD:
+              //   trace("VFR_HUD");
+              //   break;
+              // case MAVLINK_MSG_ID_COMMAND_ACK:
+              //   trace("CMD_ACK");
+              //   break;
+              // case MAVLINK_MSG_ID_BATTERY_STATUS:
+              //   trace("BATTERY_STAT");
+              //   break;
+              // case 150:
+              //   trace("SENSOR_OFFSETS");
+              //   break;
+              // case 152:
+              //   trace("MEMtraceO");
+              //   break;
+              // case 162:
+              //   trace("FENCE_STATUS");
+              //   break;
+              // case 163:
+              //   trace("AHRS");
+              //   break;
+              // case 164:
+              //   trace("SIM_STATE");
+              //   break;
+              // case MAVLINK_MSG_ID_HWSTATUS:
+              //   trace("HW_STATUS");
+              //   break;
+              // case MAVLINK_MSG_ID_WIND:
+              //   trace("WIND");
+              //   break;
+              // case MAVLINK_MSG_ID_STATUSTEXT:
+              //   trace("STATUSTEXT");
+              //   break;
               default:
                 // debug("UNDEF: %u", m_msg.msgid);
                 break;
@@ -491,10 +497,13 @@ namespace Tests
         
         last_2steps_velocity_x = 0;
         last_2steps_velocity_y = 0;
+        last_2steps_velocity_z = 0;
         last_1steps_velocity_x = 0;
         last_1steps_velocity_y = 0;
+        last_1steps_velocity_z = 0;
         last_estate_x = 0;
         last_estate_y = 0;
+        last_estate_z = 0;
         last_time_stamp = 0;
         last_delta_t = 0;
         
@@ -566,25 +575,32 @@ namespace Tests
             // Current raw velocity in (m/s)
             current_velocity_x = (e_state.x - last_estate_x) / delta_t * 1000;
             current_velocity_y = (e_state.y - last_estate_y) / delta_t * 1000;
+            current_velocity_z = (e_state.z - last_estate_z) / delta_t * 1000;
 
             last_estate_x = e_state.x;
             last_estate_y = e_state.y;
+            last_estate_z = e_state.z;
+
+            // Smooth velocity x and y
+            smooth();
+
+            smooth_velocity = sqrt(pow(smooth_velocity_x, 2) + pow(smooth_velocity_y, 2));
+            smooth_course = atan2(smooth_velocity_y, smooth_velocity_x);
+            //change smooth course to [0, 2PI)
+            if (smooth_course < 0) smooth_course += 2*PI;
+
           }
 
           if(m_args.Print_Raw_Values)
           {
-            debug("raw velocity(m/s) x:%f, y:%f \n", current_velocity_x, current_velocity_y);
+            debug("raw velocity(m/s) x:%f, y:%f z:%f\n", current_velocity_x, current_velocity_y, current_velocity_z);
           }
-
-          // Smooth velocity x and y
-          smooth();
-
-          smooth_velocity = sqrt(pow(smooth_velocity_x, 2) + pow(smooth_velocity_y, 2));
-          smooth_course = atan2(smooth_velocity_y, smooth_velocity_x);
 
           if (m_args.Print_Smooth_values)
           {
-            debug("smooth velocity (m/s):%f, course:%f \n", smooth_velocity, smooth_course);
+            debug("smooth Ground velocity (m/s):%f, course:%f \n", smooth_velocity, smooth_course);
+            debug("smooth velocity (m/s):x %f, y:%f, z:%f \n", smooth_velocity_x, smooth_velocity_y, smooth_velocity_z);
+          
           }
 
           // inf("Current Freq: %f \n", getFrequency());
@@ -599,18 +615,22 @@ namespace Tests
         {
           smooth_velocity_x = current_velocity_x;
           smooth_velocity_y = current_velocity_y;
+          smooth_velocity_z = current_velocity_z;
         }
         else
         {
           smooth_velocity_x = current_velocity_x - (last_1steps_velocity_x - last_2steps_velocity_x) / m_args.filter_K / last_delta_t;
           smooth_velocity_y = current_velocity_y - (last_1steps_velocity_y - last_2steps_velocity_y) / m_args.filter_K / last_delta_t;
+          smooth_velocity_z = current_velocity_z - (last_1steps_velocity_z - last_2steps_velocity_z) / m_args.filter_K / last_delta_t;
         }
 
         last_delta_t = delta_t;
         last_2steps_velocity_x = last_1steps_velocity_x;
         last_2steps_velocity_y = last_1steps_velocity_y;
+        last_2steps_velocity_z = last_1steps_velocity_z;
         last_1steps_velocity_x = smooth_velocity_x;
         last_1steps_velocity_y = smooth_velocity_y;
+        last_1steps_velocity_z = smooth_velocity_z;
 
       }
 
@@ -653,17 +673,54 @@ namespace Tests
           uint16_t cog,
           uint8_t satellites_visible)
          */
-        n = mavlink_msg_gps_raw_int_pack_chan(1, 10, MAVLINK_COMM_1, &m_msg_send, 
-                                              u_msec, 3, 
-                                              int32_t(e_state.lat/PI*180*1e7), 
-                                              int32_t(e_state.lon/PI*180*1e7), 
-                                              int32_t(e_state.height*1e3), 
-                                              0, 0, 
-                                              int32_t(smooth_velocity*100), int32_t(smooth_course*100), 
-                                              10);
-        n = mavlink_msg_to_send_buffer(m_buf_send, &m_msg_send);
-        onDataTransmission(m_buf_send, n);
+        // n = mavlink_msg_gps_raw_int_pack_chan(1, 10, MAVLINK_COMM_1, &m_msg_send, 
+        //                                       u_msec, 3, 
+        //                                       int32_t(e_state.lat/PI*180*1e7), 
+        //                                       int32_t(e_state.lon/PI*180*1e7), 
+        //                                       int32_t(e_state.height*1e3), 
+        //                                       0, 0, 
+        //                                       int32_t(smooth_velocity*100), int32_t(smooth_course*100), 
+        //                                       10);
+        // n = mavlink_msg_to_send_buffer(m_buf_send, &m_msg_send);
+        // onDataTransmission(m_buf_send, n);
         // debug("GPS_Raw_Data Send\n\r");
+        // -----------------------------------------------------------------------------------------------------------------------------------------------
+        /**
+         * @brief Pack a hil_gps message on a channel
+         * @param system_id ID of this system
+         * @param component_id ID of this component (e.g. 200 for IMU)
+         * @param chan The MAVLink channel this message will be sent over
+         * @param msg The MAVLink message to compress the data into
+         * @param time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
+         * @param fix_type 0-1: no fix, 2: 2D fix, 3: 3D fix. Some applications will not use the value of this field unless it is at least two, so always correctly fill in the fix.
+         * @param lat Latitude (WGS84), in degrees * 1E7
+         * @param lon Longitude (WGS84), in degrees * 1E7
+         * @param alt Altitude (AMSL, not WGS84), in meters * 1000 (positive for up)
+         * @param eph GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
+         * @param epv GPS VDOP vertical dilution of position in cm (m*100). If unknown, set to: 65535
+         * @param vel GPS ground speed (m/s * 100). If unknown, set to: 65535
+         * @param vn GPS velocity in cm/s in NORTH direction in earth-fixed NED frame
+         * @param ve GPS velocity in cm/s in EAST direction in earth-fixed NED frame
+         * @param vd GPS velocity in cm/s in DOWN direction in earth-fixed NED frame
+         * @param cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
+         * @param satellites_visible Number of satellites visible. If unknown, set to 255
+         * @return length of the message in bytes (excluding serial stream start sign)
+         */
+          n = mavlink_msg_hil_gps_pack_chan(1, 10, MAVLINK_COMM_1, &m_msg_send,
+                                            u_msec, 3,
+                                            int32_t(e_state.lat/PI*180*1e7),
+                                            int32_t(e_state.lon/PI*180*1e7),
+                                            int32_t(-e_state.height*1e3),
+                                            0, 0,
+                                            int32_t(smooth_velocity*100),
+                                            int16_t(smooth_velocity_x*100),
+                                            int16_t(smooth_velocity_y*100),
+                                            int16_t(smooth_velocity_z*100),
+                                            uint16_t(smooth_course),
+                                            10);
+          n = mavlink_msg_to_send_buffer(m_buf_send, &m_msg_send);
+          onDataTransmission(m_buf_send, n);
+
       }
 
       // Retrieve Mavlink data from vehicle
