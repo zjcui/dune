@@ -128,18 +128,18 @@ namespace Tests
       IMC::EstimatedState e_state;
 
       // Previous smooth info
-      fp32_t last_2steps_velocity;
-      fp32_t last_2steps_course;
-      fp32_t last_1steps_velocity;
-      fp32_t last_1steps_course;
+      fp32_t last_2steps_velocity_x;
+      fp32_t last_2steps_velocity_y;
+      fp32_t last_1steps_velocity_x;
+      fp32_t last_1steps_velocity_y;
 
       // Last step estated x, y
       fp32_t last_estate_x;
       fp32_t last_estate_y;
 
       // Current info
-      fp32_t current_velocity;
-      fp32_t current_course;
+      fp32_t current_velocity_x;
+      fp32_t current_velocity_y;
 
       // Last time stamp
       uint64_t last_time_stamp;
@@ -150,6 +150,8 @@ namespace Tests
       uint64_t delta_t;
 
       // Smooth values
+      fp32_t smooth_velocity_x;
+      fp32_t smooth_velocity_y;
       fp32_t smooth_velocity;
       fp32_t smooth_course;
 
@@ -487,10 +489,10 @@ namespace Tests
         m_args.ref_height = m_args.ref_height;
         m_args.orientation = m_args.orientation/180*PI;
         
-        last_2steps_velocity = 0;
-        last_2steps_course = 0;
-        last_1steps_velocity = 0;
-        last_1steps_course = 0;
+        last_2steps_velocity_x = 0;
+        last_2steps_velocity_y = 0;
+        last_1steps_velocity_x = 0;
+        last_1steps_velocity_y = 0;
         last_estate_x = 0;
         last_estate_y = 0;
         last_time_stamp = 0;
@@ -559,47 +561,56 @@ namespace Tests
           // debug("delta time:%d \n", delta_t);
           last_time_stamp = u_msec;
 
-          current_velocity = sqrt(pow(e_state.x - last_estate_x, 2) + pow(e_state.y - last_estate_y, 2)) / delta_t * 1000;
-          current_course = atan2(e_state.y - last_estate_y, e_state.x - last_estate_x);
-          last_estate_x = e_state.x;
-          last_estate_y = e_state.y;
+          if (delta_t != 0)
+          {
+            // Current raw velocity in (m/s)
+            current_velocity_x = (e_state.x - last_estate_x) / delta_t * 1000;
+            current_velocity_y = (e_state.y - last_estate_y) / delta_t * 1000;
+
+            last_estate_x = e_state.x;
+            last_estate_y = e_state.y;
+          }
 
           if(m_args.Print_Raw_Values)
           {
-            debug("raw velocity(m/s):%f, course:%f \n", current_velocity, current_course);
+            debug("raw velocity(m/s) x:%f, y:%f \n", current_velocity_x, current_velocity_y);
           }
 
+          // Smooth velocity x and y
           smooth();
+
+          smooth_velocity = sqrt(pow(smooth_velocity_x, 2) + pow(smooth_velocity_y, 2));
+          smooth_course = atan2(smooth_velocity_y, smooth_velocity_x);
+
+          if (m_args.Print_Smooth_values)
+          {
+            debug("smooth velocity (m/s):%f, course:%f \n", smooth_velocity, smooth_course);
+          }
 
           // inf("Current Freq: %f \n", getFrequency());
         }
 
       }
 
-      // Smooth values
+      // Smooth velocities
       void smooth(void)
       {
         if (last_delta_t == 0)
         {
-          smooth_velocity = current_velocity;
-          smooth_course = current_course;
+          smooth_velocity_x = current_velocity_x;
+          smooth_velocity_y = current_velocity_y;
         }
         else
         {
-          smooth_velocity = current_velocity - (last_1steps_velocity - last_2steps_velocity) / m_args.filter_K / last_delta_t;
-          smooth_course = current_course - (last_1steps_course - last_2steps_course) / m_args.filter_K / last_delta_t;
+          smooth_velocity_x = current_velocity_x - (last_1steps_velocity_x - last_2steps_velocity_x) / m_args.filter_K / last_delta_t;
+          smooth_velocity_y = current_velocity_y - (last_1steps_velocity_y - last_2steps_velocity_y) / m_args.filter_K / last_delta_t;
         }
 
         last_delta_t = delta_t;
-        last_2steps_velocity = last_1steps_velocity;
-        last_2steps_course = last_1steps_course;
-        last_1steps_velocity = smooth_velocity;
-        last_1steps_course = smooth_course;
-
-        if (m_args.Print_Smooth_values)
-        {
-          debug("smooth velocity(m/s):%f, course:%f \n", smooth_velocity, smooth_course);
-        }
+        last_2steps_velocity_x = last_1steps_velocity_x;
+        last_2steps_velocity_y = last_1steps_velocity_y;
+        last_1steps_velocity_x = smooth_velocity_x;
+        last_1steps_velocity_y = smooth_velocity_y;
 
       }
 
