@@ -38,6 +38,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <iostream>
+#include <fstream>
 
 // MYSQL includes
 #include <mysql_connection.h>
@@ -98,6 +100,13 @@ namespace Tests
 
       bool Print_Raw_Values;
       bool Print_Smooth_values;
+
+      bool Circle_Testing;
+      double Radius;
+      double Noise;
+      double Circle_Speed;
+
+      bool Log_File;
     };
 
     struct Task: public DUNE::Tasks::Task
@@ -160,6 +169,8 @@ namespace Tests
       fp32_t smooth_velocity_z;
       fp32_t smooth_velocity;
       fp32_t smooth_course;
+
+      FILE *ofp;
 
       //! Constructor.
       //! @param[in] name task name.
@@ -247,6 +258,26 @@ namespace Tests
         param("Print_Smooth_values", m_args.Print_Smooth_values)
         .defaultValue("true")
         .description("Print_Smooth_values");
+
+        param("Circle_Testing", m_args.Circle_Testing)
+        .defaultValue("true")
+        .description("If we run Circle_Testing, which will overlap the true positon data from Vicon");
+
+        param("Radius", m_args.Radius)
+        .defaultValue("2.5")
+        .description("Radius of the Circle_Testing");
+
+        param("Noise", m_args.Noise)
+        .defaultValue("0.01")
+        .description("Noise on the Circle_Testing, Test the EKF");
+
+        param("Circle_Speed", m_args.Circle_Speed)
+        .defaultValue("20")
+        .description("How many second to run a full circle");
+
+        param("Log_File", m_args.Log_File)
+        .defaultValue("true")
+        .description("If we need logfile");
 
       }
 
@@ -489,6 +520,13 @@ namespace Tests
       void
       onMain(void)
       {
+        // File operation -- Log
+        ofp = fopen("/home/dune/DUNE/logfile.txt", "w");
+        if (ofp == NULL) {
+          fprintf(stderr, "Can't open output file %s!\n","/home/dune/DUNE/logfile.txt");
+          exit(1);
+        }
+        
         // Change to radian
         m_args.ref_lat = m_args.ref_lat/180*PI;
         m_args.ref_lon = m_args.ref_lon/180*PI;
@@ -513,10 +551,12 @@ namespace Tests
 
           sendMAVLinkData();
 
-          DUNE::Time::Delay::waitMsec(50);
+          DUNE::Time::Delay::waitMsec(4);
 
-          getMAVlinkData();
+          //getMAVlinkData();
         }
+
+        fclose(ofp);
       }
 
       // Get data from SQL
@@ -536,10 +576,25 @@ namespace Tests
           e_state.theta = atof(m_args.res->getString(6)->c_str());
           e_state.psi = atof(m_args.res->getString(7)->c_str());
           
-          // Change the coordinate
-          e_state.x = e_state.x * cos(m_args.orientation) - e_state.y * sin(m_args.orientation);
-          e_state.y = e_state.x * sin(m_args.orientation) + e_state.y * cos(m_args.orientation);
+          double e_x = e_state.x;
+          double e_y = e_state.y;
 
+          // Change the coordinate
+          e_state.x = e_x * cos(m_args.orientation) - e_y * sin(m_args.orientation);
+          e_state.y = e_x * sin(m_args.orientation) + e_y * cos(m_args.orientation);
+
+          // Testing
+          if (m_args.Circle_Testing)
+          {
+            double t = float(u_msec)/1000/m_args.Circle_Speed*2*PI;
+            // e_state.x = m_args.Radius * cos(float(u_msec)/1000/m_args.Circle_Speed*2*PI) + m_args.Noise * (rand() % 3 -1);
+            // e_state.y = m_args.Radius * sin(float(u_msec)/1000/m_args.Circle_Speed*2*PI) + m_args.Noise * (rand() % 3 -1);
+            e_state.x = ((4-1)*m_args.Radius)*cos(t) + m_args.Radius*cos((4-1)*t) + m_args.Noise * (rand() % 3 -1);;
+            e_state.y = ((4-1)*m_args.Radius)*sin(t) - m_args.Radius*sin((4-1)*t) + m_args.Noise * (rand() % 3 -1);;
+            
+
+          }
+          
           if (m_args.Print_In_Coming_Vicon)
           {
             debug("id: %d x:%f y:%f z:%f roll:%f pitch:%f yaw:%f \n", 
@@ -550,7 +605,15 @@ namespace Tests
               e_state.phi,
               e_state.theta,
               e_state.psi);
+
           }  
+
+          if (m_args.Log_File)
+          {
+            fprintf(ofp, "%f\t%f\t%f\n", e_state.x, e_state.y, e_state.z);
+          }
+
+                      
 
           e_state.lat = m_args.ref_lat;
           e_state.lon = m_args.ref_lon;
